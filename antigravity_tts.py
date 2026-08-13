@@ -8,6 +8,7 @@ import asyncio
 import webbrowser
 import shutil
 import warnings
+import subprocess
 
 # Clean startup logs
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
@@ -117,14 +118,13 @@ def clean_markdown_text(text):
     text = re.sub(r'^\s*[-+*•·]\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
     
-    # 6. Comprehensive Special Character Purge (keep only Korean, Japanese, English, digits, and sentence enders)
-    # Remove quotes, brackets, math symbols, bullets, emojis, commas between numbers/short words
+    # 6. Comprehensive Special Character Purge
     text = re.sub(r'[^\w\s\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?]', ' ', text)
-    text = re.sub(r'[_]', ' ', text)  # remove underscores
+    text = re.sub(r'[_]', ' ', text)
     
     # 7. Normalize multiple punctuations & replace breathless commas with clean space
     text = re.sub(r'[\.!\?]{2,}', '.', text)
-    text = re.sub(r'\s*,\s*', ' ', text)  # remove commas to eliminate rapid breathing huffs
+    text = re.sub(r'\s*,\s*', ' ', text)
     text = re.sub(r'\s*([\.!\?])\s*', r'\1 ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
@@ -314,6 +314,15 @@ async def handle_status(request):
         "last_spoken": last_spoken_text
     })
 
+async def handle_restart(request):
+    async def restart_process():
+        await asyncio.sleep(0.5)
+        print("[Restart] Rebooting Antigravity Voice Studio...")
+        os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)])
+    
+    asyncio.create_task(restart_process())
+    return web.json_response({"status": "restarting"})
+
 async def handle_trim_audio(request):
     try:
         reader = await request.multipart()
@@ -459,6 +468,7 @@ def main():
     app.router.add_get('/api/settings', handle_get_settings)
     app.router.add_post('/api/settings', handle_save_settings)
     app.router.add_post('/api/test_speak', handle_test_speak)
+    app.router.add_post('/api/restart', handle_restart)
     app.router.add_post('/api/trim_audio', handle_trim_audio)
     app.router.add_get('/api/status', handle_status)
     

@@ -16,6 +16,7 @@
       --primary-hover: #357ae8;
       --primary-subtle: rgba(70, 140, 246, 0.15);
       --danger: #FF453A;
+      --danger-hover: #e0382e;
       --success: #32D74B;
       --text-main: #FFFFFF;
       --text-muted: #8E8E93;
@@ -73,6 +74,12 @@
       margin-top: 4px;
     }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
     .status-badge {
       display: flex;
       align-items: center;
@@ -94,6 +101,23 @@
     .status-dot.speaking {
       background: var(--primary);
       box-shadow: 0 0 8px var(--primary);
+    }
+
+    .btn-restart {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255, 69, 58, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255, 69, 58, 0.3);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-restart:hover {
+      background: var(--danger);
+      color: #FFFFFF;
     }
 
     /* Clean Spoken Transcript Card */
@@ -378,9 +402,12 @@
         <h1>Antigravity Studio</h1>
         <p>GPT-SoVITS V2 Real-Time Voice Cloning</p>
       </div>
-      <div class="status-badge" id="statusBadge">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Active</span>
+      <div class="header-right">
+        <button class="btn-restart" id="restartBtn" type="button">Restart Engine</button>
+        <div class="status-badge" id="statusBadge">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Active</span>
+        </div>
       </div>
     </div>
 
@@ -519,6 +546,7 @@
     const speedVal = document.getElementById('speedVal');
     const masterToggle = document.getElementById('masterToggle');
     const testBtn = document.getElementById('testBtn');
+    const restartBtn = document.getElementById('restartBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
@@ -580,6 +608,22 @@
     });
 
     masterToggle.addEventListener('change', triggerAutoSave);
+
+    restartBtn.addEventListener('click', async () => {
+      if (!confirm('Reboot Antigravity Voice Engine?')) return;
+      restartBtn.innerText = 'Rebooting...';
+      restartBtn.disabled = true;
+      try {
+        await fetch('/api/restart', { method: 'POST' });
+        setTimeout(() => {
+          window.location.reload();
+        }, 3500);
+      } catch (err) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 3500);
+      }
+    });
 
     function updateDuration() {
       const start = Math.max(0, parseFloat(startTimeInput.value) || 0);
