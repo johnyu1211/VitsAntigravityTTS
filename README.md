@@ -1,16 +1,18 @@
-# Antigravity Voice Engine (AntigravityTTS Simple)
+# Antigravity GPT-SoVITS Character Voice Studio
 
-Real-time Text-to-Speech (TTS) background reader and web controller for Google Antigravity. Automatically reads Antigravity AI responses aloud as they are generated, with multi-language detection, markdown cleaning, and a local web GUI.
+Real-time zero-shot AI voice cloning and Text-to-Speech (TTS) background reader for Google Antigravity. Automatically reads Antigravity AI responses aloud in any custom character voice using **GPT-SoVITS V2** neural voice synthesis.
 
 ---
 
 ## Key Features
 
-- **Real-Time Log Tracking**: Automatically detects and monitors active Antigravity session logs (`transcript.jsonl`) under `~/.gemini/antigravity/brain/`.
-- **Intelligent Text Sanitization**: Automatically strips code blocks, markdown symbols, inline code, and LaTeX math formulas before synthesis.
-- **Multilingual Auto-Routing**: Dynamically detects Korean, English, and Japanese sentences and selects matching native neural voices seamlessly.
-- **Studio Web GUI**: Modern, lightweight dark-themed local web controller to adjust voice, rate, pitch, and power toggles.
-- **Cross-Environment Compatibility**: Works with Antigravity IDE, CLI, and web interface without manual configuration.
+- **Zero-Shot Character Voice Cloning**: Clone any character's voice from a short 3~10 second audio clip (`.wav`) in `reference_voices/`.
+- **Native Trilingual Support**: 100% natural pronunciation and expressive intonation for **Korean, English, and Japanese**.
+- **GPU In-Memory Acceleration**: Real-time CUDA inference with persistent model caching and low-latency audio streaming.
+- **Real-Time Log Tracking**: Automatically detects and reads active Antigravity session logs (`transcript.jsonl`) under `~/.gemini/antigravity/brain/`.
+- **Intelligent Text Sanitization**: Automatically strips code blocks, markdown tables, URLs, and LaTeX math formulas before synthesis.
+- **Instant Interrupt Handling**: Instantly stops speech when a new user message is submitted.
+- **Studio Web Controller**: Clean, dark-themed local GUI (`http://localhost:7861`) to switch character voice samples, adjust pitch, speed, and audio toggles.
 
 ---
 
@@ -21,79 +23,56 @@ Real-time Text-to-Speech (TTS) background reader and web controller for Google A
            |
            v
 [ ~/.gemini/antigravity/brain/<session>/transcript.jsonl ]
-           | (Real-time tailing)
+           | (Real-time Non-blocking Tailing)
            v
 [ Text Cleaner & Language Detector ]
-           | (Multi-language sentence routing)
+           | (Korean / English / Japanese)
            v
-[ Edge-TTS Neural Audio Engine ]
-           |
+[ GPT-SoVITS V2 Neural Audio Synthesizer ]
+           | (Zero-shot reference voice cloning)
            v
-[ Speaker Output & Web GUI Controller ]
+[ Speaker Output & Studio Web GUI (Port 7861) ]
 ```
 
 ---
 
-## Installation & Quick Start
+## Quick Start Guide
 
-### Prerequisites
-- Python 3.10 or higher
-- Windows / macOS / Linux
+### 1. Prerequisites
+- Windows 10/11 (or Linux)
+- Python 3.10 or 3.11
+- NVIDIA GPU with CUDA support (4GB+ VRAM recommended)
 
-### 1. Clone Repository
+### 2. Clone Repository
 ```bash
-git clone https://github.com/johnyu1211/AntigravityTTS_simple.git
-cd AntigravityTTS_simple
+git clone https://github.com/johnyu1211/RCV-AntigravityTTS.git
+cd RCV-AntigravityTTS
 ```
 
-### 2. Install Dependencies
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Run
+### 4. Add Character Voice Samples
+Place any 3~10 second character voice clips (`.wav`) into the `reference_voices/` folder:
+```text
+reference_voices/
+  ├── my_character.wav
+  └── anime_heroine.wav
+```
+
+### 5. Run
 On Windows:
 ```bash
 run.bat
 ```
-Or run directly via Python:
-```bash
-python antigravity_tts.py
-```
-
-The Web GUI will automatically open at `http://localhost:7860`.
+The Studio Web GUI will open automatically at `http://localhost:7861`.
 
 ---
 
-## Web GUI Parameters
+## Legal & License
 
-- **Voice Profiles**:
-  - `SunHi` (Korean Female)
-  - `InJoon` (Korean Male - Newsreader)
-  - `Hyunsu` (Korean Male - Conversational)
-  - `Jenny` / `Guy` (English)
-  - `Nanami` / `Keita` (Japanese)
-- **Auto Language Routing**: Automatically routes Korean, English, and Japanese sentences to their native voices.
-- **Rate & Pitch Sliders**: Adjust speech speed (-40% to +80%) and voice pitch (-30Hz to +30Hz).
-- **Mute / Power Switch**: Toggle TTS playback instantly.
-
----
-
-## Project Structure
-
-```text
-AntigravityTTS_simple/
-|-- antigravity_tts.py   # Core backend server, log watcher, and TTS player
-|-- index.html           # Modern Studio Web Controller GUI
-|-- requirements.txt     # Python dependencies (edge-tts, pygame, aiohttp)
-|-- run.bat              # One-click Windows startup batch script
-|-- .gitignore           # Ignored config, cache, and audio files
-|-- LICENSE              # MIT License
-`-- README.md            # Documentation
-```
-
----
-
-## License
-
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+- **Engine Code**: Licensed under the **MIT License**.
+- **Core Architecture**: Powered by [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS) (MIT License).
+- **User Responsibility**: Model weights and audio samples in `reference_voices/` are managed locally by the user and are strictly excluded from the repository.

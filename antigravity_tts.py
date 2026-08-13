@@ -6,33 +6,52 @@ import re
 import glob
 import asyncio
 import webbrowser
-from aiohttp import web
-import edge_tts
-import pygame
+import shutil
+import warnings
 
-# Initialize audio mixer
-pygame.mixer.init()
+# Clean startup logs
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+warnings.filterwarnings("ignore")
+
+import soundfile as sf
+import librosa
+import pygame
+from aiohttp import web
+from gpt_sovits_engine import gpt_sovits_engine
+
+# Initialize audio mixer for 32000Hz GPT-SoVITS audio
+pygame.mixer.init(frequency=32000, size=-16, channels=1, buffer=1024)
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(APP_DIR, "config.json")
 INDEX_HTML = os.path.join(APP_DIR, "index.html")
+TEMP_DIR = os.path.join(APP_DIR, "temp_audio")
+REF_DIR = os.path.join(APP_DIR, "reference_voices")
 BRAIN_DIR = os.path.expanduser(r"~\.gemini\antigravity\brain")
 
-# Default Global State
+os.makedirs(REF_DIR, exist_ok=True)
+
+def cleanup_temp_dir():
+    if os.path.exists(TEMP_DIR):
+        try:
+            shutil.rmtree(TEMP_DIR, ignore_errors=True)
+        except:
+            pass
+    os.makedirs(TEMP_DIR, exist_ok=True)
+
+cleanup_temp_dir()
+
 current_settings = {
-    "voice": "ko-KR-SunHiNeural",
-    "rate": "+0%",
-    "pitch": "+0Hz",
-    "volume": "+0%",
+    "reference_voice": "voiceSCOURCE.wav",
+    "volume": 1.0,
+    "speed": 1.0,
     "enabled": True,
-    "auto_lang": True,
     "skip_code": True
 }
 
-# Queue and playback control
 speech_queue = asyncio.Queue()
-current_task = None
-skip_requested = False
+audio_play_queue = asyncio.Queue()
+current_generation_id = 0
 last_spoken_text = ""
 
 def load_config():
@@ -66,21 +85,14 @@ def detect_language(text):
         return "en"
     return "ko"
 
-def get_voice_for_lang(lang, base_voice):
-    is_male = any(m in base_voice for m in ["InJoon", "Hyunsu", "Guy", "Keita", "Yunxi"])
-    if lang == "en":
-        return "en-US-GuyNeural" if is_male else "en-US-JennyNeural"
-    elif lang == "ja":
-        return "ja-JP-KeitaNeural" if is_male else "ja-JP-NanamiNeural"
-    elif lang == "ko":
-        return base_voice if base_voice.startswith("ko-KR") else ("ko-KR-InJoonNeural" if is_male else "ko-KR-SunHiNeural")
-    return base_voice
-
 def clean_markdown_text(text):
     if not text:
         return ""
+    text = re.sub(r'<[^>]+>', ' ', text)
     text = re.sub(r'```[\s\S]*?```', ' ', text)
     text = re.sub(r'`[^`]+`', ' ', text)
+    text = re.sub(r'\|[^\n]+\|', ' ', text)
+    text = re.sub(r'[-:|]{3,}', ' ', text)
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     text = re.sub(r'\\\[[\s\S]*?\\\]', ' ', text)
     text = re.sub(r'\\\([^\)]*?\\\)', ' ', text)
@@ -89,115 +101,139 @@ def clean_markdown_text(text):
     text = re.sub(r'#+\s*', '', text)
     text = re.sub(r'[*_~>|]', ' ', text)
     text = re.sub(r'^\s*[-+*]\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'https?://\S+', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-def split_into_sentences(text):
-    raw_chunks = re.split(r'(\n+|[\.\?\!]+\s+)', text)
-    sentences = []
+# Complete sentence splitting without artificial 8-chunk cutoff
+def split_into_conversational_chunks(text):
+    raw_sentences = re.split(r'(\n+|(?<=[.!?])\s+)', text)
+    chunks = []
     buf = ""
-    for c in raw_chunks:
-        if not c:
+    for s in raw_sentences:
+        if not s:
             continue
-        buf += c
-        if re.search(r'[\.\?\!\n]', c):
+        buf += s
+        # Split when sentence terminator is reached or buffer reaches natural length
+        if re.search(r'[\.\?\!\n]', s) or len(buf) >= 60:
             cleaned = buf.strip()
-            if len(cleaned) > 1:
-                sentences.append(cleaned)
+            if cleaned:
+                chunks.append(cleaned)
             buf = ""
     if buf.strip():
-        sentences.append(buf.strip())
-    return sentences if sentences else [text]
+        chunks.append(buf.strip())
+    return chunks if chunks else [text]
 
-def stop_playback():
-    """Immediately stop audio and trigger skip."""
-    global skip_requested
-    skip_requested = True
+def stop_and_clear_everything():
+    global current_generation_id
+    current_generation_id += 1
     try:
         if pygame.mixer.music.get_busy():
             pygame.mixer.music.stop()
-            pygame.mixer.music.unload()
-    except Exception as e:
-        print(f"[Stop Error] {e}")
+        pygame.mixer.music.unload()
+    except:
+        pass
+    for q in [speech_queue, audio_play_queue]:
+        while not q.empty():
+            try:
+                q.get_nowait()
+                q.task_done()
+            except:
+                break
 
-def clear_all_queue():
-    """Flush all queued speech tasks and stop audio immediately."""
-    stop_playback()
-    while not speech_queue.empty():
+async def audio_player_worker():
+    global current_generation_id
+    while True:
+        item = await audio_play_queue.get()
+        gen_id = item.get("gen_id")
+        audio_file = item.get("path")
+
+        if gen_id != current_generation_id or not os.path.exists(audio_file):
+            if os.path.exists(audio_file):
+                try: os.remove(audio_file)
+                except: pass
+            audio_play_queue.task_done()
+            continue
+
         try:
-            speech_queue.get_nowait()
-            speech_queue.task_done()
-        except:
-            break
-    print("[Queue Cleared] All pending speech dropped.")
+            vol = float(current_settings.get("volume", 1.0))
+            pygame.mixer.music.set_volume(max(0.0, min(1.0, vol)))
+            pygame.mixer.music.load(audio_file)
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy():
+                if gen_id != current_generation_id:
+                    pygame.mixer.music.stop()
+                    break
+                vol = float(current_settings.get("volume", 1.0))
+                pygame.mixer.music.set_volume(max(0.0, min(1.0, vol)))
+                await asyncio.sleep(0.02)
+            pygame.mixer.music.unload()
+        except Exception as e:
+            print(f"[Player Error] {e}")
+        finally:
+            try:
+                pygame.mixer.music.unload()
+                if os.path.exists(audio_file):
+                    os.remove(audio_file)
+            except:
+                pass
+            audio_play_queue.task_done()
 
 async def speech_worker():
-    """Background worker processing speech queue item by item."""
-    global skip_requested, last_spoken_text
+    global current_generation_id, last_spoken_text
     while True:
         item = await speech_queue.get()
         text = item.get("text", "")
-        override_voice = item.get("voice")
-        skip_requested = False
+        gen_id = item.get("gen_id")
 
-        if not current_settings.get("enabled", True) and not override_voice:
+        if gen_id != current_generation_id or not text:
+            speech_queue.task_done()
+            continue
+
+        if not current_settings.get("enabled", True):
             speech_queue.task_done()
             continue
 
         clean = clean_markdown_text(text)
-        if not clean or len(clean) < 2:
+        if not clean:
             speech_queue.task_done()
             continue
 
         last_spoken_text = clean
-        rate = current_settings.get("rate", "+0%")
-        pitch = current_settings.get("pitch", "+0Hz")
-        base_voice = override_voice or current_settings.get("voice", "ko-KR-SunHiNeural")
-        auto_lang = current_settings.get("auto_lang", True)
+        ref_voice = current_settings.get("reference_voice", "voiceSCOURCE.wav")
+        speed = float(current_settings.get("speed", 1.0))
 
-        sentences = split_into_sentences(clean)
+        chunks = split_into_conversational_chunks(clean)
 
-        for sentence in sentences:
-            if skip_requested:
-                print("[Skipped] Moving past current sentence.")
+        for chunk in chunks:
+            if gen_id != current_generation_id:
                 break
 
-            if not sentence or len(sentence.strip()) < 2:
+            if not chunk or not chunk.strip():
                 continue
 
-            if auto_lang and not override_voice:
-                lang = detect_language(sentence)
-                voice = get_voice_for_lang(lang, base_voice)
-            else:
-                voice = base_voice
-
-            print(f"[TTS Playing] [{voice}] {sentence[:45]}...")
-            temp_audio = os.path.join(APP_DIR, f"tts_{int(time.time()*1000)}.mp3")
+            lang = detect_language(chunk)
+            uid = f"{int(time.time()*1000)}_{os.getpid()}_{hash(chunk)%10000}"
+            temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
 
             try:
-                communicate = edge_tts.Communicate(sentence, voice=voice, rate=rate, pitch=pitch)
-                await communicate.save(temp_audio)
+                print(f"[GPT-SoVITS Cloning] [{ref_voice}] [{lang}] {chunk[:35]}...")
+                success = await asyncio.to_thread(
+                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temp_out
+                )
 
-                if skip_requested:
+                if gen_id != current_generation_id:
+                    if os.path.exists(temp_out): os.remove(temp_out)
                     break
 
-                if os.path.exists(temp_audio) and os.path.getsize(temp_audio) > 0:
-                    pygame.mixer.music.load(temp_audio)
-                    pygame.mixer.music.play()
-                    while pygame.mixer.music.get_busy():
-                        if skip_requested:
-                            pygame.mixer.music.stop()
-                            break
-                        await asyncio.sleep(0.06)
-                    pygame.mixer.music.unload()
+                if success and os.path.exists(temp_out) and os.path.getsize(temp_out) > 0:
+                    if gen_id == current_generation_id:
+                        await audio_play_queue.put({"gen_id": gen_id, "path": temp_out})
+                    else:
+                        if os.path.exists(temp_out): os.remove(temp_out)
+
             except Exception as e:
-                print(f"[Audio Error] {e}")
-            finally:
-                if os.path.exists(temp_audio):
-                    try:
-                        os.remove(temp_audio)
-                    except:
-                        pass
+                print(f"[Synthesize Error] {e}")
 
         speech_queue.task_done()
 
@@ -206,41 +242,99 @@ async def handle_index(request):
     return web.FileResponse(INDEX_HTML)
 
 async def handle_get_settings(request):
-    return web.json_response(current_settings)
+    return web.json_response({
+        "settings": current_settings,
+        "available_voices": gpt_sovits_engine.get_available_reference_voices()
+    })
 
 async def handle_save_settings(request):
     global current_settings
     data = await request.json()
     current_settings.update(data)
     save_config()
+    if "volume" in current_settings:
+        try:
+            pygame.mixer.music.set_volume(float(current_settings["volume"]))
+        except:
+            pass
     return web.json_response({"status": "ok", "settings": current_settings})
 
 async def handle_test_speak(request):
-    test_phrase = "안티그래비티 실시간 음성 엔진입니다."
-    await speech_queue.put({"text": test_phrase})
+    global current_generation_id
+    current_generation_id += 1
+    test_phrase = "안녕하세요! 안티그래비티 실시간 캐릭터 음성 복제 테스트입니다. 한국어와 영어를 자연스러운 억양으로 매끄럽게 읽어드리며, 원하시는 오디오 샘플로 언제든지 목소리를 바꿀 수 있습니다."
+    await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id})
     return web.json_response({"status": "queued"})
-
-async def handle_skip(request):
-    stop_playback()
-    return web.json_response({"status": "skipped"})
-
-async def handle_clear(request):
-    clear_all_queue()
-    return web.json_response({"status": "cleared"})
 
 async def handle_status(request):
     is_busy = False
     try:
-        is_busy = pygame.mixer.music.get_busy()
+        is_busy = pygame.mixer.music.get_busy() or not audio_play_queue.empty()
     except:
         pass
     return web.json_response({
         "enabled": current_settings.get("enabled", True),
-        "auto_lang": current_settings.get("auto_lang", True),
-        "queue_size": speech_queue.qsize(),
         "is_playing": is_busy,
         "last_spoken": last_spoken_text
     })
+
+async def handle_trim_audio(request):
+    try:
+        reader = await request.multipart()
+        audio_bytes = None
+        start_sec = 0.0
+        end_sec = 5.0
+        filename = "custom_sample.wav"
+
+        while True:
+            field = await reader.next()
+            if field is None:
+                break
+            if field.name == 'audio':
+                audio_bytes = await field.read()
+            elif field.name == 'start_sec':
+                start_sec = float(await field.text())
+            elif field.name == 'end_sec':
+                end_sec = float(await field.text())
+            elif field.name == 'filename':
+                filename = (await field.text()).strip()
+
+        if not audio_bytes:
+            return web.json_response({"status": "error", "error": "No audio data received"}, status=400)
+
+        if not filename.lower().endswith('.wav'):
+            filename += '.wav'
+
+        temp_input = os.path.join(TEMP_DIR, f"upload_{int(time.time()*1000)}.bin")
+        with open(temp_input, 'wb') as f:
+            f.write(audio_bytes)
+
+        audio_data, sr = librosa.load(temp_input, sr=32000, mono=True)
+        if os.path.exists(temp_input):
+            try: os.remove(temp_input)
+            except: pass
+
+        start_frame = max(0, int(start_sec * sr))
+        end_frame = min(len(audio_data), int(end_sec * sr))
+
+        if start_frame >= end_frame:
+            return web.json_response({"status": "error", "error": "Invalid start/end time range"}, status=400)
+
+        trimmed_audio = audio_data[start_frame:end_frame]
+        target_path = os.path.join(REF_DIR, filename)
+        sf.write(target_path, trimmed_audio, sr)
+
+        print(f"[Audio Trimmer] Trimmed & Saved: {target_path} (Len: {len(trimmed_audio)/sr:.2f}s)")
+
+        return web.json_response({
+            "status": "ok",
+            "filename": filename,
+            "available_voices": gpt_sovits_engine.get_available_reference_voices()
+        })
+
+    except Exception as e:
+        print(f"[Audio Trimmer Error] {e}")
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
 
 def get_latest_transcript_path():
     pattern = os.path.join(BRAIN_DIR, "*", ".system_generated", "logs", "transcript.jsonl")
@@ -250,58 +344,69 @@ def get_latest_transcript_path():
     return max(files, key=os.path.getmtime)
 
 async def background_log_watcher():
-    print("[Watcher] Tracking active transcript.jsonl...")
-    current_file = get_latest_transcript_path()
+    global current_generation_id
+    print("[Watcher] Tracking active transcript.jsonl (GPT-SoVITS Complete Reader)...")
     
+    last_file = None
+    last_pos = 0
+
     while True:
-        if not current_file or not os.path.exists(current_file):
-            current_file = get_latest_transcript_path()
-            await asyncio.sleep(1)
+        latest = get_latest_transcript_path()
+        if not latest or not os.path.exists(latest):
+            await asyncio.sleep(0.5)
             continue
 
+        if latest != last_file:
+            last_file = latest
+            last_pos = os.path.getsize(latest)
+            stop_and_clear_everything()
+
         try:
-            with open(current_file, 'r', encoding='utf-8', errors='ignore') as f:
-                f.seek(0, os.SEEK_END)
-                while True:
-                    latest = get_latest_transcript_path()
-                    if latest and latest != current_file:
-                        print(f"\n[Session Switch] -> {latest}")
-                        # New session: optionally clear old queue
-                        clear_all_queue()
-                        current_file = latest
-                        break
+            curr_size = os.path.getsize(last_file)
+            if curr_size > last_pos:
+                with open(last_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    f.seek(last_pos)
+                    new_lines = f.readlines()
+                    last_pos = f.tell()
 
-                    line = f.readline()
+                for line in new_lines:
+                    line = line.strip()
                     if not line:
-                        await asyncio.sleep(0.3)
                         continue
-
                     try:
                         data = json.loads(line)
-                        # When user enters a new prompt, clear backlog
-                        if data.get("type") == "USER_INPUT":
-                            stop_playback()
+                        msg_type = data.get("type")
 
-                        # When AI responds, queue text
-                        elif data.get("type") == "PLANNER_RESPONSE":
+                        if msg_type == "USER_INPUT":
+                            stop_and_clear_everything()
+                        elif msg_type == "PLANNER_RESPONSE":
+                            tool_calls = data.get("tool_calls", [])
                             content = data.get("content", "")
-                            if content and current_settings.get("enabled", True):
-                                await speech_queue.put({"text": content})
-                    except json.JSONDecodeError:
+                            if content and len(tool_calls) == 0 and current_settings.get("enabled", True):
+                                stop_and_clear_everything()
+                                await speech_queue.put({"text": content, "gen_id": current_generation_id})
+                    except Exception as e:
                         pass
+            elif curr_size < last_pos:
+                last_pos = curr_size
         except Exception as e:
-            print(f"[Log Error] {e}")
-            await asyncio.sleep(1)
+            pass
+
+        await asyncio.sleep(0.15)
 
 async def start_background_tasks(app):
     app['worker'] = asyncio.create_task(speech_worker())
+    app['player'] = asyncio.create_task(audio_player_worker())
     app['watcher'] = asyncio.create_task(background_log_watcher())
 
 async def cleanup_background_tasks(app):
     app['worker'].cancel()
+    app['player'].cancel()
     app['watcher'].cancel()
     await app['worker']
+    await app['player']
     await app['watcher']
+    cleanup_temp_dir()
 
 def main():
     app = web.Application()
@@ -309,16 +414,15 @@ def main():
     app.router.add_get('/api/settings', handle_get_settings)
     app.router.add_post('/api/settings', handle_save_settings)
     app.router.add_post('/api/test_speak', handle_test_speak)
-    app.router.add_post('/api/skip', handle_skip)
-    app.router.add_post('/api/clear', handle_clear)
+    app.router.add_post('/api/trim_audio', handle_trim_audio)
     app.router.add_get('/api/status', handle_status)
     
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
 
-    port = 7860
+    port = 7861
     print("=" * 60)
-    print(f"Antigravity Voice Engine GUI: http://localhost:{port}")
+    print(f"Antigravity GPT-SoVITS Voice Studio: http://localhost:{port}")
     print("=" * 60)
     
     webbrowser.open(f"http://localhost:{port}")

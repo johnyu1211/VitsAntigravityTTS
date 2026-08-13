@@ -1,15 +1,46 @@
-# Python cache
+# Python cache & compiled files
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Temporary audio files
+# Temporary files & buffers
+*.tmp
+*.bin
+temp/
+temp_*
+temp_audio/
+
+# Audio & Media files
 *.mp3
-temp_tts.mp3
+*.wav
+*.flac
+*.m4a
+*.mp4
+*.ogg
+*.aac
 
-# User local configuration
+# User Reference Voices (Strictly ignore all except README.txt)
+reference_voices/*
+!reference_voices/README.txt
+
+# User Configuration & Runtime Created Configs
 config.json
+GPT_SoVITS/
 
-# Environment / IDE
+# Large AI Model Weights & Pretrained Models (100MB+ GitHub Limit)
+gpt_sovits_core/GPT_SoVITS/pretrained_models/
+gpt_sovits_core/tools/asr/models/
+gpt_sovits_core/tools/uvr5/uvr5_weights/
+gpt_sovits_core/tools/denoise-model/
+*.pth
+*.ckpt
+*.safetensors
+*.pt
+*.bin
+*.onnx
+
+# IDE & Virtual Environments
 .venv/
 venv/
 .idea/
