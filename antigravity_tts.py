@@ -90,7 +90,7 @@ def clean_markdown_text(text):
     if not text:
         return ""
     
-    # 1. Remove code blocks completely
+    # 1. Remove code blocks completely (```...``` and `...`)
     text = re.sub(r'```[\s\S]*?```', ' ', text)
     text = re.sub(r'`[^`]+`', ' ', text)
 
@@ -103,8 +103,9 @@ def clean_markdown_text(text):
     
     # 4. Strip file paths (e.g. C:\path\to\file or /usr/local/...)
     text = re.sub(r'[A-Za-z]:\\[\w\\\.-]+', ' ', text)
+    text = re.sub(r'/(?:[\w\.-]+/)+[\w\.-]+', ' ', text)
 
-    # 5. HTML tags & Markdown elements
+    # 5. HTML tags & Markdown elements & Tables
     text = re.sub(r'<[^>]+>', ' ', text)
     text = re.sub(r'\|[^\n]+\|', ' ', text)
     text = re.sub(r'[-:|]{3,}', ' ', text)
@@ -113,13 +114,21 @@ def clean_markdown_text(text):
     text = re.sub(r'\$\$[\s\S]*?\$\$', ' ', text)
     text = re.sub(r'\$[^\$]+?\$', ' ', text)
     text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'^\s*[-+*]\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^\s*[-+*•·]\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
     
-    # 6. Replace problematic symbols that choke G2P / BERT tokenizers
-    text = re.sub(r'[\/\\_{}\[\]\(\)<>|~*`@#%^&+=]', ' ', text)
+    # 6. Comprehensive Special Character Purge (keep only Korean, Japanese, English, digits, and natural punctuation)
+    # Filter out quotes, brackets, math symbols, bullets, emojis, arrows, formatting marks
+    text = re.sub(r'[^\w\s\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff,\.!\?]', ' ', text)
+    text = re.sub(r'[_]', ' ', text)  # remove underscores
     
-    # 7. Normalize spaces and punctuation
+    # 7. Normalize multiple punctuations (e.g. "!!!" -> "!", "..." -> ".")
+    text = re.sub(r'\.{2,}', '.', text)
+    text = re.sub(r'!{2,}', '!', text)
+    text = re.sub(r'\?{2,}', '?', text)
+    text = re.sub(r',{2,}', ',', text)
+    
+    # 8. Normalize spacing around punctuation
     text = re.sub(r'\s*([,\.!\?])\s*', r'\1 ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
@@ -272,7 +281,6 @@ async def handle_save_settings(request):
     current_settings.update(data)
     save_config()
     
-    # Check if voice prompt text is being updated
     if "update_prompt_text" in data and "reference_voice" in data:
         gpt_sovits_engine.save_voice_metadata(
             data["reference_voice"],
@@ -294,7 +302,7 @@ async def handle_save_settings(request):
 async def handle_test_speak(request):
     global current_generation_id
     current_generation_id += 1
-    test_phrase = "안녕하세요! 대사 매칭 가이드가 적용된 실시간 캐릭터 음성 복제 테스트입니다. 문장의 시작부터 끝까지 음높이가 안정적으로 유지됩니다."
+    test_phrase = "안녕하세요! 특수기호가 깔끔하게 정제된 실시간 캐릭터 음성 복제 테스트입니다. 괄호나 기호에 방해받지 않고 자연스럽게 발화합니다."
     await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id})
     return web.json_response({"status": "queued"})
 
@@ -362,7 +370,6 @@ async def handle_trim_audio(request):
         target_path = os.path.join(REF_DIR, filename)
         sf.write(target_path, trimmed_audio, sr)
 
-        # Save companion prompt text file
         if prompt_text:
             gpt_sovits_engine.save_voice_metadata(filename, prompt_text, prompt_lang)
 
