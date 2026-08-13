@@ -42,9 +42,12 @@ def cleanup_temp_dir():
 cleanup_temp_dir()
 
 current_settings = {
-    "reference_voice": "voiceSCOURCE.wav",
-    "target_lang": "auto",
-    "prompt_lang": "en",
+    "voice_en": "voiceSCOURCE.wav",
+    "prompt_en": "",
+    "voice_ko": "voiceSCOURCE.wav",
+    "prompt_ko": "",
+    "voice_default": "voiceSCOURCE.wav",
+    "prompt_default": "",
     "temperature": 0.65,
     "volume": 1.0,
     "speed": 1.0,
@@ -62,7 +65,12 @@ def load_config():
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-                current_settings.update(json.load(f))
+                saved = json.load(f)
+                current_settings.update(saved)
+                # Backward compatibility migration
+                if "reference_voice" in saved:
+                    if "voice_en" not in saved: current_settings["voice_en"] = saved["reference_voice"]
+                    if "voice_ko" not in saved: current_settings["voice_ko"] = saved["reference_voice"]
         except:
             pass
 
@@ -216,12 +224,8 @@ async def speech_worker():
             continue
 
         last_spoken_text = clean
-        ref_voice = current_settings.get("reference_voice", "voiceSCOURCE.wav")
         speed = float(current_settings.get("speed", 1.0))
         temperature = float(current_settings.get("temperature", 0.65))
-        
-        target_lang_setting = current_settings.get("target_lang", "auto")
-        sample_prompt_lang = current_settings.get("prompt_lang", "en")
 
         chunks = split_into_conversational_chunks(clean)
 
@@ -232,19 +236,29 @@ async def speech_worker():
             if not chunk or not chunk.strip():
                 continue
 
-            # Determine synthesis target language
-            if target_lang_setting and target_lang_setting != "auto":
-                lang = target_lang_setting
+            lang = detect_language(chunk)
+            
+            # Language-specific voice slot routing
+            if lang == "en":
+                ref_voice = current_settings.get("voice_en", "voiceSCOURCE.wav")
+                prompt_text = current_settings.get("prompt_en", "")
+                prompt_lang = "en"
+            elif lang == "ko":
+                ref_voice = current_settings.get("voice_ko", current_settings.get("voice_en", "voiceSCOURCE.wav"))
+                prompt_text = current_settings.get("prompt_ko", "")
+                prompt_lang = "ko"
             else:
-                lang = detect_language(chunk)
+                ref_voice = current_settings.get("voice_default", current_settings.get("voice_en", "voiceSCOURCE.wav"))
+                prompt_text = current_settings.get("prompt_default", "")
+                prompt_lang = "auto"
 
             uid = f"{int(time.time()*1000)}_{os.getpid()}_{hash(chunk)%10000}"
             temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
 
             try:
-                print(f"[GPT-SoVITS] [{ref_voice}] [Target: {lang}] [Sample: {sample_prompt_lang}] {chunk[:35]}...")
+                print(f"[GPT-SoVITS] [{lang.upper()}] Voice: '{ref_voice}' (Temp: {temperature:.2f}) -> {chunk[:35]}...")
                 success = await asyncio.to_thread(
-                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, "", sample_prompt_lang, temp_out
+                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out
                 )
 
                 if gen_id != current_generation_id:
@@ -279,12 +293,11 @@ async def handle_save_settings(request):
     current_settings.update(data)
     save_config()
     
-    if "update_prompt_text" in data and "reference_voice" in data:
-        gpt_sovits_engine.save_voice_metadata(
-            data["reference_voice"],
-            data.get("update_prompt_text", ""),
-            data.get("update_prompt_lang", data.get("prompt_lang", "auto"))
-        )
+    # Save accompanying transcripts if provided
+    if "voice_en" in data and "prompt_en" in data:
+        gpt_sovits_engine.save_voice_metadata(data["voice_en"], data.get("prompt_en", ""), "en")
+    if "voice_ko" in data and "prompt_ko" in data:
+        gpt_sovits_engine.save_voice_metadata(data["voice_ko"], data.get("prompt_ko", ""), "ko")
 
     if "volume" in current_settings:
         try:
@@ -300,7 +313,7 @@ async def handle_save_settings(request):
 async def handle_test_speak(request):
     global current_generation_id
     current_generation_id += 1
-    test_phrase = "안녕하세요! 다국어 언어 매칭 가이드가 적용된 캐릭터 음성 복제 테스트입니다."
+    test_phrase = "Hello! This is English speech test. 그리고 이것은 한국어 전용 샘플 음성 테스트입니다."
     await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id})
     return web.json_response({"status": "queued"})
 
