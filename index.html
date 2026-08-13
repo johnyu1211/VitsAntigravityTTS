@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antigravity Voice Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #1c1c1e;
+      --surface-color: #242426;
+      --surface-low: #1f1f21;
+      --surface-high: #2a2a2d;
+      --surface-highest: #323236;
+      --surface-lowest: #161618;
+      
+      --primary: #468CF6;
+      --primary-light: #6ba2f8;
+      --primary-glow: rgba(70, 140, 246, 0.18);
+      
+      --secondary: #10b981;
+      --secondary-glow: rgba(16, 185, 129, 0.18);
+      --danger: #ef4444;
+      
+      --text-main: #f2f2f5;
+      --text-muted: #a0a0a6;
+      --text-dark: #73737a;
+      
+      --border-color: rgba(255, 255, 255, 0.11);
+      --border-focus: #468CF6;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'DM Sans', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+      line-height: 1.5;
+      user-select: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Top App Bar */
+    .app-header {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .app-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-title svg {
+      color: var(--primary);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--secondary);
+      box-shadow: 0 0 8px var(--secondary-glow);
+    }
+
+    .status-indicator.muted {
+      background-color: var(--danger);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Minimal Switch */
+    .switch-toggle {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+    }
+
+    .switch-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--surface-highest);
+      border: 1px solid var(--border-color);
+      transition: var(--transition);
+      border-radius: 20px;
+    }
+
+    .switch-slider::before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-muted);
+      transition: var(--transition);
+      border-radius: 50%;
+    }
+
+    input:checked + .switch-slider {
+      background-color: var(--primary);
+      border-color: var(--primary-light);
+    }
+
+    input:checked + .switch-slider::before {
+      transform: translateX(22px);
+      background-color: #ffffff;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .form-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary-light);
+      font-feature-settings: "tnum";
+    }
+
+    /* Inputs & Select */
+    select {
+      width: 100%;
+      background: var(--surface-low);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      outline: none;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--border-focus);
+      background: var(--surface-high);
+    }
+
+    /* Range Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 5px;
+      background: var(--surface-highest);
+      border-radius: 4px;
+      outline: none;
+      margin: 8px 0;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+      background: var(--primary-light);
+    }
+
+    /* Buttons */
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    button {
+      padding: 11px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-light);
+      box-shadow: 0 0 16px var(--primary-glow);
+    }
+
+    .btn-secondary {
+      background: var(--surface-high);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-highest);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* Console Feed */
+    .console-box {
+      background: var(--surface-low);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      max-height: 140px;
+      overflow-y: auto;
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      word-break: break-all;
+    }
+
+    .console-timestamp {
+      color: var(--text-dark);
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .console-content {
+      color: var(--text-main);
+    }
+
+    /* Toast Notification */
+    .toast-popup {
+      position: fixed;
+      bottom: 24px;
+      background: var(--surface-highest);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: var(--transition);
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .toast-popup.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="app-header">
+      <div class="header-left">
+        <div class="app-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+          </svg>
+          Antigravity Voice Engine
+        </div>
+        <div class="status-badge">
+          <div class="status-indicator" id="statusDot"></div>
+          <span id="statusLabel">실시간 대화 로그 감시 중</span>
+        </div>
+      </div>
+      <label class="switch-toggle" title="TTS 전원 토글">
+        <input type="checkbox" id="powerSwitch" checked>
+        <span class="switch-slider"></span>
+      </label>
+    </div>
+
+    <!-- Voice Configurations -->
+    <div class="card">
+      <div class="card-title">VOICE PARAMETERS</div>
+
+      <!-- Voice Selection -->
+      <div class="form-group">
+        <div class="form-header">
+          <span>기본 음성 프로필</span>
+        </div>
+        <select id="voiceSelector">
+          <option value="ko-KR-SunHiNeural">SunHi (한국어 여성 · 표준)</option>
+          <option value="ko-KR-InJoonNeural">InJoon (한국어 남성 · 아나운서)</option>
+          <option value="ko-KR-HyunsuNeural">Hyunsu (한국어 남성 · 대화체)</option>
+          <option value="en-US-JennyNeural">Jenny (영어 여성)</option>
+          <option value="en-US-GuyNeural">Guy (영어 남성)</option>
+          <option value="ja-JP-NanamiNeural">Nanami (일본어 여성)</option>
+        </select>
+      </div>
+
+      <!-- Auto Language Routing Switch -->
+      <div class="form-group">
+        <div class="form-row">
+          <div>
+            <div class="form-header">언어 자동 감지 & 음성 자동 전환</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">영어/일본어/한국어 문장을 감지하여 적합한 원어민 음성으로 자동 출력</div>
+          </div>
+          <label class="switch-toggle" title="자동 언어 전환">
+            <input type="checkbox" id="autoLangSwitch" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Speech Rate -->
+      <div class="form-group">
+        <div class="form-header">
+          <span>재생 속도</span>
+          <span class="form-value" id="rateDisplay">0%</span>
+        </div>
+        <input type="range" id="rateInput" min="-40" max="80" step="5" value="0">
+      </div>
+
+      <!-- Pitch -->
+      <div class="form-group">
+        <div class="form-header">
+          <span>음성 톤 (Pitch)</span>
+          <span class="form-value" id="pitchDisplay">0 Hz</span>
+        </div>
+        <input type="range" id="pitchInput" min="-30" max="30" step="2" value="0">
+      </div>
+
+      <!-- Actions -->
+      <div class="button-row">
+        <button class="btn-secondary" id="btnPreview">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          미리듣기
+        </button>
+        <button class="btn-primary" id="btnSaveConfig">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          설정 적용
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Console Output -->
+    <div class="card">
+      <div class="card-title">RECENT OUTPUT</div>
+      <div class="console-box" id="recentOutputBox">
+        <span class="console-content">새 AI 응답이 생성되면 실시간 낭독이 시작됩니다.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-popup" id="toastMessage">설정이 저장되었습니다.</div>
+
+  <script>
+    const voiceSelector = document.getElementById('voiceSelector');
+    const rateInput = document.getElementById('rateInput');
+    const rateDisplay = document.getElementById('rateDisplay');
+    const pitchInput = document.getElementById('pitchInput');
+    const pitchDisplay = document.getElementById('pitchDisplay');
+    const powerSwitch = document.getElementById('powerSwitch');
+    const autoLangSwitch = document.getElementById('autoLangSwitch');
+    const btnPreview = document.getElementById('btnPreview');
+    const btnSaveConfig = document.getElementById('btnSaveConfig');
+    const statusDot = document.getElementById('statusDot');
+    const statusLabel = document.getElementById('statusLabel');
+    const recentOutputBox = document.getElementById('recentOutputBox');
+    const toastMessage = document.getElementById('toastMessage');
+
+    function notify(msg) {
+      toastMessage.textContent = msg;
+      toastMessage.classList.add('active');
+      setTimeout(() => toastMessage.classList.remove('active'), 2000);
+    }
+
+    rateInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      rateDisplay.textContent = (val >= 0 ? `+${val}%` : `${val}%`);
+    });
+
+    pitchInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      pitchDisplay.textContent = (val >= 0 ? `+${val} Hz` : `${val} Hz`);
+    });
+
+    async function fetchConfig() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        voiceSelector.value = data.voice || 'ko-KR-SunHiNeural';
+
+        const r = parseInt((data.rate || '0').replace('%', '').replace('+', '')) || 0;
+        rateInput.value = r;
+        rateDisplay.textContent = (r >= 0 ? `+${r}%` : `${r}%`);
+
+        const p = parseInt((data.pitch || '0').replace('Hz', '').replace('+', '')) || 0;
+        pitchInput.value = p;
+        pitchDisplay.textContent = (p >= 0 ? `+${p} Hz` : `${p} Hz`);
+
+        powerSwitch.checked = data.enabled !== false;
+        autoLangSwitch.checked = data.auto_lang !== false;
+        refreshStatusState();
+      } catch (err) {
+        console.error("Config fetch error:", err);
+      }
+    }
+
+    function refreshStatusState() {
+      if (powerSwitch.checked) {
+        statusDot.classList.remove('muted');
+        statusLabel.textContent = "실시간 대화 로그 감시 중";
+      } else {
+        statusDot.classList.add('muted');
+        statusLabel.textContent = "음소거 활성화됨";
+      }
+    }
+
+    powerSwitch.addEventListener('change', () => {
+      refreshStatusState();
+      persistSettings(false);
+    });
+
+    autoLangSwitch.addEventListener('change', () => {
+      persistSettings(false);
+    });
+
+    async function persistSettings(showToast = true) {
+      const r = parseInt(rateInput.value);
+      const p = parseInt(pitchInput.value);
+      const payload = {
+        voice: voiceSelector.value,
+        rate: (r >= 0 ? `+${r}%` : `${r}%`),
+        pitch: (p >= 0 ? `+${p}Hz` : `${p}Hz`),
+        enabled: powerSwitch.checked,
+        auto_lang: autoLangSwitch.checked,
+        skip_code: true
+      };
+
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (showToast) notify("설정이 저장되었습니다.");
+      } catch (e) {
+        notify("저장 실패");
+      }
+    }
+
+    btnSaveConfig.addEventListener('click', () => persistSettings(true));
+
+    btnPreview.addEventListener('click', async () => {
+      btnPreview.disabled = true;
+      btnPreview.textContent = "재생 중...";
+      try {
+        await persistSettings(false);
+        await fetch('/api/test_speak', { method: 'POST' });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setTimeout(() => {
+          btnPreview.disabled = false;
+          btnPreview.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            미리듣기
+          `;
+        }, 1500);
+      }
+    });
+
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.last_spoken) {
+          recentOutputBox.innerHTML = `
+            <span class="console-timestamp">[${new Date().toLocaleTimeString()}]</span>
+            <span class="console-content">${data.last_spoken}</span>
+          `;
+        }
+      } catch (e) {}
+    }, 1500);
+
+    fetchConfig();
+  </script>
+</body>
+</html>
