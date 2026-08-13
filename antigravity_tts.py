@@ -43,6 +43,7 @@ cleanup_temp_dir()
 
 current_settings = {
     "reference_voice": "voiceSCOURCE.wav",
+    "temperature": 0.65,
     "volume": 1.0,
     "speed": 1.0,
     "enabled": True,
@@ -88,24 +89,41 @@ def detect_language(text):
 def clean_markdown_text(text):
     if not text:
         return ""
-    text = re.sub(r'<[^>]+>', ' ', text)
+    
+    # 1. Remove code blocks completely
     text = re.sub(r'```[\s\S]*?```', ' ', text)
     text = re.sub(r'`[^`]+`', ' ', text)
+
+    # 2. Markdown links: [Link Title](http://...) -> Link Title
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    
+    # 3. Strip all URLs (http, https, ftp, file, www)
+    text = re.sub(r'(?:https?|ftp|file)://\S+', ' ', text)
+    text = re.sub(r'www\.\S+', ' ', text)
+    
+    # 4. Strip file paths (e.g. C:\path\to\file or /usr/local/...)
+    text = re.sub(r'[A-Za-z]:\\[\w\\\.-]+', ' ', text)
+
+    # 5. HTML tags & Markdown elements
+    text = re.sub(r'<[^>]+>', ' ', text)
     text = re.sub(r'\|[^\n]+\|', ' ', text)
     text = re.sub(r'[-:|]{3,}', ' ', text)
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     text = re.sub(r'\\\[[\s\S]*?\\\]', ' ', text)
     text = re.sub(r'\\\([^\)]*?\\\)', ' ', text)
     text = re.sub(r'\$\$[\s\S]*?\$\$', ' ', text)
     text = re.sub(r'\$[^\$]+?\$', ' ', text)
     text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'[*_~>|]', ' ', text)
     text = re.sub(r'^\s*[-+*]\s+', '', text, flags=re.MULTILINE)
-    text = re.sub(r'https?://\S+', ' ', text)
+    text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
+    
+    # 6. Replace problematic symbols that choke G2P / BERT tokenizers
+    text = re.sub(r'[\/\\_{}\[\]\(\)<>|~*`@#%^&+=]', ' ', text)
+    
+    # 7. Normalize spaces and punctuation
+    text = re.sub(r'\s*([,\.!\?])\s*', r'\1 ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-# Complete sentence splitting without artificial 8-chunk cutoff
 def split_into_conversational_chunks(text):
     raw_sentences = re.split(r'(\n+|(?<=[.!?])\s+)', text)
     chunks = []
@@ -114,7 +132,6 @@ def split_into_conversational_chunks(text):
         if not s:
             continue
         buf += s
-        # Split when sentence terminator is reached or buffer reaches natural length
         if re.search(r'[\.\?\!\n]', s) or len(buf) >= 60:
             cleaned = buf.strip()
             if cleaned:
@@ -202,6 +219,7 @@ async def speech_worker():
         last_spoken_text = clean
         ref_voice = current_settings.get("reference_voice", "voiceSCOURCE.wav")
         speed = float(current_settings.get("speed", 1.0))
+        temperature = float(current_settings.get("temperature", 0.65))
 
         chunks = split_into_conversational_chunks(clean)
 
@@ -217,9 +235,9 @@ async def speech_worker():
             temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
 
             try:
-                print(f"[GPT-SoVITS Cloning] [{ref_voice}] [{lang}] {chunk[:35]}...")
+                print(f"[GPT-SoVITS] [{ref_voice}] [{lang}] (Temp: {temperature:.2f}) {chunk[:35]}...")
                 success = await asyncio.to_thread(
-                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temp_out
+                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, "", "auto", temp_out
                 )
 
                 if gen_id != current_generation_id:
@@ -233,7 +251,8 @@ async def speech_worker():
                         if os.path.exists(temp_out): os.remove(temp_out)
 
             except Exception as e:
-                print(f"[Synthesize Error] {e}")
+                print(f"[Synthesize Chunk Error] {e}")
+                continue
 
         speech_queue.task_done()
 
@@ -252,17 +271,30 @@ async def handle_save_settings(request):
     data = await request.json()
     current_settings.update(data)
     save_config()
+    
+    # Check if voice prompt text is being updated
+    if "update_prompt_text" in data and "reference_voice" in data:
+        gpt_sovits_engine.save_voice_metadata(
+            data["reference_voice"],
+            data.get("update_prompt_text", ""),
+            data.get("update_prompt_lang", "auto")
+        )
+
     if "volume" in current_settings:
         try:
             pygame.mixer.music.set_volume(float(current_settings["volume"]))
         except:
             pass
-    return web.json_response({"status": "ok", "settings": current_settings})
+    return web.json_response({
+        "status": "ok",
+        "settings": current_settings,
+        "available_voices": gpt_sovits_engine.get_available_reference_voices()
+    })
 
 async def handle_test_speak(request):
     global current_generation_id
     current_generation_id += 1
-    test_phrase = "안녕하세요! 안티그래비티 실시간 캐릭터 음성 복제 테스트입니다. 한국어와 영어를 자연스러운 억양으로 매끄럽게 읽어드리며, 원하시는 오디오 샘플로 언제든지 목소리를 바꿀 수 있습니다."
+    test_phrase = "안녕하세요! 대사 매칭 가이드가 적용된 실시간 캐릭터 음성 복제 테스트입니다. 문장의 시작부터 끝까지 음높이가 안정적으로 유지됩니다."
     await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id})
     return web.json_response({"status": "queued"})
 
@@ -285,6 +317,8 @@ async def handle_trim_audio(request):
         start_sec = 0.0
         end_sec = 5.0
         filename = "custom_sample.wav"
+        prompt_text = ""
+        prompt_lang = "auto"
 
         while True:
             field = await reader.next()
@@ -298,6 +332,10 @@ async def handle_trim_audio(request):
                 end_sec = float(await field.text())
             elif field.name == 'filename':
                 filename = (await field.text()).strip()
+            elif field.name == 'prompt_text':
+                prompt_text = (await field.text()).strip()
+            elif field.name == 'prompt_lang':
+                prompt_lang = (await field.text()).strip()
 
         if not audio_bytes:
             return web.json_response({"status": "error", "error": "No audio data received"}, status=400)
@@ -324,7 +362,11 @@ async def handle_trim_audio(request):
         target_path = os.path.join(REF_DIR, filename)
         sf.write(target_path, trimmed_audio, sr)
 
-        print(f"[Audio Trimmer] Trimmed & Saved: {target_path} (Len: {len(trimmed_audio)/sr:.2f}s)")
+        # Save companion prompt text file
+        if prompt_text:
+            gpt_sovits_engine.save_voice_metadata(filename, prompt_text, prompt_lang)
+
+        print(f"[Audio Trimmer] Saved: {target_path} (Prompt: '{prompt_text}')")
 
         return web.json_response({
             "status": "ok",

@@ -106,12 +106,30 @@
       gap: 20px;
     }
 
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     .section-title {
       font-size: 14px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
+    }
+
+    .autosave-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--success);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .autosave-badge.visible {
+      opacity: 1;
     }
 
     .form-group {
@@ -299,6 +317,12 @@
       justify-content: space-between;
     }
 
+    .hint-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
     .live-feed {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -329,7 +353,7 @@
     <div class="header-card">
       <div class="title-wrap">
         <h1>Antigravity Studio</h1>
-        <p>GPT-SoVITS V2 Zero-Shot Voice Cloning</p>
+        <p>GPT-SoVITS V2 Real-Time Voice Cloning</p>
       </div>
       <div class="status-badge" id="statusBadge">
         <div class="status-dot" id="statusDot"></div>
@@ -339,13 +363,35 @@
 
     <!-- Main Character Voice Selection -->
     <div class="section-card">
-      <div class="section-title">Character Voice & Audio Settings</div>
+      <div class="section-header">
+        <div class="section-title">Character Voice & Audio Settings</div>
+        <div class="autosave-badge" id="autoSaveBadge">Auto-Saved</div>
+      </div>
 
       <div class="form-group">
         <label class="form-label" for="voiceSelect">Active Voice Sample (reference_voices/)</label>
         <select id="voiceSelect">
           <option value="voiceSCOURCE.wav">voiceSCOURCE.wav</option>
         </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span>Sample Script / Transcript (샘플 대사 텍스트)</span>
+          <span style="font-size: 11px; color: var(--primary);">피치 고정 핵심</span>
+        </label>
+        <input type="text" id="voicePromptInput" placeholder="샘플 오디오가 말한 실제 대사를 입력하면 피치가 100% 고정됩니다.">
+        <div class="hint-text">오디오가 실제로 발화한 대사를 적어주시면 매 문장마다 시작 톤과 음높이가 흔들리지 않고 완벽하게 고정됩니다.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span>Temperature (권장: 0.60 ~ 0.70)</span>
+          <span class="range-val" id="tempVal">0.65</span>
+        </label>
+        <div class="range-wrap">
+          <input type="range" id="tempRange" min="0.5" max="0.95" step="0.05" value="0.65">
+        </div>
       </div>
 
       <div class="form-group">
@@ -380,8 +426,7 @@
       </div>
 
       <div class="btn-group">
-        <button class="btn-secondary" id="testBtn">Test Cloned Voice</button>
-        <button class="btn-primary" id="saveBtn">Apply Settings</button>
+        <button class="btn-primary" id="testBtn">Test Cloned Voice</button>
       </div>
     </div>
 
@@ -409,8 +454,13 @@
         </div>
 
         <div class="trim-info">
-          <span>Selected Duration: <strong id="durationDisplay" style="color: var(--primary);">5.0s</strong> (Recommended: 3~7s)</span>
+          <span>Selected Duration: <strong id="durationDisplay" style="color: var(--primary);">5.0s</strong> (Recommended: 3~6s)</span>
           <span id="totalDurationDisplay">Total: 0.0s</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sample Script (구간에서 캐릭터가 말하는 대사)</label>
+          <input type="text" id="trimmerPromptText" placeholder="예: Hello there, what a wonderful day!">
         </div>
 
         <div class="form-group">
@@ -434,13 +484,16 @@
 
   <script>
     const voiceSelect = document.getElementById('voiceSelect');
+    const voicePromptInput = document.getElementById('voicePromptInput');
+    const tempRange = document.getElementById('tempRange');
+    const tempVal = document.getElementById('tempVal');
     const volumeRange = document.getElementById('volumeRange');
     const volumeVal = document.getElementById('volumeVal');
     const speedRange = document.getElementById('speedRange');
     const speedVal = document.getElementById('speedVal');
     const masterToggle = document.getElementById('masterToggle');
-    const saveBtn = document.getElementById('saveBtn');
     const testBtn = document.getElementById('testBtn');
+    const autoSaveBadge = document.getElementById('autoSaveBadge');
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
     const liveTranscript = document.getElementById('liveTranscript');
@@ -452,20 +505,54 @@
     const endTimeInput = document.getElementById('endTimeInput');
     const durationDisplay = document.getElementById('durationDisplay');
     const totalDurationDisplay = document.getElementById('totalDurationDisplay');
+    const trimmerPromptText = document.getElementById('trimmerPromptText');
     const targetFilename = document.getElementById('targetFilename');
     const previewTrimBtn = document.getElementById('previewTrimBtn');
     const trimSaveBtn = document.getElementById('trimSaveBtn');
 
     let loadedAudioBlob = null;
     let audioDuration = 0;
+    let saveTimeout = null;
+    let voicesMetadata = {};
+
+    function triggerAutoSave() {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveSettingsAuto, 250);
+    }
+
+    function showAutoSaveNotification() {
+      autoSaveBadge.classList.add('visible');
+      setTimeout(() => autoSaveBadge.classList.remove('visible'), 1200);
+    }
+
+    tempRange.addEventListener('input', () => {
+      tempVal.innerText = parseFloat(tempRange.value).toFixed(2);
+      triggerAutoSave();
+    });
 
     volumeRange.addEventListener('input', () => {
       volumeVal.innerText = volumeRange.value + '%';
+      triggerAutoSave();
     });
 
     speedRange.addEventListener('input', () => {
       speedVal.innerText = speedRange.value + 'x';
+      triggerAutoSave();
     });
+
+    voicePromptInput.addEventListener('input', triggerAutoSave);
+
+    voiceSelect.addEventListener('change', () => {
+      const selected = voiceSelect.value;
+      if (voicesMetadata[selected]) {
+        voicePromptInput.value = voicesMetadata[selected].prompt_text || "";
+      } else {
+        voicePromptInput.value = "";
+      }
+      triggerAutoSave();
+    });
+
+    masterToggle.addEventListener('change', triggerAutoSave);
 
     function updateDuration() {
       const start = Math.max(0, parseFloat(startTimeInput.value) || 0);
@@ -530,6 +617,7 @@
       formData.append('start_sec', start);
       formData.append('end_sec', end);
       formData.append('filename', filename);
+      formData.append('prompt_text', trimmerPromptText.value.trim());
 
       trimSaveBtn.innerText = 'Trimming & Saving...';
       try {
@@ -539,10 +627,11 @@
         });
         const data = await res.json();
         if (data.status === 'ok') {
-          trimSaveBtn.innerText = 'Saved to Reference Voices!';
+          trimSaveBtn.innerText = 'Saved with Script!';
           await loadSettings();
           voiceSelect.value = filename;
-          await saveSettings();
+          voicePromptInput.value = trimmerPromptText.value.trim();
+          await saveSettingsAuto();
           setTimeout(() => trimSaveBtn.innerText = 'Trim & Save to reference_voices/', 2000);
         } else {
           trimSaveBtn.innerText = 'Error: ' + (data.error || 'Failed');
@@ -561,14 +650,27 @@
         const s = data.settings;
         
         voiceSelect.innerHTML = '';
+        voicesMetadata = {};
         if (data.available_voices && data.available_voices.length > 0) {
           data.available_voices.forEach(v => {
+            const fname = typeof v === 'string' ? v : v.filename;
+            const ptext = typeof v === 'object' ? v.prompt_text : "";
+            voicesMetadata[fname] = { prompt_text: ptext };
+
             const opt = document.createElement('option');
-            opt.value = v;
-            opt.innerText = v;
-            if (v === s.reference_voice) opt.selected = true;
+            opt.value = fname;
+            opt.innerText = fname + (ptext ? " (Script Tagged)" : "");
+            if (fname === s.reference_voice) {
+              opt.selected = true;
+              voicePromptInput.value = ptext;
+            }
             voiceSelect.appendChild(opt);
           });
+        }
+
+        if (s.temperature !== undefined) {
+          tempRange.value = s.temperature;
+          tempVal.innerText = parseFloat(s.temperature).toFixed(2);
         }
 
         if (s.volume !== undefined) {
@@ -587,25 +689,32 @@
       }
     }
 
-    async function saveSettings() {
+    async function saveSettingsAuto() {
       const payload = {
         reference_voice: voiceSelect.value,
+        update_prompt_text: voicePromptInput.value.trim(),
+        temperature: parseFloat(tempRange.value),
         volume: parseFloat(volumeRange.value) / 100.0,
         speed: parseFloat(speedRange.value),
         enabled: masterToggle.checked
       };
 
       try {
-        saveBtn.innerText = 'Saved!';
-        await fetch('/api/settings', {
+        const res = await fetch('/api/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        setTimeout(() => saveBtn.innerText = 'Apply Settings', 1500);
-      } catch (err) {
-        saveBtn.innerText = 'Error';
-      }
+        const data = await res.json();
+        if (data.available_voices) {
+          data.available_voices.forEach(v => {
+            const fname = typeof v === 'string' ? v : v.filename;
+            const ptext = typeof v === 'object' ? v.prompt_text : "";
+            voicesMetadata[fname] = { prompt_text: ptext };
+          });
+        }
+        showAutoSaveNotification();
+      } catch (err) {}
     }
 
     testBtn.addEventListener('click', async () => {
@@ -613,8 +722,6 @@
       await fetch('/api/test_speak', { method: 'POST' });
       setTimeout(() => testBtn.innerText = 'Test Cloned Voice', 2500);
     });
-
-    saveBtn.addEventListener('click', saveSettings);
 
     setInterval(async () => {
       try {
