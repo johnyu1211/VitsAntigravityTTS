@@ -28,6 +28,11 @@ current_settings = {
     "auto_lang": True,
     "skip_code": True
 }
+
+# Queue and playback control
+speech_queue = asyncio.Queue()
+current_task = None
+skip_requested = False
 last_spoken_text = ""
 
 def load_config():
@@ -49,7 +54,6 @@ def save_config():
 load_config()
 
 def detect_language(text):
-    """Detect dominant language of a given text segment."""
     hangul_count = len(re.findall(r'[\uac00-\ud7a3\u1100-\u11ff]', text))
     japanese_count = len(re.findall(r'[\u3040-\u30ff]', text))
     latin_count = len(re.findall(r'[a-zA-Z]', text))
@@ -63,9 +67,7 @@ def detect_language(text):
     return "ko"
 
 def get_voice_for_lang(lang, base_voice):
-    """Map language to appropriate high-quality neural voice."""
     is_male = any(m in base_voice for m in ["InJoon", "Hyunsu", "Guy", "Keita", "Yunxi"])
-    
     if lang == "en":
         return "en-US-GuyNeural" if is_male else "en-US-JennyNeural"
     elif lang == "ja":
@@ -77,18 +79,13 @@ def get_voice_for_lang(lang, base_voice):
 def clean_markdown_text(text):
     if not text:
         return ""
-    # Strip markdown code blocks
     text = re.sub(r'```[\s\S]*?```', ' ', text)
-    # Strip inline code
     text = re.sub(r'`[^`]+`', ' ', text)
-    # Strip links [text](url) -> text
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    # Strip LaTeX math formulas
     text = re.sub(r'\\\[[\s\S]*?\\\]', ' ', text)
     text = re.sub(r'\\\([^\)]*?\\\)', ' ', text)
     text = re.sub(r'\$\$[\s\S]*?\$\$', ' ', text)
     text = re.sub(r'\$[^\$]+?\$', ' ', text)
-    # Strip headers & special markdown syntax
     text = re.sub(r'#+\s*', '', text)
     text = re.sub(r'[*_~>|]', ' ', text)
     text = re.sub(r'^\s*[-+*]\s+', '', text, flags=re.MULTILINE)
@@ -96,8 +93,6 @@ def clean_markdown_text(text):
     return text
 
 def split_into_sentences(text):
-    """Split text into sentences or language segments."""
-    # Split by newlines and common punctuation
     raw_chunks = re.split(r'(\n+|[\.\?\!]+\s+)', text)
     sentences = []
     buf = ""
@@ -114,54 +109,97 @@ def split_into_sentences(text):
         sentences.append(buf.strip())
     return sentences if sentences else [text]
 
-async def speak_text(text, override_voice=None, override_rate=None, override_pitch=None):
-    global last_spoken_text
-    if not current_settings.get("enabled", True) and not override_voice:
-        return
+def stop_playback():
+    """Immediately stop audio and trigger skip."""
+    global skip_requested
+    skip_requested = True
+    try:
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()
+            pygame.mixer.music.unload()
+    except Exception as e:
+        print(f"[Stop Error] {e}")
 
-    clean = clean_markdown_text(text)
-    if not clean or len(clean) < 2:
-        return
+def clear_all_queue():
+    """Flush all queued speech tasks and stop audio immediately."""
+    stop_playback()
+    while not speech_queue.empty():
+        try:
+            speech_queue.get_nowait()
+            speech_queue.task_done()
+        except:
+            break
+    print("[Queue Cleared] All pending speech dropped.")
 
-    last_spoken_text = clean
-    rate = override_rate or current_settings.get("rate", "+0%")
-    pitch = override_pitch or current_settings.get("pitch", "+0Hz")
-    base_voice = override_voice or current_settings.get("voice", "ko-KR-SunHiNeural")
-    auto_lang = current_settings.get("auto_lang", True)
+async def speech_worker():
+    """Background worker processing speech queue item by item."""
+    global skip_requested, last_spoken_text
+    while True:
+        item = await speech_queue.get()
+        text = item.get("text", "")
+        override_voice = item.get("voice")
+        skip_requested = False
 
-    sentences = split_into_sentences(clean)
-
-    for sentence in sentences:
-        if not sentence or len(sentence.strip()) < 2:
+        if not current_settings.get("enabled", True) and not override_voice:
+            speech_queue.task_done()
             continue
 
-        if auto_lang and not override_voice:
-            lang = detect_language(sentence)
-            voice = get_voice_for_lang(lang, base_voice)
-        else:
-            voice = base_voice
+        clean = clean_markdown_text(text)
+        if not clean or len(clean) < 2:
+            speech_queue.task_done()
+            continue
 
-        print(f"[TTS Playing] [{voice}] {sentence[:45]}...")
-        temp_audio = os.path.join(APP_DIR, f"tts_{int(time.time()*1000)}.mp3")
+        last_spoken_text = clean
+        rate = current_settings.get("rate", "+0%")
+        pitch = current_settings.get("pitch", "+0Hz")
+        base_voice = override_voice or current_settings.get("voice", "ko-KR-SunHiNeural")
+        auto_lang = current_settings.get("auto_lang", True)
 
-        try:
-            communicate = edge_tts.Communicate(sentence, voice=voice, rate=rate, pitch=pitch)
-            await communicate.save(temp_audio)
+        sentences = split_into_sentences(clean)
 
-            if os.path.exists(temp_audio) and os.path.getsize(temp_audio) > 0:
-                pygame.mixer.music.load(temp_audio)
-                pygame.mixer.music.play()
-                while pygame.mixer.music.get_busy():
-                    await asyncio.sleep(0.08)
-                pygame.mixer.music.unload()
-        except Exception as e:
-            print(f"[TTS Audio Error] {e}")
-        finally:
-            if os.path.exists(temp_audio):
-                try:
-                    os.remove(temp_audio)
-                except:
-                    pass
+        for sentence in sentences:
+            if skip_requested:
+                print("[Skipped] Moving past current sentence.")
+                break
+
+            if not sentence or len(sentence.strip()) < 2:
+                continue
+
+            if auto_lang and not override_voice:
+                lang = detect_language(sentence)
+                voice = get_voice_for_lang(lang, base_voice)
+            else:
+                voice = base_voice
+
+            print(f"[TTS Playing] [{voice}] {sentence[:45]}...")
+            temp_audio = os.path.join(APP_DIR, f"tts_{int(time.time()*1000)}.mp3")
+
+            try:
+                communicate = edge_tts.Communicate(sentence, voice=voice, rate=rate, pitch=pitch)
+                await communicate.save(temp_audio)
+
+                if skip_requested:
+                    break
+
+                if os.path.exists(temp_audio) and os.path.getsize(temp_audio) > 0:
+                    pygame.mixer.music.load(temp_audio)
+                    pygame.mixer.music.play()
+                    while pygame.mixer.music.get_busy():
+                        if skip_requested:
+                            pygame.mixer.music.stop()
+                            break
+                        await asyncio.sleep(0.06)
+                    pygame.mixer.music.unload()
+            except Exception as e:
+                print(f"[Audio Error] {e}")
+            finally:
+                if os.path.exists(temp_audio):
+                    try:
+                        os.remove(temp_audio)
+                    except:
+                        pass
+
+        speech_queue.task_done()
 
 # Web Handlers
 async def handle_index(request):
@@ -178,14 +216,29 @@ async def handle_save_settings(request):
     return web.json_response({"status": "ok", "settings": current_settings})
 
 async def handle_test_speak(request):
-    test_phrase = "안티그래비티 음성 설정 완료. Automatic language routing is active!"
-    asyncio.create_task(speak_text(test_phrase))
-    return web.json_response({"status": "speaking"})
+    test_phrase = "안티그래비티 실시간 음성 엔진입니다."
+    await speech_queue.put({"text": test_phrase})
+    return web.json_response({"status": "queued"})
+
+async def handle_skip(request):
+    stop_playback()
+    return web.json_response({"status": "skipped"})
+
+async def handle_clear(request):
+    clear_all_queue()
+    return web.json_response({"status": "cleared"})
 
 async def handle_status(request):
+    is_busy = False
+    try:
+        is_busy = pygame.mixer.music.get_busy()
+    except:
+        pass
     return web.json_response({
         "enabled": current_settings.get("enabled", True),
         "auto_lang": current_settings.get("auto_lang", True),
+        "queue_size": speech_queue.qsize(),
+        "is_playing": is_busy,
         "last_spoken": last_spoken_text
     })
 
@@ -210,10 +263,11 @@ async def background_log_watcher():
             with open(current_file, 'r', encoding='utf-8', errors='ignore') as f:
                 f.seek(0, os.SEEK_END)
                 while True:
-                    # Check if session switched
                     latest = get_latest_transcript_path()
                     if latest and latest != current_file:
                         print(f"\n[Session Switch] -> {latest}")
+                        # New session: optionally clear old queue
+                        clear_all_queue()
                         current_file = latest
                         break
 
@@ -224,10 +278,15 @@ async def background_log_watcher():
 
                     try:
                         data = json.loads(line)
-                        if data.get("type") == "PLANNER_RESPONSE":
+                        # When user enters a new prompt, clear backlog
+                        if data.get("type") == "USER_INPUT":
+                            stop_playback()
+
+                        # When AI responds, queue text
+                        elif data.get("type") == "PLANNER_RESPONSE":
                             content = data.get("content", "")
                             if content and current_settings.get("enabled", True):
-                                await speak_text(content)
+                                await speech_queue.put({"text": content})
                     except json.JSONDecodeError:
                         pass
         except Exception as e:
@@ -235,10 +294,13 @@ async def background_log_watcher():
             await asyncio.sleep(1)
 
 async def start_background_tasks(app):
+    app['worker'] = asyncio.create_task(speech_worker())
     app['watcher'] = asyncio.create_task(background_log_watcher())
 
 async def cleanup_background_tasks(app):
+    app['worker'].cancel()
     app['watcher'].cancel()
+    await app['worker']
     await app['watcher']
 
 def main():
@@ -247,6 +309,8 @@ def main():
     app.router.add_get('/api/settings', handle_get_settings)
     app.router.add_post('/api/settings', handle_save_settings)
     app.router.add_post('/api/test_speak', handle_test_speak)
+    app.router.add_post('/api/skip', handle_skip)
+    app.router.add_post('/api/clear', handle_clear)
     app.router.add_get('/api/status', handle_status)
     
     app.on_startup.append(start_background_tasks)

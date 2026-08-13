@@ -23,6 +23,7 @@
       --secondary: #10b981;
       --secondary-glow: rgba(16, 185, 129, 0.18);
       --danger: #ef4444;
+      --warning: #f59e0b;
       
       --text-main: #f2f2f5;
       --text-muted: #a0a0a6;
@@ -117,6 +118,17 @@
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
     }
 
+    .status-indicator.speaking {
+      background-color: var(--primary-light);
+      box-shadow: 0 0 10px var(--primary-glow);
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(0.9); opacity: 0.8; }
+      to { transform: scale(1.3); opacity: 1; }
+    }
+
     /* Minimal Switch */
     .switch-toggle {
       position: relative;
@@ -175,12 +187,28 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     .card-title {
       font-size: 0.8rem;
       font-weight: 700;
       color: var(--text-dark);
       letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+
+    .queue-tag {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--surface-highest);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
     }
 
     .form-group {
@@ -267,6 +295,12 @@
       margin-top: 4px;
     }
 
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
     button {
       padding: 11px 16px;
       border-radius: var(--radius-md);
@@ -302,6 +336,28 @@
       border-color: rgba(255, 255, 255, 0.2);
     }
 
+    .btn-danger {
+      background: var(--surface-high);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: var(--danger);
+    }
+
+    .btn-warning {
+      background: var(--surface-high);
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.25);
+    }
+
+    .btn-warning:hover {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: var(--warning);
+    }
+
     button:disabled {
       opacity: 0.45;
       cursor: not-allowed;
@@ -313,7 +369,7 @@
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 14px;
-      max-height: 140px;
+      max-height: 130px;
       overflow-y: auto;
       font-size: 0.84rem;
       color: var(--text-muted);
@@ -378,6 +434,30 @@
         <input type="checkbox" id="powerSwitch" checked>
         <span class="switch-slider"></span>
       </label>
+    </div>
+
+    <!-- Playback Control Card -->
+    <div class="card">
+      <div class="card-header-row">
+        <div class="card-title">PLAYBACK CONTROL</div>
+        <div class="queue-tag" id="queueStatus">대기열: 0개</div>
+      </div>
+
+      <div class="control-row">
+        <button class="btn-warning" id="btnSkip">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 4 15 12 5 20 5 4"></polygon>
+            <line x1="19" y1="5" x2="19" y2="19"></line>
+          </svg>
+          현재 문장 스킵
+        </button>
+        <button class="btn-danger" id="btnClear">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          </svg>
+          전체 중지 & 대기열 삭제
+        </button>
+      </div>
     </div>
 
     <!-- Voice Configurations -->
@@ -471,8 +551,11 @@
     const autoLangSwitch = document.getElementById('autoLangSwitch');
     const btnPreview = document.getElementById('btnPreview');
     const btnSaveConfig = document.getElementById('btnSaveConfig');
+    const btnSkip = document.getElementById('btnSkip');
+    const btnClear = document.getElementById('btnClear');
     const statusDot = document.getElementById('statusDot');
     const statusLabel = document.getElementById('statusLabel');
+    const queueStatus = document.getElementById('queueStatus');
     const recentOutputBox = document.getElementById('recentOutputBox');
     const toastMessage = document.getElementById('toastMessage');
 
@@ -508,24 +591,27 @@
 
         powerSwitch.checked = data.enabled !== false;
         autoLangSwitch.checked = data.auto_lang !== false;
-        refreshStatusState();
+        refreshStatusState(false);
       } catch (err) {
         console.error("Config fetch error:", err);
       }
     }
 
-    function refreshStatusState() {
-      if (powerSwitch.checked) {
-        statusDot.classList.remove('muted');
-        statusLabel.textContent = "실시간 대화 로그 감시 중";
-      } else {
-        statusDot.classList.add('muted');
+    function refreshStatusState(isPlaying) {
+      if (!powerSwitch.checked) {
+        statusDot.className = "status-indicator muted";
         statusLabel.textContent = "음소거 활성화됨";
+      } else if (isPlaying) {
+        statusDot.className = "status-indicator speaking";
+        statusLabel.textContent = "음성 낭독 중...";
+      } else {
+        statusDot.className = "status-indicator";
+        statusLabel.textContent = "실시간 대화 로그 감시 중";
       }
     }
 
     powerSwitch.addEventListener('change', () => {
-      refreshStatusState();
+      refreshStatusState(false);
       persistSettings(false);
     });
 
@@ -559,6 +645,24 @@
 
     btnSaveConfig.addEventListener('click', () => persistSettings(true));
 
+    btnSkip.addEventListener('click', async () => {
+      try {
+        await fetch('/api/skip', { method: 'POST' });
+        notify("현재 문장을 스킵했습니다.");
+      } catch (e) {
+        notify("스킵 실패");
+      }
+    });
+
+    btnClear.addEventListener('click', async () => {
+      try {
+        await fetch('/api/clear', { method: 'POST' });
+        notify("모든 대기열과 음성을 중단했습니다.");
+      } catch (e) {
+        notify("대기열 비우기 실패");
+      }
+    });
+
     btnPreview.addEventListener('click', async () => {
       btnPreview.disabled = true;
       btnPreview.textContent = "재생 중...";
@@ -580,10 +684,13 @@
       }
     });
 
+    // Poll status & queue info
     setInterval(async () => {
       try {
         const res = await fetch('/api/status');
         const data = await res.json();
+        refreshStatusState(data.is_playing);
+        queueStatus.textContent = `대기열: ${data.queue_size}개`;
         if (data.last_spoken) {
           recentOutputBox.innerHTML = `
             <span class="console-timestamp">[${new Date().toLocaleTimeString()}]</span>
@@ -591,7 +698,7 @@
           `;
         }
       } catch (e) {}
-    }, 1500);
+    }, 1000);
 
     fetchConfig();
   </script>
