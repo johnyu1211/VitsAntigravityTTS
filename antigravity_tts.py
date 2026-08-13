@@ -43,6 +43,8 @@ cleanup_temp_dir()
 
 current_settings = {
     "reference_voice": "voiceSCOURCE.wav",
+    "target_lang": "auto",
+    "prompt_lang": "en",
     "temperature": 0.65,
     "volume": 1.0,
     "speed": 1.0,
@@ -90,7 +92,7 @@ def clean_markdown_text(text):
     if not text:
         return ""
     
-    # 1. Remove code blocks completely (```...``` and `...`)
+    # 1. Remove code blocks completely
     text = re.sub(r'```[\s\S]*?```', ' ', text)
     text = re.sub(r'`[^`]+`', ' ', text)
 
@@ -131,17 +133,9 @@ def clean_markdown_text(text):
 def split_into_conversational_chunks(text):
     if not text:
         return []
-    
-    # 1. Normalize linebreaks into spaces
     normalized = re.sub(r'\s*\n+\s*', ' ', text).strip()
-    
-    # 2. Split right BEFORE numbered items (e.g. " 1. ", " 2) ") so list items start on their own chunk
     marked = re.sub(r'(\s+)(?=\d+[\.\)]\s+)', r' <CHUNK_SPLIT> ', normalized)
-    
-    # 3. Split after full sentence terminators that are NOT preceded by a number (protects 3.14, 2.0, 1., etc.)
     marked = re.sub(r'(?<=[^\d][\.\!\?])\s+', r' <CHUNK_SPLIT> ', marked)
-    
-    # 4. Extract clean chunks
     raw_chunks = marked.split('<CHUNK_SPLIT>')
     chunks = [c.strip() for c in raw_chunks if c.strip()]
     return chunks if chunks else [normalized]
@@ -225,6 +219,9 @@ async def speech_worker():
         ref_voice = current_settings.get("reference_voice", "voiceSCOURCE.wav")
         speed = float(current_settings.get("speed", 1.0))
         temperature = float(current_settings.get("temperature", 0.65))
+        
+        target_lang_setting = current_settings.get("target_lang", "auto")
+        sample_prompt_lang = current_settings.get("prompt_lang", "en")
 
         chunks = split_into_conversational_chunks(clean)
 
@@ -235,14 +232,19 @@ async def speech_worker():
             if not chunk or not chunk.strip():
                 continue
 
-            lang = detect_language(chunk)
+            # Determine synthesis target language
+            if target_lang_setting and target_lang_setting != "auto":
+                lang = target_lang_setting
+            else:
+                lang = detect_language(chunk)
+
             uid = f"{int(time.time()*1000)}_{os.getpid()}_{hash(chunk)%10000}"
             temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
 
             try:
-                print(f"[GPT-SoVITS] [{ref_voice}] [{lang}] (Temp: {temperature:.2f}) {chunk[:35]}...")
+                print(f"[GPT-SoVITS] [{ref_voice}] [Target: {lang}] [Sample: {sample_prompt_lang}] {chunk[:35]}...")
                 success = await asyncio.to_thread(
-                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, "", "auto", temp_out
+                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, "", sample_prompt_lang, temp_out
                 )
 
                 if gen_id != current_generation_id:
@@ -281,7 +283,7 @@ async def handle_save_settings(request):
         gpt_sovits_engine.save_voice_metadata(
             data["reference_voice"],
             data.get("update_prompt_text", ""),
-            data.get("update_prompt_lang", "auto")
+            data.get("update_prompt_lang", data.get("prompt_lang", "auto"))
         )
 
     if "volume" in current_settings:
@@ -298,7 +300,7 @@ async def handle_save_settings(request):
 async def handle_test_speak(request):
     global current_generation_id
     current_generation_id += 1
-    test_phrase = "안녕하세요! 특수기호가 깔끔하게 정제된 실시간 캐릭터 음성 복제 테스트입니다. 괄호나 기호에 방해받지 않고 자연스럽게 발화합니다."
+    test_phrase = "안녕하세요! 다국어 언어 매칭 가이드가 적용된 캐릭터 음성 복제 테스트입니다."
     await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id})
     return web.json_response({"status": "queued"})
 
