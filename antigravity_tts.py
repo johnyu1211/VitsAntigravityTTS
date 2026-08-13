@@ -131,10 +131,20 @@ def clean_markdown_text(text):
 def split_into_conversational_chunks(text):
     if not text:
         return []
+    
+    # 1. Normalize linebreaks into spaces
     normalized = re.sub(r'\s*\n+\s*', ' ', text).strip()
-    sentences = re.split(r'(?<=[.!?])\s+', normalized)
-    chunks = [s.strip() for s in sentences if s.strip()]
-    return chunks if chunks else [text]
+    
+    # 2. Split right BEFORE numbered items (e.g. " 1. ", " 2) ") so list items start on their own chunk
+    marked = re.sub(r'(\s+)(?=\d+[\.\)]\s+)', r' <CHUNK_SPLIT> ', normalized)
+    
+    # 3. Split after full sentence terminators that are NOT preceded by a number (protects 3.14, 2.0, 1., etc.)
+    marked = re.sub(r'(?<=[^\d][\.\!\?])\s+', r' <CHUNK_SPLIT> ', marked)
+    
+    # 4. Extract clean chunks
+    raw_chunks = marked.split('<CHUNK_SPLIT>')
+    chunks = [c.strip() for c in raw_chunks if c.strip()]
+    return chunks if chunks else [normalized]
 
 def stop_and_clear_everything():
     global current_generation_id
