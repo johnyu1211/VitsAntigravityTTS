@@ -96,6 +96,53 @@
       box-shadow: 0 0 8px var(--primary);
     }
 
+    /* Clean Spoken Transcript Card */
+    .speech-feed-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .feed-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .feed-badge {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .feed-badge.active {
+      background: var(--primary-subtle);
+      color: var(--primary);
+    }
+
+    .transcript-box {
+      font-size: 15px;
+      line-height: 1.65;
+      color: #E5E5EA;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      min-height: 70px;
+      max-height: 220px;
+      overflow-y: auto;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
     .section-card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -293,93 +340,6 @@
       background: rgba(255, 255, 255, 0.15);
     }
 
-    /* Live Speech Highlighting Feed */
-    .speech-feed-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 24px 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .feed-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .feed-badge {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-muted);
-    }
-
-    .feed-badge.active {
-      background: var(--primary-subtle);
-      color: var(--primary);
-    }
-
-    .chunks-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 280px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-
-    .speech-chunk {
-      font-size: 14px;
-      line-height: 1.6;
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      background: rgba(255, 255, 255, 0.02);
-      border-left: 3px solid transparent;
-      transition: all 0.25s ease;
-    }
-
-    .speech-chunk.active {
-      background: var(--primary-subtle);
-      border-left: 3px solid var(--primary);
-      box-shadow: 0 0 16px rgba(70, 140, 246, 0.12);
-    }
-
-    /* Word-by-Word Live Karaoke Highlighting */
-    .word-token {
-      display: inline-block;
-      margin-right: 4px;
-      padding: 1px 3px;
-      border-radius: 4px;
-      color: rgba(255, 255, 255, 0.35);
-      transition: all 0.12s ease-out;
-    }
-
-    .word-token.completed {
-      color: rgba(255, 255, 255, 0.9);
-    }
-
-    .word-token.active-word {
-      color: #FFFFFF;
-      font-weight: 700;
-      background: rgba(70, 140, 246, 0.35);
-      box-shadow: 0 0 10px rgba(70, 140, 246, 0.5);
-      transform: scale(1.05);
-    }
-
-    .speech-chunk.completed .word-token {
-      color: rgba(255, 255, 255, 0.7);
-      background: transparent;
-      box-shadow: none;
-      font-weight: normal;
-      transform: none;
-    }
-
     /* Trimmer Styles */
     .trimmer-box {
       background: var(--card-inner);
@@ -424,21 +384,13 @@
       </div>
     </div>
 
-    <!-- Live Speech Highlighting Transcript Feed -->
+    <!-- Clean Spoken Transcript Card -->
     <div class="speech-feed-card">
       <div class="feed-header">
-        <div class="section-title">Live Spoken Transcript (Karaoke Visualizer)</div>
+        <div class="section-title">Spoken Text Stream</div>
         <div class="feed-badge" id="feedBadge">Idle</div>
       </div>
-      <div class="chunks-container" id="chunksContainer">
-        <div class="speech-chunk">
-          <span class="word-token completed">Waiting</span>
-          <span class="word-token completed">for</span>
-          <span class="word-token completed">AI</span>
-          <span class="word-token completed">speech</span>
-          <span class="word-token completed">activity...</span>
-        </div>
-      </div>
+      <div class="transcript-box" id="transcriptBox">Waiting for speech activity...</div>
     </div>
 
     <!-- Main Character Voice Selection -->
@@ -571,7 +523,7 @@
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
     const feedBadge = document.getElementById('feedBadge');
-    const chunksContainer = document.getElementById('chunksContainer');
+    const transcriptBox = document.getElementById('transcriptBox');
 
     // Trimmer elements
     const audioFileInput = document.getElementById('audioFileInput');
@@ -589,14 +541,6 @@
     let audioDuration = 0;
     let saveTimeout = null;
     let voicesMetadata = {};
-
-    // Word-by-word streaming state
-    let currentRawText = "";
-    let sentenceChunks = [];
-    let activeSentenceIdx = 0;
-    let activeWordIdx = 0;
-    let wordTimer = null;
-    let isPacingActive = false;
 
     function triggerAutoSave() {
       if (saveTimeout) clearTimeout(saveTimeout);
@@ -804,122 +748,26 @@
       setTimeout(() => testBtn.innerText = 'Test Cloned Voice', 2500);
     });
 
-    // Dynamic word duration calculator based on word length, language & punctuation
-    function calculateWordDurationMs(word, speedRate) {
-      const isKorean = /[\uac00-\ud7a3]/.test(word);
-      const baseMs = isKorean ? (word.length * 150 + 90) : (word.length * 60 + 130);
-      const punctuationBonus = /[,\.!\?]/.test(word) ? 200 : 0;
-      return Math.max(160, Math.round((baseMs + punctuationBonus) / (speedRate || 1.0)));
-    }
-
-    function runWordPacer() {
-      if (!isPacingActive) return;
-
-      const currentChunkEl = document.getElementById(`chunk-${activeSentenceIdx}`);
-      if (!currentChunkEl) {
-        isPacingActive = false;
-        return;
-      }
-
-      const wordsInSentence = currentChunkEl.querySelectorAll('.word-token');
-      if (wordsInSentence.length === 0 || activeWordIdx >= wordsInSentence.length) {
-        // Move to next sentence
-        currentChunkEl.className = 'speech-chunk completed';
-        if (activeSentenceIdx < sentenceChunks.length - 1) {
-          activeSentenceIdx++;
-          activeWordIdx = 0;
-          const nextChunkEl = document.getElementById(`chunk-${activeSentenceIdx}`);
-          if (nextChunkEl) {
-            nextChunkEl.className = 'speech-chunk active';
-            nextChunkEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-          // Inter-sentence pause (~400ms)
-          setTimeout(runWordPacer, 400);
-        } else {
-          isPacingActive = false;
-        }
-        return;
-      }
-
-      // Highlight active word
-      wordsInSentence.forEach((wEl, wIdx) => {
-        if (wIdx < activeWordIdx) {
-          wEl.className = 'word-token completed';
-        } else if (wIdx === activeWordIdx) {
-          wEl.className = 'word-token active-word';
-        } else {
-          wEl.className = 'word-token';
-        }
-      });
-
-      const currentWordText = wordsInSentence[activeWordIdx].innerText;
-      const speed = parseFloat(speedRange.value) || 1.0;
-      const delay = calculateWordDurationMs(currentWordText, speed);
-
-      activeWordIdx++;
-      setTimeout(runWordPacer, delay);
-    }
-
-    function updateTranscriptFeed(rawText, isPlaying) {
-      if (!rawText) return;
-      if (rawText !== currentRawText) {
-        currentRawText = rawText;
-        const rawChunks = rawText.split(/(?<=[.!?])\s+|\n+/).filter(c => c.trim().length > 0);
-        sentenceChunks = rawChunks.length > 0 ? rawChunks : [rawText];
-        activeSentenceIdx = 0;
-        activeWordIdx = 0;
-
-        chunksContainer.innerHTML = '';
-        sentenceChunks.forEach((sentence, sIdx) => {
-          const sDiv = document.createElement('div');
-          sDiv.className = 'speech-chunk' + (sIdx === 0 && isPlaying ? ' active' : '');
-          sDiv.id = `chunk-${sIdx}`;
-
-          const words = sentence.split(/\s+/).filter(w => w.length > 0);
-          words.forEach((word, wIdx) => {
-            const wSpan = document.createElement('span');
-            wSpan.className = 'word-token' + (sIdx === 0 && isPlaying && wIdx === 0 ? ' active-word' : '');
-            wSpan.id = `word-${sIdx}-${wIdx}`;
-            wSpan.innerText = word;
-            sDiv.appendChild(wSpan);
-          });
-
-          chunksContainer.appendChild(sDiv);
-        });
-
-        if (isPlaying && !isPacingActive) {
-          isPacingActive = true;
-          setTimeout(runWordPacer, 300);
-        }
-      }
-
-      if (isPlaying) {
-        feedBadge.innerText = 'Speaking';
-        feedBadge.classList.add('active');
-        statusDot.classList.add('speaking');
-        statusText.innerText = 'Speaking';
-
-        if (!isPacingActive) {
-          isPacingActive = true;
-          runWordPacer();
-        }
-      } else {
-        feedBadge.innerText = 'Idle';
-        feedBadge.classList.remove('active');
-        statusDot.classList.remove('speaking');
-        statusText.innerText = masterToggle.checked ? 'Active' : 'Muted';
-        isPacingActive = false;
-
-        document.querySelectorAll('.speech-chunk').forEach(el => el.className = 'speech-chunk completed');
-        document.querySelectorAll('.word-token').forEach(el => el.className = 'word-token completed');
-      }
-    }
-
     setInterval(async () => {
       try {
         const res = await fetch('/api/status');
         const data = await res.json();
-        updateTranscriptFeed(data.last_spoken, data.is_playing);
+
+        if (data.last_spoken) {
+          transcriptBox.innerText = data.last_spoken;
+        }
+
+        if (data.is_playing) {
+          feedBadge.innerText = 'Speaking';
+          feedBadge.classList.add('active');
+          statusDot.classList.add('speaking');
+          statusText.innerText = 'Speaking';
+        } else {
+          feedBadge.innerText = 'Idle';
+          feedBadge.classList.remove('active');
+          statusDot.classList.remove('speaking');
+          statusText.innerText = masterToggle.checked ? 'Active' : 'Muted';
+        }
       } catch {}
     }, 300);
 
