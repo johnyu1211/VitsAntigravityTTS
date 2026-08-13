@@ -103,7 +103,11 @@
       box-shadow: 0 0 8px var(--primary);
     }
 
-    .btn-restart {
+    .status-dot.stopped {
+      background: var(--danger);
+    }
+
+    .btn-shutdown {
       padding: 6px 14px;
       border-radius: 20px;
       font-size: 12px;
@@ -115,7 +119,7 @@
       transition: var(--transition);
     }
 
-    .btn-restart:hover {
+    .btn-shutdown:hover {
       background: var(--danger);
       color: #FFFFFF;
     }
@@ -403,7 +407,7 @@
         <p>GPT-SoVITS V2 Real-Time Voice Cloning</p>
       </div>
       <div class="header-right">
-        <button class="btn-restart" id="restartBtn" type="button">Restart Engine</button>
+        <button class="btn-shutdown" id="shutdownBtn" type="button">Shutdown Server</button>
         <div class="status-badge" id="statusBadge">
           <div class="status-dot" id="statusDot"></div>
           <span id="statusText">Active</span>
@@ -546,7 +550,7 @@
     const speedVal = document.getElementById('speedVal');
     const masterToggle = document.getElementById('masterToggle');
     const testBtn = document.getElementById('testBtn');
-    const restartBtn = document.getElementById('restartBtn');
+    const shutdownBtn = document.getElementById('shutdownBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
@@ -569,6 +573,7 @@
     let audioDuration = 0;
     let saveTimeout = null;
     let voicesMetadata = {};
+    let isServerDead = false;
 
     function triggerAutoSave() {
       if (saveTimeout) clearTimeout(saveTimeout);
@@ -609,20 +614,19 @@
 
     masterToggle.addEventListener('change', triggerAutoSave);
 
-    restartBtn.addEventListener('click', async () => {
-      if (!confirm('Reboot Antigravity Voice Engine?')) return;
-      restartBtn.innerText = 'Rebooting...';
-      restartBtn.disabled = true;
+    shutdownBtn.addEventListener('click', async () => {
+      if (!confirm('Shutdown Antigravity Voice Engine Server?')) return;
+      shutdownBtn.innerText = 'Server Stopped';
+      shutdownBtn.disabled = true;
+      statusDot.className = 'status-dot stopped';
+      statusText.innerText = 'Offline';
+      feedBadge.innerText = 'Offline';
+      feedBadge.classList.remove('active');
+      isServerDead = true;
+
       try {
-        await fetch('/api/restart', { method: 'POST' });
-        setTimeout(() => {
-          window.location.reload();
-        }, 3500);
-      } catch (err) {
-        setTimeout(() => {
-          window.location.reload();
-        }, 3500);
-      }
+        await fetch('/api/shutdown', { method: 'POST' });
+      } catch (err) {}
     });
 
     function updateDuration() {
@@ -759,6 +763,7 @@
     }
 
     async function saveSettingsAuto() {
+      if (isServerDead) return;
       const payload = {
         reference_voice: voiceSelect.value,
         update_prompt_text: voicePromptInput.value.trim(),
@@ -787,12 +792,14 @@
     }
 
     testBtn.addEventListener('click', async () => {
+      if (isServerDead) return;
       testBtn.innerText = 'Cloning...';
       await fetch('/api/test_speak', { method: 'POST' });
       setTimeout(() => testBtn.innerText = 'Test Cloned Voice', 2500);
     });
 
     setInterval(async () => {
+      if (isServerDead) return;
       try {
         const res = await fetch('/api/status');
         const data = await res.json();
@@ -812,7 +819,10 @@
           statusDot.classList.remove('speaking');
           statusText.innerText = masterToggle.checked ? 'Active' : 'Muted';
         }
-      } catch {}
+      } catch {
+        statusDot.className = 'status-dot stopped';
+        statusText.innerText = 'Offline';
+      }
     }, 300);
 
     loadSettings();

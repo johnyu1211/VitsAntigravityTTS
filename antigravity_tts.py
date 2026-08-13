@@ -8,7 +8,6 @@ import asyncio
 import webbrowser
 import shutil
 import warnings
-import subprocess
 
 # Clean startup logs
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
@@ -132,9 +131,7 @@ def clean_markdown_text(text):
 def split_into_conversational_chunks(text):
     if not text:
         return []
-    # Replace internal linebreaks with spaces so sentences don't get chopped
     normalized = re.sub(r'\s*\n+\s*', ' ', text).strip()
-    # Split strictly on full sentence terminators (. ! ?)
     sentences = re.split(r'(?<=[.!?])\s+', normalized)
     chunks = [s.strip() for s in sentences if s.strip()]
     return chunks if chunks else [text]
@@ -307,14 +304,14 @@ async def handle_status(request):
         "last_spoken": last_spoken_text
     })
 
-async def handle_restart(request):
-    async def restart_process():
-        await asyncio.sleep(0.5)
-        print("[Restart] Rebooting Antigravity Voice Studio...")
-        os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)])
+async def handle_shutdown(request):
+    async def shutdown_process():
+        await asyncio.sleep(0.3)
+        print("[Shutdown] Server stopped by user request from GUI.")
+        os._exit(0)
     
-    asyncio.create_task(restart_process())
-    return web.json_response({"status": "restarting"})
+    asyncio.create_task(shutdown_process())
+    return web.json_response({"status": "shutdown"})
 
 async def handle_trim_audio(request):
     try:
@@ -461,7 +458,7 @@ def main():
     app.router.add_get('/api/settings', handle_get_settings)
     app.router.add_post('/api/settings', handle_save_settings)
     app.router.add_post('/api/test_speak', handle_test_speak)
-    app.router.add_post('/api/restart', handle_restart)
+    app.router.add_post('/api/shutdown', handle_shutdown)
     app.router.add_post('/api/trim_audio', handle_trim_audio)
     app.router.add_get('/api/status', handle_status)
     
