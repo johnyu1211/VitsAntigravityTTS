@@ -51,7 +51,6 @@ class GPTSoVITSEngine:
             try:
                 with open(txt_path, 'r', encoding='utf-8') as f:
                     content = f.read().strip()
-                # Check if it has lang tag like "[en] text" or plain text
                 if content.startswith("[") and "]" in content:
                     parts = content.split("]", 1)
                     lang = parts[0].replace("[", "").strip().lower()
@@ -103,7 +102,6 @@ class GPTSoVITSEngine:
                     print(f"[GPT-SoVITS Error] No reference audio found in {self.ref_dir}")
                     return False
 
-            # If prompt_text is not passed explicitly, load companion .txt
             if not prompt_text:
                 meta = self.get_voice_metadata(ref_audio_name)
                 prompt_text = meta.get("text", "")
@@ -111,7 +109,6 @@ class GPTSoVITSEngine:
                     prompt_lang = meta.get("lang")
 
             if not prompt_lang or prompt_lang == "auto":
-                # Auto detect prompt language if text is provided
                 import re
                 if re.search(r'[\uac00-\ud7a3]', prompt_text):
                     prompt_lang = "ko"
@@ -122,6 +119,7 @@ class GPTSoVITSEngine:
                 else:
                     prompt_lang = text_lang
 
+            # Use cut0 (no artificial chunking inside model) for smooth, unbroken human sentence flow
             inputs = {
                 'text': text,
                 'text_lang': text_lang,
@@ -131,7 +129,7 @@ class GPTSoVITSEngine:
                 'top_k': 10 if prompt_text else 5,
                 'top_p': 0.9 if prompt_text else 1.0,
                 'temperature': max(0.5, min(1.0, float(temperature))),
-                'text_split_method': 'cut5',
+                'text_split_method': 'cut0',
                 'speed_factor': speed,
                 'batch_size': 1,
                 'stream_mode': 'normal'

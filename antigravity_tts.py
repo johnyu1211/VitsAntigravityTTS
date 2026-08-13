@@ -130,20 +130,13 @@ def clean_markdown_text(text):
     return text
 
 def split_into_conversational_chunks(text):
-    raw_sentences = re.split(r'(\n+|(?<=[.!?])\s+)', text)
-    chunks = []
-    buf = ""
-    for s in raw_sentences:
-        if not s:
-            continue
-        buf += s
-        if re.search(r'[\.\?\!\n]', s) or len(buf) >= 60:
-            cleaned = buf.strip()
-            if cleaned:
-                chunks.append(cleaned)
-            buf = ""
-    if buf.strip():
-        chunks.append(buf.strip())
+    if not text:
+        return []
+    # Replace internal linebreaks with spaces so sentences don't get chopped
+    normalized = re.sub(r'\s*\n+\s*', ' ', text).strip()
+    # Split strictly on full sentence terminators (. ! ?)
+    sentences = re.split(r'(?<=[.!?])\s+', normalized)
+    chunks = [s.strip() for s in sentences if s.strip()]
     return chunks if chunks else [text]
 
 def stop_and_clear_everything():
