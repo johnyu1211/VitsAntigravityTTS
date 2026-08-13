@@ -117,19 +117,15 @@ def clean_markdown_text(text):
     text = re.sub(r'^\s*[-+*•·]\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
     
-    # 6. Comprehensive Special Character Purge (keep only Korean, Japanese, English, digits, and natural punctuation)
-    # Filter out quotes, brackets, math symbols, bullets, emojis, arrows, formatting marks
-    text = re.sub(r'[^\w\s\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff,\.!\?]', ' ', text)
+    # 6. Comprehensive Special Character Purge (keep only Korean, Japanese, English, digits, and sentence enders)
+    # Remove quotes, brackets, math symbols, bullets, emojis, commas between numbers/short words
+    text = re.sub(r'[^\w\s\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?]', ' ', text)
     text = re.sub(r'[_]', ' ', text)  # remove underscores
     
-    # 7. Normalize multiple punctuations (e.g. "!!!" -> "!", "..." -> ".")
-    text = re.sub(r'\.{2,}', '.', text)
-    text = re.sub(r'!{2,}', '!', text)
-    text = re.sub(r'\?{2,}', '?', text)
-    text = re.sub(r',{2,}', ',', text)
-    
-    # 8. Normalize spacing around punctuation
-    text = re.sub(r'\s*([,\.!\?])\s*', r'\1 ', text)
+    # 7. Normalize multiple punctuations & replace breathless commas with clean space
+    text = re.sub(r'[\.!\?]{2,}', '.', text)
+    text = re.sub(r'\s*,\s*', ' ', text)  # remove commas to eliminate rapid breathing huffs
+    text = re.sub(r'\s*([\.!\?])\s*', r'\1 ', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
