@@ -9,7 +9,7 @@ Real-time Text-to-Speech (TTS) background reader and web controller for Google A
 - **Real-Time Log Tracking**: Automatically detects and monitors active Antigravity session logs (`transcript.jsonl`) under `~/.gemini/antigravity/brain/`.
 - **Intelligent Text Sanitization**: Automatically strips code blocks, markdown symbols, inline code, and LaTeX math formulas before synthesis.
 - **Multilingual Auto-Routing**: Dynamically detects Korean, English, and Japanese sentences and selects matching native neural voices seamlessly.
-- **Studio Web GUI**: Modern, lightweight local web controller (inspired by Poorman's Gravity design system) to adjust voice, rate, pitch, and power toggles.
+- **Studio Web GUI**: Modern, lightweight dark-themed local web controller to adjust voice, rate, pitch, and power toggles.
 - **Cross-Environment Compatibility**: Works with Antigravity IDE, CLI, and web interface without manual configuration.
 
 ---
