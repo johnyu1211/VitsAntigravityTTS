@@ -80,6 +80,7 @@ speech_queue = asyncio.Queue()
 audio_play_queue = asyncio.Queue()
 current_generation_id = 0
 last_spoken_text = ""
+last_latency_ms = 0
 
 def load_config():
     global current_settings
@@ -427,14 +428,18 @@ async def speech_worker():
             uid = f"{int(time.time()*1000)}_{os.getpid()}_{hash(chunk)%10000}"
             temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
 
+            t0 = time.perf_counter()
             try:
                 fast_mode = current_settings.get("fast_pipeline", True)
                 pipe_tag = " [FAST]" if fast_mode else ""
                 log_preview = chunk[:35].replace('\n', ' ')
-                print(f"[GPT-SoVITS]{pipe_tag} [{lang.upper()}] Voice: '{ref_voice}' (Vol: {int(vol*100)}%, Temp: {temperature:.2f}) -> {log_preview}...")
                 success = await asyncio.to_thread(
                     gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol, fast_mode
                 )
+                elapsed_ms = (time.perf_counter() - t0) * 1000.0
+                elapsed_s = elapsed_ms / 1000.0
+                last_latency_ms = int(elapsed_ms)
+                print(f"[GPT-SoVITS]{pipe_tag} [{lang.upper()}] {len(chunk)} chars in {elapsed_s:.2f}s ({int(elapsed_ms)}ms) (Voice: '{ref_voice}') -> {log_preview}...")
 
                 if gen_id != current_generation_id:
                     if os.path.exists(temp_out): os.remove(temp_out)
@@ -527,6 +532,7 @@ async def handle_status(request):
         "enabled": current_settings.get("enabled", True),
         "is_playing": is_busy,
         "last_spoken": last_spoken_text,
+        "last_latency_ms": last_latency_ms,
         "model_ready": model_ready,
         "status": "ready" if model_ready else "loading_models"
     })
@@ -842,10 +848,12 @@ async def background_log_watcher():
 
 async def async_load_ai_engine():
     loop = asyncio.get_running_loop()
-    print("[Antigravity Studio] Initializing AI neural models in background...")
+    t_start = time.perf_counter()
+    print("[Antigravity Studio] Initializing AI neural models into GPU VRAM in background...")
     try:
         await loop.run_in_executor(None, gpt_sovits_engine.load_models)
-        print("[Antigravity Studio] AI Neural Model ready for real-time multilingual voice cloning!")
+        t_elapsed = time.perf_counter() - t_start
+        print(f"[Antigravity Studio] AI Neural Model loaded in {t_elapsed:.1f}s (CUDA pre-warmed & ready)!")
     except Exception as e:
         print(f"[Antigravity Studio] Neural Model load error: {e}")
 

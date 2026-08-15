@@ -1021,7 +1021,10 @@
           <div class="section-card">
             <div class="section-header">
               <div class="section-title">Spoken Text Stream</div>
-              <div class="feed-badge" id="feedBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);">Idle</div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span id="latencyBadge" style="font-size: 11px; font-weight: 700; font-family: monospace; color: #468CF6; background: rgba(70, 140, 246, 0.12); padding: 2px 7px; border-radius: 4px; display: none;">0ms</span>
+                <div class="feed-badge" id="feedBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);">Idle</div>
+              </div>
             </div>
             <div class="transcript-box" id="transcriptBox">Waiting for speech activity...</div>
           </div>
@@ -2868,6 +2871,12 @@
 
         if (data.last_spoken && transcriptBox) {
           transcriptBox.innerText = data.last_spoken;
+        }
+
+        const latencyBadge = document.getElementById('latencyBadge');
+        if (latencyBadge && data.last_latency_ms > 0) {
+          latencyBadge.innerText = `${data.last_latency_ms}ms`;
+          latencyBadge.style.display = 'inline-block';
         }
 
         if (data.model_ready) {
