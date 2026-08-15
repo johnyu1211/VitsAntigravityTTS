@@ -119,22 +119,24 @@ def clean_markdown_text(text):
     if not text:
         return ""
     
-    # 1. Remove code blocks completely
+    # 1. Multi-line code blocks ``` ... ``` can be skipped
     text = re.sub(r'```[\s\S]*?```', '\n', text)
-    text = re.sub(r'`[^`]+`', ' ', text)
+    
+    # 2. Preserve inline code terms `saveVoiceItem` -> saveVoiceItem (Never erase the term!)
+    text = re.sub(r'`([^`\n]+)`', r' \1 ', text)
 
-    # 2. Markdown links: [Link Title](http://...) -> Link Title
+    # 3. Markdown links: [Link Title](http://...) -> Link Title
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     
-    # 3. Strip all URLs (http, https, ftp, file, www)
+    # 4. Strip all raw URLs (http, https, ftp, file, www)
     text = re.sub(r'(?:https?|ftp|file)://\S+', ' ', text)
     text = re.sub(r'www\.\S+', ' ', text)
     
-    # 4. Strip file paths (e.g. C:\path\to\file or /usr/local/...)
+    # 5. Strip file paths (e.g. C:\path\to\file or /usr/local/...)
     text = re.sub(r'[A-Za-z]:\\[\w\\\.-]+', ' ', text)
     text = re.sub(r'/(?:[\w\.-]+/)+[\w\.-]+', ' ', text)
 
-    # 5. HTML tags & Markdown elements & Tables
+    # 6. HTML tags & Markdown elements & Tables
     text = re.sub(r'<[^>]+>', ' ', text)
     text = re.sub(r'\|[^\n]+\|', '\n', text)
     text = re.sub(r'[-:|]{3,}', '\n', text)
@@ -145,16 +147,17 @@ def clean_markdown_text(text):
     text = re.sub(r'#+\s*', '', text)
     text = re.sub(r'^\s*[-+*•·▪▫►✔✕]\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
-    
-    # 6. Box drawings, arrows, bullets, and divider symbols
-    text = re.sub(r'[─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬▲▼◀▶►◄→←↑↓⇒⇔•·▪▫►✔✕★☆✓✗]', ' ', text)
 
     # 7. Protect decimal points (e.g. 3.14, 2.0)
     text = re.sub(r'(\d+)\.(\d+)', r'\1_DECIMAL_DOT_\2', text)
     
-    # 8. Complete symbol purge via translation table (removes hyphens, em-dashes, brackets, tildes, colons)
-    symbol_table = str.maketrans({c: ' ' for c in '-—–_~:;/\\|()[]{}<>#*+=`^$%@&"\'“”‘’'})
-    text = text.translate(symbol_table)
+    # 8. Symbol clean (remove brackets while connecting trailing Korean particles naturally: (xxx)를 -> xxx를)
+    text = re.sub(r'[\(\[\{]\s*', ' ', text)
+    text = re.sub(r'\s*[\)\]\}]\s*([은는이가을를의에로와과도만])', r'\1', text)
+    text = re.sub(r'\s*[\)\]\}]', ' ', text)
+
+    symbols = r'[-—–_~:;/\\<>#*+=`^$%@&"\'“”‘’★☆✓✗─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬▲▼◀▶►◄→←↑↓⇒⇔•·▪▫►✔✕]'
+    text = re.sub(symbols, ' ', text)
     
     # 9. Keep ONLY letters, numbers, spaces, newlines, and standard sentence terminals (. ! ? ,)
     text = re.sub(r'[^\w\s\n\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?,]', ' ', text)
@@ -162,9 +165,9 @@ def clean_markdown_text(text):
     # 10. Normalize multiple punctuations & spaces
     text = re.sub(r'[\.!\?]{2,}', '.', text)
     text = re.sub(r'[,]{2,}', ',', text)
-    
-    # Restore decimal points
-    text = text.replace(' DECIMAL DOT ', '.').replace('DECIMAL DOT', '.').replace('DECIMALDOT', '.')
+    text = text.replace('_DECIMAL_DOT_', '.')
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'\s+([,\.\!\?])', r'\1', text)
     return text.strip()
 
 DANGLING_ENDINGS = re.compile(
@@ -249,7 +252,7 @@ def split_into_conversational_chunks(text, max_chars=36, min_chars=12):
     # Final pass: merge any trailing micro-fragment (<8 chars) with previous chunk
     cleaned = []
     for c in refined:
-        c = c.strip()
+        c = re.sub(r'^[,\s]+', '', c.strip())
         if not c:
             continue
         if cleaned and len(c) < 8:
