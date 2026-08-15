@@ -908,6 +908,44 @@
     </div>
   </div>
 
+  <!-- In-App Custom Thumbnail Confirmation Modal -->
+  <div id="thumbModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center;">
+    <div style="background:#18181B; border:1px solid var(--border-color); border-radius:var(--radius-md); width:440px; max-width:92%; padding:22px; box-shadow:0 16px 40px rgba(0,0,0,0.7); display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0; font-size:15px; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>Update Voice Thumbnail</span>
+        </h3>
+        <button onclick="closeThumbModal()" type="button" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:18px; line-height:1; padding:4px;">✕</button>
+      </div>
+
+      <!-- Preview Box -->
+      <div id="thumbModalPreviewBox" style="display:flex; justify-content:center; align-items:center; height:120px; background:#111113; border:1px dashed var(--border-color); border-radius:var(--radius-sm); overflow:hidden;">
+        <img id="thumbModalPreviewImg" src="" style="display:none; width:110px; height:110px; object-fit:cover; border-radius:6px;">
+        <div id="thumbModalNoPreviewText" style="font-size:12px; color:var(--text-muted); text-align:center; padding:10px;">
+          No image detected in clipboard.<br><span style="font-size:11px; opacity:0.7;">Copy an image (Ctrl+C) or enter a URL below</span>
+        </div>
+      </div>
+
+      <!-- Question Text -->
+      <p id="thumbModalQuestion" style="margin:0; font-size:13px; color:var(--text-main); line-height:1.5; font-weight:500;">
+        Do you want to paste the image from your clipboard as the thumbnail for this voice?
+      </p>
+
+      <!-- URL Input Area -->
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <label style="font-size:11px; color:var(--text-muted); font-weight:600;">Or enter an Image URL to download:</label>
+        <input type="text" id="thumbModalUrlInput" placeholder="https://example.com/character.png" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:8px 10px; font-size:12px; color:var(--text-main); outline:none;">
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
+        <button class="btn-secondary btn-sm" onclick="closeThumbModal()" type="button" style="padding:8px 14px;">Cancel</button>
+        <button class="btn-primary btn-sm" id="thumbModalConfirmBtn" onclick="confirmThumbModal()" type="button" style="padding:8px 16px; font-weight:600;">Yes, Apply Thumbnail</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Tab Navigation Logic
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -1578,64 +1616,111 @@
       };
     }
 
+    let activeModalVoiceFilename = null;
+    let activeModalClipItem = null;
+
     async function setVoiceThumbnail(filename) {
-      let clipItem = null;
+      activeModalVoiceFilename = filename;
+      activeModalClipItem = null;
+
+      const modal = document.getElementById('thumbModal');
+      const previewImg = document.getElementById('thumbModalPreviewImg');
+      const noPreview = document.getElementById('thumbModalNoPreviewText');
+      const question = document.getElementById('thumbModalQuestion');
+      const urlInput = document.getElementById('thumbModalUrlInput');
+      const confirmBtn = document.getElementById('thumbModalConfirmBtn');
+
+      if (!modal) return;
+
+      urlInput.value = '';
+      previewImg.style.display = 'none';
+      previewImg.src = '';
+      noPreview.style.display = 'block';
 
       // 1. Try Electron native clipboard API (100% reliable)
       if (window.electronAPI && window.electronAPI.getClipboardImage) {
         try {
-          clipItem = await window.electronAPI.getClipboardImage();
+          activeModalClipItem = await window.electronAPI.getClipboardImage();
         } catch (e) {
           console.warn('Electron clipboard read error:', e);
         }
       }
 
-      // 2. If Electron found an image in clipboard
-      if (clipItem) {
-        if (clipItem.type === 'data') {
-          if (confirm(`Do you want to paste the image from your clipboard as the thumbnail for "${filename}"?`)) {
-            await uploadThumbnailBase64(filename, clipItem.data);
-            return;
-          }
-          return;
-        } else if (clipItem.type === 'url') {
-          if (confirm(`Do you want to download and set this image URL as the thumbnail for "${filename}"?\n\n${clipItem.data}`)) {
-            await uploadThumbnailUrl(filename, clipItem.data);
-            return;
-          }
-          return;
-        }
-      }
-
-      // 3. Fallback: Browser Web Clipboard API
-      try {
-        if (navigator.clipboard && navigator.clipboard.read) {
+      // 2. Fallback to Web Clipboard API
+      if (!activeModalClipItem && navigator.clipboard && navigator.clipboard.read) {
+        try {
           const items = await navigator.clipboard.read();
           for (const item of items) {
             for (const type of item.types) {
               if (type.startsWith('image/')) {
                 const blob = await item.getType(type);
                 const reader = new FileReader();
-                reader.onload = async () => {
-                  if (confirm(`Do you want to paste the image from your clipboard as the thumbnail for "${filename}"?`)) {
-                    await uploadThumbnailBase64(filename, reader.result);
-                  }
-                };
-                reader.readAsDataURL(blob);
-                return;
+                await new Promise((resolve) => {
+                  reader.onload = () => {
+                    activeModalClipItem = { type: 'data', data: reader.result };
+                    resolve();
+                  };
+                  reader.readAsDataURL(blob);
+                });
+                break;
               }
             }
+            if (activeModalClipItem) break;
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
 
-      // 4. If no image found in clipboard, prompt for URL
-      const userUrl = prompt(`No image found in clipboard.\n\nPlease copy an image (Ctrl+C) first, or enter an Image URL to download:`);
-      if (userUrl && (userUrl.startsWith('http://') || userUrl.startsWith('https://') || userUrl.startsWith('data:image/'))) {
-        if (userUrl.startsWith('data:image/')) {
-          await uploadThumbnailBase64(filename, userUrl);
+      // Populate Modal Content
+      if (activeModalClipItem) {
+        if (activeModalClipItem.type === 'data') {
+          previewImg.src = activeModalClipItem.data;
+          previewImg.style.display = 'block';
+          noPreview.style.display = 'none';
+          question.innerText = `Do you want to paste the image from your clipboard as the thumbnail for "${filename}"?`;
+          confirmBtn.innerText = 'Yes, Paste Image';
+        } else if (activeModalClipItem.type === 'url') {
+          previewImg.src = activeModalClipItem.data;
+          previewImg.style.display = 'block';
+          previewImg.onerror = () => { previewImg.style.display = 'none'; noPreview.style.display = 'block'; };
+          noPreview.style.display = 'none';
+          urlInput.value = activeModalClipItem.data;
+          question.innerText = `Do you want to download and set this image URL as the thumbnail for "${filename}"?`;
+          confirmBtn.innerText = 'Yes, Download & Set';
+        }
+      } else {
+        question.innerText = `No image found in clipboard. You can paste an image URL below, or copy an image (Ctrl+C) first:`;
+        confirmBtn.innerText = 'Apply Image URL';
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    function closeThumbModal() {
+      const modal = document.getElementById('thumbModal');
+      if (modal) modal.style.display = 'none';
+      activeModalVoiceFilename = null;
+      activeModalClipItem = null;
+    }
+
+    async function confirmThumbModal() {
+      if (!activeModalVoiceFilename) return;
+      const urlInput = document.getElementById('thumbModalUrlInput');
+      const customUrl = urlInput.value.trim();
+      const filename = activeModalVoiceFilename;
+
+      closeThumbModal();
+
+      if (customUrl) {
+        if (customUrl.startsWith('data:image/')) {
+          await uploadThumbnailBase64(filename, customUrl);
         } else {
-          await uploadThumbnailUrl(filename, userUrl);
+          await uploadThumbnailUrl(filename, customUrl);
+        }
+      } else if (activeModalClipItem) {
+        if (activeModalClipItem.type === 'data') {
+          await uploadThumbnailBase64(filename, activeModalClipItem.data);
+        } else if (activeModalClipItem.type === 'url') {
+          await uploadThumbnailUrl(filename, activeModalClipItem.data);
         }
       }
     }
