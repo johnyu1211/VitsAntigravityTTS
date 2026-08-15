@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn, exec } = require('child_process');
@@ -159,6 +159,20 @@ function cleanupProcesses() {
 
 app.whenReady().then(() => {
   createWindow();
+
+  ipcMain.on('app-relaunch', () => {
+    console.log('[Electron] Relaunching application...');
+    cleanupProcesses();
+    app.relaunch();
+    app.exit(0);
+  });
+
+  ipcMain.on('app-reload', () => {
+    console.log('[Electron] Reloading window...');
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.reload();
+    }
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
