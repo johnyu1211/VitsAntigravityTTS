@@ -7,6 +7,7 @@ const http = require('http');
 let mainWindow = null;
 let pythonProcess = null;
 let didSpawnBackend = false;
+let isConnected = false;
 const SERVER_URL = 'http://127.0.0.1:7861';
 
 process.on('uncaughtException', (err) => {
@@ -16,6 +17,12 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason) => {
   console.error('[Electron Unhandled Rejection]', reason);
 });
+
+function getPythonExecutable() {
+  const localPy = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python311', 'python.exe');
+  if (fs.existsSync(localPy)) return localPy;
+  return 'python';
+}
 
 function checkPortActive(callback) {
   const req = http.get(`${SERVER_URL}/api/status`, (res) => {
@@ -37,7 +44,8 @@ function checkPortActive(callback) {
 }
 
 function startPythonBackend() {
-  console.log('[Electron] Starting Python Voice Engine with persistent log stream...');
+  console.log('[Electron] Starting Python Voice Engine in background...');
+  const pyExe = getPythonExecutable();
   const pyScript = path.join(__dirname, 'antigravity_tts.py');
   const logPath = path.join(__dirname, 'electron_backend.log');
   
@@ -48,8 +56,9 @@ function startPythonBackend() {
     outStream = 'ignore';
   }
 
-  pythonProcess = spawn('python', [pyScript, '--no-browser'], {
+  pythonProcess = spawn(pyExe, ['-u', pyScript, '--no-browser'], {
     cwd: __dirname,
+    env: { ...process.env, PYTHONUNBUFFERED: '1' },
     stdio: ['ignore', outStream, outStream]
   });
 
@@ -65,19 +74,19 @@ function startPythonBackend() {
   });
 }
 
-function checkServerReady(onReady, onTimeout, retries = 75) {
-  if (retries <= 0) {
-    console.error('[Electron] Healthcheck timeout.');
-    if (onTimeout) onTimeout();
-    return;
-  }
+function pollAndLoadApp() {
+  if (isConnected || !mainWindow || mainWindow.isDestroyed()) return;
 
   checkPortActive((active) => {
     if (active) {
-      console.log('[Electron] Connected to Voice Engine!');
-      onReady();
+      console.log('[Electron] Voice Engine is READY! Loading full studio GUI...');
+      isConnected = true;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadURL(SERVER_URL);
+      }
     } else {
-      setTimeout(() => checkServerReady(onReady, onTimeout, retries - 1), 400);
+      // Keep polling until server is ready (AI models take ~6-8s to load into GPU VRAM)
+      setTimeout(pollAndLoadApp, 400);
     }
   });
 }
@@ -100,31 +109,26 @@ function createWindow() {
     }
   });
 
-  // 1. Show sleek loading screen
+  // 1. Show sleek loading screen first
   mainWindow.loadFile(path.join(__dirname, 'loading.html')).catch(() => {});
 
-  // 2. Check if already running or launch backend
+  // 2. Prevent blank screen if load ever fails
+  mainWindow.webContents.on('did-fail-load', (event, errorCode) => {
+    if (!isConnected && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadFile(path.join(__dirname, 'loading.html')).catch(() => {});
+      setTimeout(pollAndLoadApp, 600);
+    }
+  });
+
+  // 3. Check if already running or launch
   checkPortActive((alreadyRunning) => {
     if (alreadyRunning) {
-      console.log('[Electron] Existing backend detected on port 7861. Connecting immediately...');
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.loadURL(SERVER_URL).catch(() => {});
-      }
+      console.log('[Electron] Existing backend detected. Connecting immediately...');
+      isConnected = true;
+      mainWindow.loadURL(SERVER_URL);
     } else {
       startPythonBackend();
-      checkServerReady(
-        () => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.loadURL(SERVER_URL).catch(() => {});
-          }
-        },
-        () => {
-          // Timeout fallback
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.loadURL(SERVER_URL).catch(() => {});
-          }
-        }
-      );
+      pollAndLoadApp();
     }
   });
 
