@@ -215,6 +215,18 @@ app.whenReady().then(() => {
     return null;
   });
 
+  ipcMain.on('app-relaunch', () => {
+    cleanupProcesses();
+    app.relaunch();
+    app.exit(0);
+  });
+
+  ipcMain.on('app-reload', () => {
+    if (mainWindow) {
+      mainWindow.reload();
+    }
+  });
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

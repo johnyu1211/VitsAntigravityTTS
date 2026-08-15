@@ -33,20 +33,28 @@
       padding: 0;
     }
 
-    /* Sleek Custom Studio Scrollbars */
+    /* Sleek Custom Studio Scrollbars (No borders) */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
     ::-webkit-scrollbar-track {
       background: transparent;
+      border: none !important;
     }
     ::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.16);
       border-radius: 4px;
+      border: none !important;
+      outline: none !important;
     }
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.32);
+      border: none !important;
+    }
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+      border: none !important;
     }
     * {
       scrollbar-width: thin;
@@ -211,6 +219,13 @@
       background: var(--primary);
       color: #FFFFFF;
       box-shadow: 0 2px 8px rgba(70, 140, 246, 0.35);
+    }
+
+    .btn-refresh.spinning svg {
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
     }
 
     /* Navigation Tabs */
@@ -2825,6 +2840,22 @@
 
     setInterval(fetchSystemLogs, 800);
     fetchSystemLogs();
+
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        refreshBtn.classList.add('spinning');
+        const txt = refreshBtn.querySelector('span');
+        if (txt) txt.innerText = 'Restarting...';
+        if (window.electronAPI && window.electronAPI.relaunch) {
+          window.electronAPI.relaunch();
+        } else if (window.electronAPI && window.electronAPI.reload) {
+          window.electronAPI.reload();
+        } else {
+          window.location.reload();
+        }
+      });
+    }
 
     loadSettings();
   </script>
