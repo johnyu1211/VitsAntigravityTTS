@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn, exec } = require('child_process');
 const http = require('http');
 
@@ -29,20 +30,27 @@ function checkPortActive(callback) {
     callback(false);
   });
 
-  req.setTimeout(1000, () => {
+  req.setTimeout(800, () => {
     req.destroy();
     callback(false);
   });
 }
 
 function startPythonBackend() {
-  console.log('[Electron] Starting Python Voice Engine...');
+  console.log('[Electron] Starting Python Voice Engine with persistent log stream...');
   const pyScript = path.join(__dirname, 'antigravity_tts.py');
+  const logPath = path.join(__dirname, 'electron_backend.log');
+  
+  let outStream;
+  try {
+    outStream = fs.openSync(logPath, 'a');
+  } catch (e) {
+    outStream = 'ignore';
+  }
 
   pythonProcess = spawn('python', [pyScript, '--no-browser'], {
     cwd: __dirname,
-    shell: true,
-    stdio: 'ignore'
+    stdio: ['ignore', outStream, outStream]
   });
 
   didSpawnBackend = true;
@@ -57,9 +65,10 @@ function startPythonBackend() {
   });
 }
 
-function checkServerReady(onReady, retries = 60) {
+function checkServerReady(onReady, onTimeout, retries = 75) {
   if (retries <= 0) {
     console.error('[Electron] Healthcheck timeout.');
+    if (onTimeout) onTimeout();
     return;
   }
 
@@ -68,7 +77,7 @@ function checkServerReady(onReady, retries = 60) {
       console.log('[Electron] Connected to Voice Engine!');
       onReady();
     } else {
-      setTimeout(() => checkServerReady(onReady, retries - 1), 400);
+      setTimeout(() => checkServerReady(onReady, onTimeout, retries - 1), 400);
     }
   });
 }
@@ -91,7 +100,7 @@ function createWindow() {
     }
   });
 
-  // 1. Load sleek loading splash
+  // 1. Show sleek loading screen
   mainWindow.loadFile(path.join(__dirname, 'loading.html')).catch(() => {});
 
   // 2. Check if already running or launch backend
@@ -103,11 +112,19 @@ function createWindow() {
       }
     } else {
       startPythonBackend();
-      checkServerReady(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.loadURL(SERVER_URL).catch(() => {});
+      checkServerReady(
+        () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.loadURL(SERVER_URL).catch(() => {});
+          }
+        },
+        () => {
+          // Timeout fallback
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.loadURL(SERVER_URL).catch(() => {});
+          }
         }
-      });
+      );
     }
   });
 

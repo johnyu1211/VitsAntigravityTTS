@@ -9,6 +9,15 @@ import webbrowser
 import shutil
 import warnings
 
+# Protect against WinError 6 / invalid stdout handles when spawned by Electron/GUI
+try:
+    if sys.stdout is None or not hasattr(sys.stdout, 'write'):
+        sys.stdout = open(os.devnull, 'w', encoding='utf-8')
+    if sys.stderr is None or not hasattr(sys.stderr, 'write'):
+        sys.stderr = open(os.devnull, 'w', encoding='utf-8')
+except:
+    pass
+
 # Clean startup logs
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 warnings.filterwarnings("ignore")
