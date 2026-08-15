@@ -618,6 +618,183 @@
       background: var(--primary);
       color: #FFFFFF;
     }
+
+    /* ============================================================ */
+    /* PRO NLE TIMELINE EDITOR STYLES (CapCut / Premiere Pro Style) */
+    /* ============================================================ */
+    .nle-editor-wrapper {
+      background: #111113;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      margin: 12px 0;
+      user-select: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .nle-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: #161619;
+      border-bottom: 1px solid var(--border-color);
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nle-tool-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nle-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--border-color);
+      margin: 0 4px;
+    }
+
+    .nle-ruler-track-container {
+      position: relative;
+      background: #0E0E10;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .nle-ruler-bar {
+      height: 26px;
+      background: #1A1A1E;
+      border-bottom: 1px solid var(--border-color);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .nle-track-area {
+      height: 130px;
+      position: relative;
+      background: #0A0A0C;
+      cursor: crosshair;
+      overflow: hidden;
+    }
+
+    .nle-waveform-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* Draggable Clip Blocks on Track */
+    .nle-clip {
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      background: rgba(70, 140, 246, 0.18);
+      border: 1.5px solid rgba(70, 140, 246, 0.6);
+      border-radius: 6px;
+      cursor: grab;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    .nle-clip:hover {
+      background: rgba(70, 140, 246, 0.28);
+      border-color: var(--primary);
+    }
+
+    .nle-clip.active {
+      background: rgba(70, 140, 246, 0.38);
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 16px rgba(70, 140, 246, 0.4);
+      z-index: 10;
+    }
+
+    /* Edge Trim Handles */
+    .nle-clip-handle {
+      width: 14px;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      cursor: col-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      z-index: 20;
+      transition: background 0.15s;
+    }
+
+    .nle-clip-handle:hover,
+    .nle-clip.active .nle-clip-handle {
+      background: var(--primary);
+    }
+
+    .nle-clip-handle.handle-left {
+      left: 0;
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+    }
+
+    .nle-clip-handle.handle-right {
+      right: 0;
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+    }
+
+    .nle-clip-handle::after {
+      content: '';
+      width: 2px;
+      height: 18px;
+      background: #FFFFFF;
+      border-radius: 1px;
+      opacity: 0.85;
+    }
+
+    .nle-clip-tag {
+      position: absolute;
+      top: 5px;
+      left: 18px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 2px 7px;
+      border-radius: 4px;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* Playhead Needle with Diamond Pointer */
+    .nle-playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #FF453A;
+      pointer-events: none;
+      z-index: 50;
+      display: none;
+    }
+
+    .nle-playhead-head {
+      position: absolute;
+      top: 0;
+      left: -6px;
+      width: 14px;
+      height: 14px;
+      background: #FF453A;
+      clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+    }
   </style>
 </head>
 <body>
@@ -793,60 +970,118 @@
             <audio id="audioPreview" style="display: none;"></audio>
           </div>
 
-          <!-- Interactive Waveform Visualizer -->
-          <div class="waveform-container" style="position: relative; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-sm); height: 120px; overflow: hidden; cursor: crosshair;">
-            <canvas id="waveformCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
-            <div id="selectionOverlay" style="position: absolute; top: 0; bottom: 0; left: 0%; width: 30%; background: rgba(70, 140, 246, 0.25); border-left: 2px solid var(--primary); border-right: 2px solid var(--primary); pointer-events: none; display: none;"></div>
-            <div id="playheadCursor" style="position: absolute; top: 0; bottom: 0; left: 0%; width: 2px; background: #FF453A; pointer-events: none; display: none;"></div>
-            <div id="waveformLoading" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background: rgba(20,20,22,0.8); font-size:12px; color:var(--text-muted); display: none;">Rendering audio waveform...</div>
+          <!-- PRO NLE TIMELINE SUITE (Premiere / CapCut DAW Style) -->
+          <div class="nle-editor-wrapper">
+            <!-- Timeline Toolbar -->
+            <div class="nle-toolbar">
+              <!-- Playback Controls -->
+              <div class="nle-tool-group">
+                <button class="btn-primary btn-sm" id="btnNlePlayPause" type="button" style="display:flex;align-items:center;gap:5px;padding:6px 12px;" title="Play / Pause (Spacebar)">
+                  <svg id="nlePlayIcon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span id="nlePlayText">Play (Space)</span>
+                </button>
+                <button class="btn-secondary btn-sm" id="btnNlePlaySelection" type="button" style="display:flex;align-items:center;gap:5px;" title="Play selected clip only">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Play Clip</span>
+                </button>
+                <button class="btn-secondary btn-sm" id="btnNlePlayMerged" type="button" style="display:flex;align-items:center;gap:5px;" title="Play all slices stitched in sequence">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Play Merged</span>
+                </button>
+              </div>
+
+              <div class="nle-divider"></div>
+
+              <!-- Edit Tools: Split / Add / Delete -->
+              <div class="nle-tool-group">
+                <button class="btn-secondary btn-sm" id="btnNleSplit" type="button" style="display:flex;align-items:center;gap:5px;" title="Split clip at playhead cursor (Hotkey: S)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                  <span>Split (S)</span>
+                </button>
+                <button class="btn-secondary btn-sm" id="btnNleAddClip" type="button" style="display:flex;align-items:center;gap:5px;" title="Add new slice at playhead">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Add Clip</span>
+                </button>
+                <button class="btn-danger btn-sm" id="btnNleDeleteClip" type="button" style="display:flex;align-items:center;gap:4px;padding:6px 10px;" title="Delete selected clip (Hotkey: Delete)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  <span>Delete</span>
+                </button>
+              </div>
+
+              <div class="nle-divider"></div>
+
+              <!-- Zoom Controls -->
+              <div class="nle-tool-group">
+                <button class="btn-secondary btn-sm" id="btnNleZoomOut" type="button" style="padding:4px 8px;font-weight:700;" title="Zoom out timeline">−</button>
+                <span id="nleZoomDisplay" style="font-size:11px;font-weight:700;color:var(--text-muted);min-width:36px;text-align:center;">100%</span>
+                <button class="btn-secondary btn-sm" id="btnNleZoomIn" type="button" style="padding:4px 8px;font-weight:700;" title="Zoom in timeline">+</button>
+                <button class="btn-secondary btn-sm" id="btnNleZoomFit" type="button" style="padding:4px 8px;font-size:11px;" title="Fit entire track">Fit</button>
+              </div>
+
+              <!-- Time Counter -->
+              <div style="font-size:12px;font-weight:700;color:var(--text-muted);font-family:monospace;">
+                <span id="nleCurrentTime" style="color:#FF453A;">00:00.00</span> / <span id="nleTotalDuration">00:00.00</span>
+              </div>
+            </div>
+
+            <!-- NLE Track Scroll View -->
+            <div class="nle-ruler-track-container" id="nleScrollContainer">
+              <div id="nleTrackCanvasWrapper" style="position:relative; width:100%; min-width:100%; height:156px;">
+                <!-- Time Ruler Bar -->
+                <div class="nle-ruler-bar" id="nleRulerBar" title="Click or drag to scrub playhead">
+                  <canvas id="nleRulerCanvas" style="width:100%;height:100%;display:block;"></canvas>
+                </div>
+
+                <!-- Audio Track Area -->
+                <div class="nle-track-area" id="nleTrackArea">
+                  <!-- Waveform Background Canvas -->
+                  <canvas class="nle-waveform-bg" id="nleWaveformCanvas"></canvas>
+                  
+                  <!-- Interactive Draggable Clips Container -->
+                  <div id="nleClipsContainer" style="position:absolute;top:0;left:0;right:0;bottom:0;"></div>
+
+                  <!-- Red Playhead Line -->
+                  <div class="nle-playhead" id="nlePlayhead">
+                    <div class="nle-playhead-head"></div>
+                  </div>
+
+                  <div id="waveformLoading" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(10,10,12,0.85);font-size:12px;color:var(--text-muted);display:none;">Loading audio timeline waveform...</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Playback & Control Bar -->
-          <div class="scrub-toolbar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: var(--radius-sm);">
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <button class="btn-primary btn-sm" id="btnPlayMerged" type="button" style="display:flex;align-items:center;gap:5px;" title="Play all selected segments sequentially">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <span>Play Merged Clips</span>
-              </button>
-              <button class="btn-secondary btn-sm" id="btnPlaySelection" type="button" style="display:flex;align-items:center;gap:5px;">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <span>Play Active Clip</span>
-              </button>
-              <button class="btn-secondary btn-sm" id="btnPlayFull" type="button" style="display:flex;align-items:center;gap:5px;">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <span>Play All</span>
-              </button>
-              <button class="btn-secondary btn-sm" id="btnPauseAudio" type="button" style="display:flex;align-items:center;gap:5px;">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-                <span>Pause</span>
-              </button>
+          <!-- Active Clip Inspector & Total Summary Bar -->
+          <div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;flex-wrap:wrap;">
+            <!-- Active Clip Fine Tuning Box -->
+            <div class="slot-box" style="flex:1;min-width:280px;padding:12px;">
+              <div class="slot-header" style="margin-bottom:8px;">
+                <span style="font-size:12px;font-weight:700;" id="activeClipTitle">Selected: Clip #1</span>
+                <span style="font-size:12px;font-weight:700;color:var(--primary);" id="activeClipDurationBadge">0.00s</span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
+                <span>Start:</span>
+                <input type="number" id="activeClipStartInput" step="0.05" min="0" value="0.00" style="width:70px;padding:4px 6px;font-size:12px;text-align:right;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:4px;color:var(--text-main);">
+                <span>s</span>
+                <span style="margin-left:8px;">End:</span>
+                <input type="number" id="activeClipEndInput" step="0.05" min="0" value="2.50" style="width:70px;padding:4px 6px;font-size:12px;text-align:right;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:4px;color:var(--text-main);">
+                <span>s</span>
+                <button class="btn-secondary btn-sm" id="btnNudgeMinus" type="button" style="padding:3px 7px;font-size:11px;margin-left:6px;" title="Nudge start -0.1s">-0.1s</button>
+                <button class="btn-secondary btn-sm" id="btnNudgePlus" type="button" style="padding:3px 7px;font-size:11px;" title="Nudge end +0.1s">+0.1s</button>
+              </div>
             </div>
-            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted);">
-              Current: <span id="currentPlaybackTime" style="color: var(--primary);">0.00s</span> / <span id="totalDurationDisplay">0.00s</span>
+
+            <!-- Total Spliced Duration & Quality Indicator -->
+            <div class="trim-info" style="flex:1;min-width:280px;padding:12px;border-radius:var(--radius-sm);display:flex;flex-direction:column;justify-content:space-between;gap:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:12px;color:var(--text-muted);">Total Combined Length:</span>
+                <strong id="durationDisplay" style="color:var(--primary);font-size:16px;">0.00s</strong>
+              </div>
+              <div id="clipGuideText" style="font-size:11px;color:var(--success);font-weight:600;display:flex;align-items:center;gap:4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Ideal combined length for voice cloning (3~6s)</span>
+              </div>
             </div>
-          </div>
-
-          <!-- Multi-Segment Slices Manager -->
-          <div style="margin-top: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-size: 13px; font-weight: 700; color: var(--text-main);">Voice Clip Slices (Multi-Segment Non-Contiguous Splicing)</span>
-              <button class="btn-secondary btn-sm" id="btnAddSegment" type="button" style="display: flex; align-items: center; gap: 4px; font-weight: 600;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                <span>Add Clip Segment</span>
-              </button>
-            </div>
-            <p class="hint-text" style="margin-bottom: 8px;">대화 중 상대방 목소리나 배경 잡음 구간을 건너뛰고, 원하는 캐릭터 대사 구간들만 지정하여 하나의 고품질 음성으로 병합 추출합니다.</p>
-
-            <div class="segment-list" id="segmentListContainer"></div>
-          </div>
-
-          <!-- Total Spliced Duration & Quality Indicator -->
-          <div class="trim-info" style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-            <span>Total Combined Duration: <strong id="durationDisplay" style="color: var(--primary); font-size: 14px;">0.00s</strong> <span id="segmentCountDisplay" style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">(1 clip)</span></span>
-            <span id="clipGuideText" style="font-size: 11px; color: var(--success); font-weight: 600; display:flex; align-items:center; gap:4px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Ideal speech length for voice cloning (3~6s)</span>
-            </span>
           </div>
 
           <div class="form-group" style="margin-top: 14px;">
@@ -1080,31 +1315,52 @@
       }
     });
 
-    // ==============================================
-    // PRO MULTI-SEGMENT WAVEFORM & MEDIA TRIMMER DAW
-    // ==============================================
+    // ============================================================
+    // PRO NLE TIMELINE & AUDIO/VIDEO DAW ENGINE (Premiere / CapCut)
+    // ============================================================
     const mediaFileInput = document.getElementById('mediaFileInput');
     const playerContainer = document.getElementById('playerContainer');
     const videoPreview = document.getElementById('videoPreview');
     const audioPreview = document.getElementById('audioPreview');
-    const waveformCanvas = document.getElementById('waveformCanvas');
-    const playheadCursor = document.getElementById('playheadCursor');
-    const waveformLoading = document.getElementById('waveformLoading');
     const durationBadge = document.getElementById('durationBadge');
 
-    const btnPlayMerged = document.getElementById('btnPlayMerged');
-    const btnPlaySelection = document.getElementById('btnPlaySelection');
-    const btnPlayFull = document.getElementById('btnPlayFull');
-    const btnPauseAudio = document.getElementById('btnPauseAudio');
-    const currentPlaybackTime = document.getElementById('currentPlaybackTime');
-    const totalDurationDisplay = document.getElementById('totalDurationDisplay');
+    const nleScrollContainer = document.getElementById('nleScrollContainer');
+    const nleTrackCanvasWrapper = document.getElementById('nleTrackCanvasWrapper');
+    const nleRulerBar = document.getElementById('nleRulerBar');
+    const nleRulerCanvas = document.getElementById('nleRulerCanvas');
+    const nleTrackArea = document.getElementById('nleTrackArea');
+    const nleWaveformCanvas = document.getElementById('nleWaveformCanvas');
+    const nleClipsContainer = document.getElementById('nleClipsContainer');
+    const nlePlayhead = document.getElementById('nlePlayhead');
+    const waveformLoading = document.getElementById('waveformLoading');
 
-    const btnAddSegment = document.getElementById('btnAddSegment');
-    const segmentListContainer = document.getElementById('segmentListContainer');
+    const btnNlePlayPause = document.getElementById('btnNlePlayPause');
+    const nlePlayIcon = document.getElementById('nlePlayIcon');
+    const nlePlayText = document.getElementById('nlePlayText');
+    const btnNlePlaySelection = document.getElementById('btnNlePlaySelection');
+    const btnNlePlayMerged = document.getElementById('btnNlePlayMerged');
+
+    const btnNleSplit = document.getElementById('btnNleSplit');
+    const btnNleAddClip = document.getElementById('btnNleAddClip');
+    const btnNleDeleteClip = document.getElementById('btnNleDeleteClip');
+
+    const btnNleZoomOut = document.getElementById('btnNleZoomOut');
+    const btnNleZoomIn = document.getElementById('btnNleZoomIn');
+    const btnNleZoomFit = document.getElementById('btnNleZoomFit');
+    const nleZoomDisplay = document.getElementById('nleZoomDisplay');
+
+    const nleCurrentTime = document.getElementById('nleCurrentTime');
+    const nleTotalDuration = document.getElementById('nleTotalDuration');
+
+    const activeClipTitle = document.getElementById('activeClipTitle');
+    const activeClipDurationBadge = document.getElementById('activeClipDurationBadge');
+    const activeClipStartInput = document.getElementById('activeClipStartInput');
+    const activeClipEndInput = document.getElementById('activeClipEndInput');
+    const btnNudgeMinus = document.getElementById('btnNudgeMinus');
+    const btnNudgePlus = document.getElementById('btnNudgePlus');
+
     const durationDisplay = document.getElementById('durationDisplay');
-    const segmentCountDisplay = document.getElementById('segmentCountDisplay');
     const clipGuideText = document.getElementById('clipGuideText');
-
     const trimmerPromptText = document.getElementById('trimmerPromptText');
     const targetFilename = document.getElementById('targetFilename');
     const trimSaveBtn = document.getElementById('trimSaveBtn');
@@ -1113,170 +1369,161 @@
     let activePlayer = null;
     let audioBufferData = null;
     let mediaDuration = 0;
-    let isDraggingWaveform = false;
-    let dragStartX = 0;
+    let zoomLevel = 1.0;
+    let nextSegmentId = 2;
+    let segments = [{ id: 1, start: 0.0, end: 2.5 }];
+    let activeSegmentId = 1;
+
+    let isScrubbingPlayhead = false;
+    let isDraggingClipHandle = false;
     let segmentCheckInterval = null;
     let mergedPlayTimeout = null;
     let isPlayingMerged = false;
 
-    let nextSegmentId = 2;
-    let segments = [
-      { id: 1, start: 0.0, end: 2.5 }
-    ];
-    let activeSegmentId = 1;
-
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function formatTimeCode(seconds) {
+      if (isNaN(seconds) || seconds < 0) seconds = 0;
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      const ms = Math.floor((seconds % 1) * 100);
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+    }
+
+    function getTrackPixelWidth() {
+      const baseWidth = nleScrollContainer.clientWidth || 800;
+      return Math.max(baseWidth, baseWidth * zoomLevel);
+    }
+
+    function timeToPixels(t) {
+      if (!mediaDuration) return 0;
+      return (t / mediaDuration) * getTrackPixelWidth();
+    }
+
+    function pixelsToTime(px) {
+      const trackW = getTrackPixelWidth();
+      if (!trackW || !mediaDuration) return 0;
+      return Math.max(0, Math.min(mediaDuration, (px / trackW) * mediaDuration));
+    }
 
     function getActiveSegment() {
       return segments.find(s => s.id === activeSegmentId) || segments[0];
     }
 
-    function updateTrimmerSummary() {
-      let totalDur = 0;
-      segments.forEach(s => {
-        totalDur += Math.max(0, s.end - s.start);
-      });
+    function updateInspectorUI() {
+      const act = getActiveSegment();
+      if (!act) return;
+      const idx = segments.findIndex(s => s.id === act.id);
+      const dur = Math.max(0, act.end - act.start);
 
+      activeClipTitle.innerText = `Selected: Clip #${idx + 1}`;
+      activeClipDurationBadge.innerText = `${dur.toFixed(2)}s`;
+      activeClipStartInput.value = act.start.toFixed(2);
+      activeClipEndInput.value = act.end.toFixed(2);
+
+      let totalDur = 0;
+      segments.forEach(s => { totalDur += Math.max(0, s.end - s.start); });
       durationDisplay.innerText = totalDur.toFixed(2) + 's';
-      segmentCountDisplay.innerText = `(${segments.length} ${segments.length === 1 ? 'clip' : 'clips merged'})`;
       durationBadge.innerText = `Combined: ${totalDur.toFixed(2)}s`;
 
       if (totalDur >= 2.5 && totalDur <= 7.0) {
-        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal combined speech length for voice cloning (3~6s)';
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal combined length for voice cloning (3~6s)';
         clipGuideText.style.color = 'var(--success)';
       } else if (totalDur < 2.5) {
-        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too short (Under 2.5s may reduce clone accuracy)';
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too short (<2.5s may reduce clone accuracy)';
         clipGuideText.style.color = '#FF9F0A';
       } else {
-        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too long (Over 7s may increase inference latency)';
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too long (>7s may increase latency)';
         clipGuideText.style.color = '#FF9F0A';
       }
     }
 
-    function renderSegmentsList() {
-      if (!segmentListContainer) return;
-      segmentListContainer.innerHTML = '';
+    function renderNleTimeline() {
+      const trackW = getTrackPixelWidth();
+      nleTrackCanvasWrapper.style.width = trackW + 'px';
 
-      segments.forEach((seg, idx) => {
-        const dur = Math.max(0, seg.end - seg.start);
-        const card = document.createElement('div');
-        card.className = `segment-card ${seg.id === activeSegmentId ? 'active' : ''}`;
-        card.onclick = (e) => {
-          if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
-            activeSegmentId = seg.id;
-            renderSegmentsList();
-            renderWaveform();
-          }
-        };
-
-        card.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap;">
-            <span class="segment-badge">#${idx + 1} Clip</span>
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
-              <span>Start:</span>
-              <input type="number" step="0.05" min="0" value="${seg.start.toFixed(2)}" onchange="updateSegmentStart(${seg.id}, this.value)" style="width: 70px; padding: 4px 6px; font-size: 12px; text-align: right; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-main);">
-              <span>s</span>
-              <span style="margin-left: 8px;">End:</span>
-              <input type="number" step="0.05" min="0" value="${seg.end.toFixed(2)}" onchange="updateSegmentEnd(${seg.id}, this.value)" style="width: 70px; padding: 4px 6px; font-size: 12px; text-align: right; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-main);">
-              <span>s</span>
-              <span style="margin-left: 10px; color: var(--primary); font-weight: 700;">(${dur.toFixed(2)}s)</span>
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 5px; align-items: center;">
-            <button class="btn-secondary btn-sm" onclick="playSingleSegment(${seg.id})" type="button" title="Play this clip" style="display:flex;align-items:center;gap:3px;padding:5px 9px;">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Play</span>
-            </button>
-            <button class="btn-secondary btn-sm" onclick="nudgeSegment(${seg.id}, -0.1)" type="button" style="padding: 4px 6px; font-size: 11px;">-0.1s</button>
-            <button class="btn-secondary btn-sm" onclick="nudgeSegment(${seg.id}, +0.1)" type="button" style="padding: 4px 6px; font-size: 11px;">+0.1s</button>
-            ${segments.length > 1 ? `<button class="btn-danger btn-sm" onclick="removeSegment(${seg.id})" type="button" title="Remove clip" style="padding: 5px 8px; font-size: 11px; font-weight:700;">✕</button>` : ''}
-          </div>
-        `;
-        segmentListContainer.appendChild(card);
-      });
-
-      updateTrimmerSummary();
-      renderWaveform();
+      drawNleRuler();
+      drawNleWaveform();
+      renderNleClips();
+      updatePlayheadPosition();
+      updateInspectorUI();
     }
 
-    window.updateSegmentStart = function(id, val) {
-      const seg = segments.find(s => s.id === id);
-      if (seg) {
-        seg.start = Math.max(0, parseFloat(val) || 0);
-        if (seg.end <= seg.start) seg.end = Math.min(mediaDuration || 999, seg.start + 1.0);
-        if (activePlayer) activePlayer.currentTime = seg.start;
-        renderSegmentsList();
+    function drawNleRuler() {
+      const dpr = window.devicePixelRatio || 1;
+      const trackW = getTrackPixelWidth();
+      const h = 26;
+
+      nleRulerCanvas.width = trackW * dpr;
+      nleRulerCanvas.height = h * dpr;
+      nleRulerCanvas.style.width = trackW + 'px';
+      nleRulerCanvas.style.height = h + 'px';
+
+      const ctx = nleRulerCanvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, trackW, h);
+
+      if (!mediaDuration) return;
+
+      // Determine tick interval
+      let tickStep = 1.0;
+      if (zoomLevel >= 3.0) tickStep = 0.2;
+      else if (zoomLevel >= 2.0) tickStep = 0.5;
+      else if (zoomLevel < 1.2 && mediaDuration > 30) tickStep = 5.0;
+
+      ctx.fillStyle = '#8E8E93';
+      ctx.font = '10px -apple-system, BlinkMacSystemFont, monospace';
+      ctx.textAlign = 'left';
+
+      for (let t = 0; t <= mediaDuration; t += tickStep) {
+        const x = (t / mediaDuration) * trackW;
+        const isMajor = Math.abs(t % (tickStep * 2)) < 0.001 || t === 0;
+
+        ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, isMajor ? h - 12 : h - 6);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+
+        if (isMajor && x < trackW - 35) {
+          const label = formatTimeCode(t);
+          ctx.fillText(label, x + 4, 14);
+        }
       }
-    };
+    }
 
-    window.updateSegmentEnd = function(id, val) {
-      const seg = segments.find(s => s.id === id);
-      if (seg) {
-        seg.end = Math.max(seg.start + 0.05, Math.min(mediaDuration || 999, parseFloat(val) || 1.0));
-        if (activePlayer) activePlayer.currentTime = seg.end;
-        renderSegmentsList();
-      }
-    };
+    function drawNleWaveform() {
+      const dpr = window.devicePixelRatio || 1;
+      const trackW = getTrackPixelWidth();
+      const h = 130;
 
-    window.nudgeSegment = function(id, delta) {
-      const seg = segments.find(s => s.id === id);
-      if (seg) {
-        seg.start = Math.max(0, seg.start + delta);
-        seg.end = Math.max(seg.start + 0.05, Math.min(mediaDuration || 999, seg.end + delta));
-        if (activePlayer) activePlayer.currentTime = seg.start;
-        renderSegmentsList();
-      }
-    };
+      nleWaveformCanvas.width = trackW * dpr;
+      nleWaveformCanvas.height = h * dpr;
+      nleWaveformCanvas.style.width = trackW + 'px';
+      nleWaveformCanvas.style.height = h + 'px';
 
-    window.removeSegment = function(id) {
-      if (segments.length <= 1) return;
-      segments = segments.filter(s => s.id !== id);
-      if (activeSegmentId === id) activeSegmentId = segments[0].id;
-      renderSegmentsList();
-    };
+      const ctx = nleWaveformCanvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, trackW, h);
 
-    btnAddSegment.addEventListener('click', () => {
-      let newStart = 0;
-      if (activePlayer && activePlayer.currentTime) {
-        newStart = activePlayer.currentTime;
-      } else if (segments.length > 0) {
-        const last = segments[segments.length - 1];
-        newStart = Math.min(mediaDuration ? mediaDuration - 1.0 : 999, last.end + 0.5);
-      }
-      const newEnd = Math.min(mediaDuration || 999, newStart + 2.0);
-      const newId = nextSegmentId++;
-      segments.push({ id: newId, start: newStart, end: newEnd });
-      activeSegmentId = newId;
-      renderSegmentsList();
-    });
-
-    // Waveform Drawing (renders audio background + all colored segments)
-    function renderWaveform() {
       if (!audioBufferData) return;
-      waveformCanvas.width = waveformCanvas.parentElement.clientWidth * window.devicePixelRatio || 1200;
-      waveformCanvas.height = 120 * window.devicePixelRatio || 240;
-      const ctx = waveformCanvas.getContext('2d');
-      const width = waveformCanvas.width;
-      const height = waveformCanvas.height;
-
-      ctx.clearRect(0, 0, width, height);
 
       const data = audioBufferData.getChannelData(0);
-      const step = Math.ceil(data.length / width);
-      const amp = height / 2;
+      const step = Math.ceil(data.length / trackW);
+      const amp = h / 2;
 
-      // Draw subtle midline
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      // Center Line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, amp);
-      ctx.lineTo(width, amp);
+      ctx.lineTo(trackW, amp);
       ctx.stroke();
 
-      // Draw waveform bars
+      // Draw Waveform Bars
       ctx.fillStyle = '#3A3A3C';
-      for (let i = 0; i < width; i += 3) {
+      for (let i = 0; i < trackW; i += 2) {
         let min = 1.0;
         let max = -1.0;
         for (let j = 0; j < step; j++) {
@@ -1284,53 +1531,405 @@
           if (datum < min) min = datum;
           if (datum > max) max = datum;
         }
-        const barHeight = Math.max(3, (max - min) * amp * 0.9);
-        const y = amp - (barHeight / 2);
-        ctx.fillRect(i, y, 2, barHeight);
-      }
-
-      // Draw overlay for every segment
-      if (mediaDuration > 0) {
-        segments.forEach((seg, idx) => {
-          const left = (seg.start / mediaDuration) * width;
-          const w = ((seg.end - seg.start) / mediaDuration) * width;
-          const isActive = seg.id === activeSegmentId;
-
-          // Segment highlight fill
-          ctx.fillStyle = isActive ? 'rgba(70, 140, 246, 0.32)' : 'rgba(191, 90, 242, 0.22)';
-          ctx.fillRect(left, 0, w, height);
-
-          // Highlighted waveform bars inside segment
-          ctx.fillStyle = isActive ? '#468CF6' : '#BF5AF2';
-          const startIdx = Math.floor(left);
-          const endIdx = Math.min(width, Math.ceil(left + w));
-          for (let i = startIdx; i < endIdx; i += 3) {
-            let min = 1.0;
-            let max = -1.0;
-            for (let j = 0; j < step; j++) {
-              const datum = data[(i * step) + j];
-              if (datum < min) min = datum;
-              if (datum > max) max = datum;
-            }
-            const barHeight = Math.max(3, (max - min) * amp * 0.9);
-            const y = amp - (barHeight / 2);
-            ctx.fillRect(i, y, 2, barHeight);
-          }
-
-          // Boundary borders
-          ctx.strokeStyle = isActive ? '#468CF6' : '#BF5AF2';
-          ctx.lineWidth = isActive ? 3 : 1.5;
-          ctx.strokeRect(left, 0, w, height);
-
-          // Segment Label Tag
-          ctx.fillStyle = isActive ? '#468CF6' : '#BF5AF2';
-          ctx.fillRect(left, 0, Math.min(w, 54), 18);
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = 'bold 10px -apple-system, sans-serif';
-          ctx.fillText(`#${idx + 1} (${(seg.end - seg.start).toFixed(1)}s)`, left + 4, 13);
-        });
+        const barH = Math.max(2, (max - min) * amp * 0.95);
+        ctx.fillRect(i, amp - (barH / 2), 1.5, barH);
       }
     }
+
+    function renderNleClips() {
+      nleClipsContainer.innerHTML = '';
+      if (!mediaDuration) return;
+
+      segments.forEach((seg, idx) => {
+        const leftPx = timeToPixels(seg.start);
+        const widthPx = timeToPixels(seg.end - seg.start);
+        const isActive = seg.id === activeSegmentId;
+        const dur = Math.max(0, seg.end - seg.start);
+
+        const clipEl = document.createElement('div');
+        clipEl.className = `nle-clip ${isActive ? 'active' : ''}`;
+        clipEl.style.left = leftPx + 'px';
+        clipEl.style.width = widthPx + 'px';
+        clipEl.dataset.id = seg.id;
+
+        clipEl.innerHTML = `
+          <div class="nle-clip-handle handle-left" title="Drag to trim start"></div>
+          <div class="nle-clip-tag">#${idx + 1} Clip (${dur.toFixed(2)}s)</div>
+          <div class="nle-clip-handle handle-right" title="Drag to trim end"></div>
+        `;
+
+        // Click to Select
+        clipEl.addEventListener('mousedown', (e) => {
+          if (e.target.classList.contains('nle-clip-handle')) return;
+          activeSegmentId = seg.id;
+          renderNleClips();
+          updateInspectorUI();
+
+          // Body Dragging (Move Entire Clip)
+          const startMouseX = e.clientX;
+          const origStart = seg.start;
+          const origEnd = seg.end;
+          const clipDur = origEnd - origStart;
+
+          function onMouseMove(moveEvent) {
+            const deltaPx = moveEvent.clientX - startMouseX;
+            const deltaTime = (deltaPx / getTrackPixelWidth()) * mediaDuration;
+            let newStart = Math.max(0, origStart + deltaTime);
+            let newEnd = newStart + clipDur;
+
+            if (newEnd > mediaDuration) {
+              newEnd = mediaDuration;
+              newStart = Math.max(0, newEnd - clipDur);
+            }
+
+            seg.start = newStart;
+            seg.end = newEnd;
+            renderNleClips();
+            updateInspectorUI();
+          }
+
+          function onMouseUp() {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+          }
+
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Left Handle Dragging (Trim Start)
+        const leftHandle = clipEl.querySelector('.handle-left');
+        leftHandle.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          isDraggingClipHandle = true;
+          activeSegmentId = seg.id;
+
+          function onMouseMove(moveEvent) {
+            const rect = nleTrackArea.getBoundingClientRect();
+            const relX = moveEvent.clientX - rect.left + nleScrollContainer.scrollLeft;
+            const newStart = Math.max(0, Math.min(seg.end - 0.05, pixelsToTime(relX)));
+            seg.start = newStart;
+            if (activePlayer) activePlayer.currentTime = newStart;
+            renderNleClips();
+            updateInspectorUI();
+          }
+
+          function onMouseUp() {
+            isDraggingClipHandle = false;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+          }
+
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Right Handle Dragging (Trim End)
+        const rightHandle = clipEl.querySelector('.handle-right');
+        rightHandle.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          isDraggingClipHandle = true;
+          activeSegmentId = seg.id;
+
+          function onMouseMove(moveEvent) {
+            const rect = nleTrackArea.getBoundingClientRect();
+            const relX = moveEvent.clientX - rect.left + nleScrollContainer.scrollLeft;
+            const newEnd = Math.max(seg.start + 0.05, Math.min(mediaDuration, pixelsToTime(relX)));
+            seg.end = newEnd;
+            if (activePlayer) activePlayer.currentTime = newEnd;
+            renderNleClips();
+            updateInspectorUI();
+          }
+
+          function onMouseUp() {
+            isDraggingClipHandle = false;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+          }
+
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        });
+
+        nleClipsContainer.appendChild(clipEl);
+      });
+    }
+
+    function updatePlayheadPosition() {
+      if (!activePlayer || !mediaDuration) return;
+      const cur = activePlayer.currentTime;
+      const x = timeToPixels(cur);
+
+      nlePlayhead.style.left = x + 'px';
+      nlePlayhead.style.display = 'block';
+      nleCurrentTime.innerText = formatTimeCode(cur);
+    }
+
+    // Ruler & Track Playhead Scrubbing
+    function handleTrackScrub(e) {
+      if (!activePlayer || !mediaDuration || isDraggingClipHandle) return;
+      const rect = nleTrackArea.getBoundingClientRect();
+      const relX = e.clientX - rect.left + nleScrollContainer.scrollLeft;
+      const targetTime = pixelsToTime(relX);
+
+      activePlayer.currentTime = targetTime;
+      updatePlayheadPosition();
+    }
+
+    nleRulerBar.addEventListener('mousedown', (e) => {
+      isScrubbingPlayhead = true;
+      handleTrackScrub(e);
+
+      function onMouseMove(moveEvent) {
+        if (isScrubbingPlayhead) handleTrackScrub(moveEvent);
+      }
+      function onMouseUp() {
+        isScrubbingPlayhead = false;
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      }
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+
+    nleTrackArea.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.nle-clip') || e.target.classList.contains('nle-clip-handle')) return;
+      isScrubbingPlayhead = true;
+      handleTrackScrub(e);
+
+      function onMouseMove(moveEvent) {
+        if (isScrubbingPlayhead) handleTrackScrub(moveEvent);
+      }
+      function onMouseUp() {
+        isScrubbingPlayhead = false;
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      }
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+
+    // Zoom Controls
+    btnNleZoomIn.addEventListener('click', () => {
+      zoomLevel = Math.min(5.0, zoomLevel + 0.5);
+      nleZoomDisplay.innerText = Math.round(zoomLevel * 100) + '%';
+      renderNleTimeline();
+    });
+
+    btnNleZoomOut.addEventListener('click', () => {
+      zoomLevel = Math.max(1.0, zoomLevel - 0.5);
+      nleZoomDisplay.innerText = Math.round(zoomLevel * 100) + '%';
+      renderNleTimeline();
+    });
+
+    btnNleZoomFit.addEventListener('click', () => {
+      zoomLevel = 1.0;
+      nleZoomDisplay.innerText = '100%';
+      renderNleTimeline();
+    });
+
+    // Zoom on Ctrl + Wheel
+    nleScrollContainer.addEventListener('wheel', (e) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          zoomLevel = Math.min(5.0, zoomLevel + 0.25);
+        } else {
+          zoomLevel = Math.max(1.0, zoomLevel - 0.25);
+        }
+        nleZoomDisplay.innerText = Math.round(zoomLevel * 100) + '%';
+        renderNleTimeline();
+      }
+    });
+
+    // Split Clip Tool (Hotkey: S or C)
+    function splitAtPlayhead() {
+      if (!activePlayer || !mediaDuration) return;
+      const cur = activePlayer.currentTime;
+
+      // Find clip containing current playhead
+      const targetClip = segments.find(s => cur > s.start + 0.05 && cur < s.end - 0.05);
+      if (!targetClip) return;
+
+      const origEnd = targetClip.end;
+      targetClip.end = cur;
+
+      const newId = nextSegmentId++;
+      segments.push({ id: newId, start: cur, end: origEnd });
+      segments.sort((a, b) => a.start - b.start);
+      activeSegmentId = newId;
+
+      renderNleTimeline();
+    }
+
+    btnNleSplit.addEventListener('click', splitAtPlayhead);
+
+    // Add Clip Tool
+    btnNleAddClip.addEventListener('click', () => {
+      if (!mediaDuration) return;
+      let start = activePlayer ? activePlayer.currentTime : 0;
+      let end = Math.min(mediaDuration, start + 2.0);
+
+      const newId = nextSegmentId++;
+      segments.push({ id: newId, start: start, end: end });
+      segments.sort((a, b) => a.start - b.start);
+      activeSegmentId = newId;
+
+      renderNleTimeline();
+    });
+
+    // Delete Clip Tool (Hotkey: Delete / Backspace)
+    function deleteActiveClip() {
+      if (segments.length <= 1) return;
+      segments = segments.filter(s => s.id !== activeSegmentId);
+      activeSegmentId = segments[0].id;
+      renderNleTimeline();
+    }
+
+    btnNleDeleteClip.addEventListener('click', deleteActiveClip);
+
+    // Inspector Inputs & Nudges
+    activeClipStartInput.addEventListener('change', () => {
+      const act = getActiveSegment();
+      if (!act) return;
+      act.start = Math.max(0, Math.min(act.end - 0.05, parseFloat(activeClipStartInput.value) || 0));
+      if (activePlayer) activePlayer.currentTime = act.start;
+      renderNleTimeline();
+    });
+
+    activeClipEndInput.addEventListener('change', () => {
+      const act = getActiveSegment();
+      if (!act) return;
+      act.end = Math.max(act.start + 0.05, Math.min(mediaDuration || 999, parseFloat(activeClipEndInput.value) || 1));
+      if (activePlayer) activePlayer.currentTime = act.end;
+      renderNleTimeline();
+    });
+
+    btnNudgeMinus.addEventListener('click', () => {
+      const act = getActiveSegment();
+      if (!act) return;
+      act.start = Math.max(0, act.start - 0.1);
+      if (activePlayer) activePlayer.currentTime = act.start;
+      renderNleTimeline();
+    });
+
+    btnNudgePlus.addEventListener('click', () => {
+      const act = getActiveSegment();
+      if (!act) return;
+      act.end = Math.min(mediaDuration || 999, act.end + 0.1);
+      if (activePlayer) activePlayer.currentTime = act.end;
+      renderNleTimeline();
+    });
+
+    // Playback Controls
+    function togglePlayPause() {
+      if (!activePlayer) return;
+      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
+      isPlayingMerged = false;
+
+      if (activePlayer.paused) {
+        activePlayer.play().catch(() => {});
+        nlePlayIcon.innerHTML = `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
+        nlePlayText.innerText = 'Pause (Space)';
+      } else {
+        activePlayer.pause();
+        nlePlayIcon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"></polygon>`;
+        nlePlayText.innerText = 'Play (Space)';
+      }
+    }
+
+    btnNlePlayPause.addEventListener('click', togglePlayPause);
+
+    btnNlePlaySelection.addEventListener('click', () => {
+      const act = getActiveSegment();
+      if (!act || !activePlayer) return;
+      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
+      isPlayingMerged = false;
+
+      activePlayer.currentTime = act.start;
+      activePlayer.play().catch(() => {});
+      nlePlayIcon.innerHTML = `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
+      nlePlayText.innerText = 'Pause (Space)';
+
+      segmentCheckInterval = setInterval(() => {
+        if (activePlayer.currentTime >= act.end || activePlayer.paused) {
+          activePlayer.pause();
+          clearInterval(segmentCheckInterval);
+          nlePlayIcon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"></polygon>`;
+          nlePlayText.innerText = 'Play (Space)';
+        }
+      }, 30);
+    });
+
+    btnNlePlayMerged.addEventListener('click', () => {
+      if (!activePlayer || !mediaDuration || segments.length === 0) return;
+      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
+
+      const sorted = [...segments].sort((a, b) => a.start - b.start);
+      let curIdx = 0;
+      isPlayingMerged = true;
+      nlePlayIcon.innerHTML = `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`;
+      nlePlayText.innerText = 'Pause (Space)';
+
+      function playNext() {
+        if (!isPlayingMerged || curIdx >= sorted.length) {
+          isPlayingMerged = false;
+          activePlayer.pause();
+          nlePlayIcon.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"></polygon>`;
+          nlePlayText.innerText = 'Play (Space)';
+          return;
+        }
+
+        const seg = sorted[curIdx];
+        activePlayer.currentTime = seg.start;
+        activePlayer.play().catch(() => {});
+
+        const durMs = Math.max(80, (seg.end - seg.start) * 1000);
+        mergedPlayTimeout = setTimeout(() => {
+          curIdx++;
+          playNext();
+        }, durMs);
+      }
+
+      playNext();
+    });
+
+    // Keyboard Shortcuts Listener
+    window.addEventListener('keydown', (e) => {
+      const activeTab = document.querySelector('.tab-content.active');
+      if (!activeTab || activeTab.id !== 'tab-trimmer') return;
+
+      const tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.code === 'KeyS' || e.code === 'KeyC') {
+        e.preventDefault();
+        splitAtPlayhead();
+      } else if (e.code === 'Delete' || e.code === 'Backspace') {
+        e.preventDefault();
+        deleteActiveClip();
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        if (activePlayer) {
+          activePlayer.currentTime = Math.max(0, activePlayer.currentTime - (e.shiftKey ? 0.5 : 0.05));
+          updatePlayheadPosition();
+        }
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        if (activePlayer) {
+          activePlayer.currentTime = Math.min(mediaDuration, activePlayer.currentTime + (e.shiftKey ? 0.5 : 0.05));
+          updatePlayheadPosition();
+        }
+      }
+    });
 
     // Media File Loading
     mediaFileInput.addEventListener('change', async (e) => {
@@ -1359,13 +1958,13 @@
         const arrayBuffer = await file.arrayBuffer();
         audioBufferData = await audioCtx.decodeAudioData(arrayBuffer);
         mediaDuration = audioBufferData.duration;
-        totalDurationDisplay.innerText = mediaDuration.toFixed(2) + 's';
+        nleTotalDuration.innerText = formatTimeCode(mediaDuration);
 
         segments = [
           { id: 1, start: 0.0, end: Math.min(3.0, mediaDuration) }
         ];
         activeSegmentId = 1;
-        renderSegmentsList();
+        renderNleTimeline();
         waveformLoading.style.display = 'none';
 
         let baseName = file.name.replace(/\.[^/.]+$/, "") + ".wav";
@@ -1377,126 +1976,14 @@
       activePlayer.onloadedmetadata = () => {
         if (!mediaDuration) {
           mediaDuration = activePlayer.duration;
-          totalDurationDisplay.innerText = mediaDuration.toFixed(2) + 's';
-          renderSegmentsList();
+          nleTotalDuration.innerText = formatTimeCode(mediaDuration);
+          renderNleTimeline();
         }
       };
 
       activePlayer.ontimeupdate = () => {
-        const cur = activePlayer.currentTime;
-        currentPlaybackTime.innerText = cur.toFixed(2) + 's';
-        if (mediaDuration > 0) {
-          playheadCursor.style.left = ((cur / mediaDuration) * 100) + '%';
-          playheadCursor.style.display = 'block';
-        }
+        updatePlayheadPosition();
       };
-    });
-
-    // Waveform Canvas Drag & Selection
-    const waveformBox = waveformCanvas.parentElement;
-
-    waveformBox.addEventListener('mousedown', (e) => {
-      if (!mediaDuration) return;
-      isDraggingWaveform = true;
-      const rect = waveformBox.getBoundingClientRect();
-      dragStartX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-      const startTime = (dragStartX / rect.width) * mediaDuration;
-      
-      const act = getActiveSegment();
-      act.start = startTime;
-      act.end = Math.min(mediaDuration, startTime + 0.1);
-      renderSegmentsList();
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (!isDraggingWaveform || !mediaDuration) return;
-      const rect = waveformBox.getBoundingClientRect();
-      const currentX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-      
-      const t1 = (dragStartX / rect.width) * mediaDuration;
-      const t2 = (currentX / rect.width) * mediaDuration;
-
-      const act = getActiveSegment();
-      act.start = Math.min(t1, t2);
-      act.end = Math.max(act.start + 0.05, Math.max(t1, t2));
-      renderSegmentsList();
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (isDraggingWaveform) {
-        isDraggingWaveform = false;
-        renderSegmentsList();
-      }
-    });
-
-    // Playback Controller
-    window.playSingleSegment = function(id) {
-      const seg = segments.find(s => s.id === id);
-      if (!seg || !activePlayer) return;
-      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
-      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
-      isPlayingMerged = false;
-
-      activePlayer.currentTime = seg.start;
-      activePlayer.play().catch(() => {});
-
-      segmentCheckInterval = setInterval(() => {
-        if (activePlayer.currentTime >= seg.end || activePlayer.paused) {
-          activePlayer.pause();
-          clearInterval(segmentCheckInterval);
-        }
-      }, 30);
-    };
-
-    btnPlaySelection.addEventListener('click', () => {
-      const act = getActiveSegment();
-      if (act) playSingleSegment(act.id);
-    });
-
-    btnPlayMerged.addEventListener('click', () => {
-      if (!activePlayer || !mediaDuration || segments.length === 0) return;
-      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
-      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
-
-      const sorted = [...segments].sort((a, b) => a.start - b.start);
-      let curIdx = 0;
-      isPlayingMerged = true;
-
-      function playNext() {
-        if (!isPlayingMerged || curIdx >= sorted.length) {
-          isPlayingMerged = false;
-          activePlayer.pause();
-          return;
-        }
-
-        const seg = sorted[curIdx];
-        activePlayer.currentTime = seg.start;
-        activePlayer.play().catch(() => {});
-
-        const durMs = Math.max(80, (seg.end - seg.start) * 1000);
-        mergedPlayTimeout = setTimeout(() => {
-          curIdx++;
-          playNext();
-        }, durMs);
-      }
-
-      playNext();
-    });
-
-    btnPlayFull.addEventListener('click', () => {
-      if (!activePlayer) return;
-      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
-      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
-      isPlayingMerged = false;
-      activePlayer.play().catch(() => {});
-    });
-
-    btnPauseAudio.addEventListener('click', () => {
-      if (!activePlayer) return;
-      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
-      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
-      isPlayingMerged = false;
-      activePlayer.pause();
     });
 
     // Save Extracted & Merged Audio
@@ -1511,7 +1998,6 @@
       if (!filename.toLowerCase().endsWith('.wav')) filename += ".wav";
 
       const promptText = trimmerPromptText.value.trim();
-
       const sortedSegments = [...segments].sort((a, b) => a.start - b.start);
 
       const formData = new FormData();
