@@ -1,10 +1,5 @@
 @echo off
-title Antigravity Voice Studio (Desktop App)
 cd /d "%~dp0"
-
-echo ===================================================
-echo   Antigravity Voice Studio - Electron Desktop App
-echo ===================================================
 
 REM Check if electron binary exists
 if not exist "%~dp0node_modules\electron\dist\electron.exe" (
@@ -12,6 +7,6 @@ if not exist "%~dp0node_modules\electron\dist\electron.exe" (
     call npm install
 )
 
-echo [INFO] Launching Desktop Application...
-start "" "%~dp0node_modules\electron\dist\electron.exe" "%~dp0."
-exit /b 0
+REM Launch completely silent without keeping any CMD window open
+start "" wscript.exe "%~dp0run_app.vbs"
+exit
