@@ -346,6 +346,18 @@ async def handle_status(request):
         "last_spoken": last_spoken_text
     })
 
+async def handle_get_logs(request):
+    logs = []
+    log_file = os.path.join(APP_DIR, "logs", "electron_backend.log")
+    if os.path.exists(log_file):
+        try:
+            with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+                logs = [line.rstrip() for line in lines[-300:]]
+        except:
+            pass
+    return web.json_response({"logs": logs})
+
 async def handle_shutdown(request):
     async def shutdown_process():
         await asyncio.sleep(0.3)
@@ -510,6 +522,7 @@ def main():
     app.router.add_post('/api/shutdown', handle_shutdown)
     app.router.add_post('/api/trim_audio', handle_trim_audio)
     app.router.add_get('/api/status', handle_status)
+    app.router.add_get('/api/logs', handle_get_logs)
     
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)

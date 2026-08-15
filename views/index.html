@@ -562,6 +562,7 @@
       <button class="tab-btn active" data-tab="tab-studio" type="button">Voice Studio</button>
       <button class="tab-btn" data-tab="tab-trimmer" type="button">Video & Audio Trimmer</button>
       <button class="tab-btn" data-tab="tab-library" type="button">Voice Library</button>
+      <button class="tab-btn" data-tab="tab-logs" type="button">System Logs</button>
     </nav>
 
     <!-- ============================================== -->
@@ -776,6 +777,29 @@
         <p class="hint-text">등록된 모든 음성 샘플과 동봉된 대사 텍스트를 확인하고 관리할 수 있습니다.</p>
 
         <div class="voice-list" id="voiceListContainer"></div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 4: SYSTEM LOGS & CONSOLE                   -->
+    <!-- ============================================== -->
+    <div class="tab-content" id="tab-logs">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Real-Time Engine Logs (logs/electron_backend.log)</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="autoScrollCheck" checked style="accent-color: var(--primary);"> Auto-Scroll
+            </label>
+            <button class="btn-secondary btn-sm" id="btnCopyLogs" type="button">Copy Logs</button>
+            <button class="btn-secondary btn-sm" id="btnClearLogs" type="button">Clear View</button>
+          </div>
+        </div>
+        <p class="hint-text">AI 음성 합성 엔진, 텍스트 라우팅, 실시간 백엔드 동작 로그가 실시간으로 스트리밍됩니다.</p>
+
+        <div id="logConsole" style="background: #111113; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 16px; height: 380px; overflow-y: auto; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; color: #D1D1D6; white-space: pre-wrap; word-break: break-all;">
+          Loading system logs...
+        </div>
       </div>
     </div>
   </div>
@@ -1366,6 +1390,73 @@
         statusText.innerText = 'Offline';
       }
     }, 300);
+
+    // ==============================================
+    // SYSTEM LOGS VIEWER ENGINE
+    // ==============================================
+    const logConsole = document.getElementById('logConsole');
+    const autoScrollCheck = document.getElementById('autoScrollCheck');
+    const btnCopyLogs = document.getElementById('btnCopyLogs');
+    const btnClearLogs = document.getElementById('btnClearLogs');
+    let lastLogContent = "";
+
+    function colorizeLog(line) {
+      const escape = text => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      let escaped = escape(line);
+
+      if (escaped.includes('[GPT-SoVITS]')) {
+        escaped = escaped.replace('[GPT-SoVITS]', '<span style="color:#468CF6;font-weight:700;">[GPT-SoVITS]</span>');
+      }
+      if (escaped.includes('[KO]')) {
+        escaped = escaped.replace('[KO]', '<span style="color:#32D74B;font-weight:700;">[KO]</span>');
+      }
+      if (escaped.includes('[EN]')) {
+        escaped = escaped.replace('[EN]', '<span style="color:#64D2FF;font-weight:700;">[EN]</span>');
+      }
+      if (escaped.includes('[Watcher]')) {
+        escaped = escaped.replace('[Watcher]', '<span style="color:#BF5AF2;font-weight:600;">[Watcher]</span>');
+      }
+      if (escaped.includes('[Media Trimmer]')) {
+        escaped = escaped.replace('[Media Trimmer]', '<span style="color:#FF9F0A;font-weight:700;">[Media Trimmer]</span>');
+      }
+      if (escaped.toLowerCase().includes('error')) {
+        escaped = `<span style="color:#FF453A;">${escaped}</span>`;
+      }
+      return escaped;
+    }
+
+    async function fetchSystemLogs() {
+      if (isServerDead) return;
+      try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        if (data.logs && Array.isArray(data.logs)) {
+          const formatted = data.logs.map(colorizeLog).join('\n');
+          if (formatted !== lastLogContent) {
+            lastLogContent = formatted;
+            logConsole.innerHTML = formatted || '<span style="color:var(--text-muted);">No logs recorded yet.</span>';
+            if (autoScrollCheck.checked) {
+              logConsole.scrollTop = logConsole.scrollHeight;
+            }
+          }
+        }
+      } catch (err) {}
+    }
+
+    btnClearLogs.addEventListener('click', () => {
+      logConsole.innerHTML = '<span style="color:var(--text-muted);">Log view cleared.</span>';
+      lastLogContent = "";
+    });
+
+    btnCopyLogs.addEventListener('click', () => {
+      navigator.clipboard.writeText(logConsole.innerText).then(() => {
+        btnCopyLogs.innerText = 'Copied!';
+        setTimeout(() => btnCopyLogs.innerText = 'Copy Logs', 1500);
+      });
+    });
+
+    setInterval(fetchSystemLogs, 800);
+    fetchSystemLogs();
 
     loadSettings();
   </script>
