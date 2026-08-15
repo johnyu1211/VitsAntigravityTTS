@@ -17,6 +17,11 @@ temp_audio/
 *.flac
 *.m4a
 *.mp4
+# Electron & Node
+node_modules/
+dist/
+build/
+*.log
 *.ogg
 *.aac
 
