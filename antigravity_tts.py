@@ -514,6 +514,16 @@ async def handle_get_logs(request):
             pass
     return web.json_response({"logs": logs})
 
+async def handle_clear_logs(request):
+    log_file = os.path.join(APP_DIR, "logs", "electron_backend.log")
+    if os.path.exists(log_file):
+        try:
+            with open(log_file, 'w', encoding='utf-8') as f:
+                f.write(f"[{time.strftime('%H:%M:%S')}] [System] Log console cleared.\n")
+        except:
+            pass
+    return web.json_response({"status": "cleared"})
+
 async def handle_rename_voice(request):
     global current_settings
     try:
@@ -828,6 +838,7 @@ def main():
     app.router.add_post('/api/save_voice_thumbnail', handle_save_voice_thumbnail)
     app.router.add_get('/api/status', handle_status)
     app.router.add_get('/api/logs', handle_get_logs)
+    app.router.add_post('/api/clear_logs', handle_clear_logs)
     app.router.add_static('/reference_voices/', REF_DIR)
     
     app.on_startup.append(start_background_tasks)

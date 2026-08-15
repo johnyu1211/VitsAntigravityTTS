@@ -1283,10 +1283,7 @@
       <div class="right-pane">
         <div class="logs-panel-card">
           <div class="section-header" style="margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div class="status-dot" style="background: #32D74B; box-shadow: 0 0 8px rgba(50, 215, 75, 0.7);"></div>
-              <div class="section-title" style="font-size: 13px;">Logs</div>
-            </div>
+            <div class="section-title" style="font-size: 13px;">Logs</div>
             <div style="display: flex; gap: 6px; align-items: center;">
               <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 4px;">
                 <input type="checkbox" id="autoScrollCheck" checked style="accent-color: var(--primary);"> Auto-Scroll
@@ -2770,6 +2767,18 @@
       return escaped;
     }
 
+    // Load persisted autoScroll preference
+    const savedAutoScroll = localStorage.getItem('log_auto_scroll');
+    if (savedAutoScroll !== null) {
+      autoScrollCheck.checked = (savedAutoScroll === 'true');
+    }
+    autoScrollCheck.addEventListener('change', () => {
+      localStorage.setItem('log_auto_scroll', autoScrollCheck.checked);
+      if (autoScrollCheck.checked) {
+        logConsole.scrollTop = logConsole.scrollHeight;
+      }
+    });
+
     async function fetchSystemLogs() {
       if (isServerDead) return;
       try {
@@ -2778,17 +2787,26 @@
         if (data.logs && Array.isArray(data.logs)) {
           const formatted = data.logs.map(colorizeLog).join('\n');
           if (formatted !== lastLogContent) {
+            const currentScrollTop = logConsole.scrollTop;
+
             lastLogContent = formatted;
             logConsole.innerHTML = formatted || '<span style="color:var(--text-muted);">No logs recorded yet.</span>';
+
             if (autoScrollCheck.checked) {
               logConsole.scrollTop = logConsole.scrollHeight;
+            } else {
+              // Maintain exact scroll position so it never auto-scrolls when unchecked
+              logConsole.scrollTop = currentScrollTop;
             }
           }
         }
       } catch (err) {}
     }
 
-    btnClearLogs.addEventListener('click', () => {
+    btnClearLogs.addEventListener('click', async () => {
+      try {
+        await fetch('/api/clear_logs', { method: 'POST' });
+      } catch (e) {}
       logConsole.innerHTML = '<span style="color:var(--text-muted);">Log view cleared.</span>';
       lastLogContent = "";
     });
