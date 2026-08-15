@@ -110,12 +110,12 @@ function createWindow() {
   });
 
   // 1. Show sleek loading screen first
-  mainWindow.loadFile(path.join(__dirname, 'loading.html')).catch(() => {});
+  mainWindow.loadFile(path.join(__dirname, 'views', 'loading.html')).catch(() => {});
 
   // 2. Prevent blank screen if load ever fails
   mainWindow.webContents.on('did-fail-load', (event, errorCode) => {
     if (!isConnected && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadFile(path.join(__dirname, 'loading.html')).catch(() => {});
+      mainWindow.loadFile(path.join(__dirname, 'views', 'loading.html')).catch(() => {});
       setTimeout(pollAndLoadApp, 600);
     }
   });
