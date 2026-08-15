@@ -38,6 +38,7 @@ class GPTSoVITSEngine:
         config.t2s_weights_path = t2s_path
         config.vits_weights_path = vits_path
         config.bert_base_path = bert_path
+        config.cnhuhbert_base_path = cnhubert_path
         if torch.cuda.is_available():
             torch.backends.cudnn.benchmark = True
             try:

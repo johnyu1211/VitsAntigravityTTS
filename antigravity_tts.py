@@ -614,7 +614,7 @@ def main():
     app.router.add_post('/api/delete_voice', handle_delete_voice)
     app.router.add_get('/api/status', handle_status)
     app.router.add_get('/api/logs', handle_get_logs)
-    app.router.add_static('/reference_voices/', REFERENCE_DIR)
+    app.router.add_static('/reference_voices/', REF_DIR)
     
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)
