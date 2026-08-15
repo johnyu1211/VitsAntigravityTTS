@@ -380,6 +380,73 @@ async def handle_get_logs(request):
             pass
     return web.json_response({"logs": logs})
 
+async def handle_rename_voice(request):
+    global current_settings
+    try:
+        data = await request.json()
+        old_filename = data.get("old_filename", "").strip()
+        new_filename = data.get("new_filename", "").strip()
+        prompt_text = data.get("prompt_text", "").strip()
+        prompt_lang = data.get("prompt_lang", "auto")
+
+        ok, msg = gpt_engine.rename_voice(old_filename, new_filename, new_prompt_text=prompt_text, new_prompt_lang=prompt_lang)
+        if not ok:
+            return web.json_response({"status": "error", "error": msg}, status=400)
+
+        actual_new_name = msg
+        # Update current_settings if the renamed voice was selected in EN or KO slots
+        changed = False
+        if current_settings.get("voice_en") == old_filename:
+            current_settings["voice_en"] = actual_new_name
+            current_settings["prompt_en"] = prompt_text
+            changed = True
+        if current_settings.get("voice_ko") == old_filename:
+            current_settings["voice_ko"] = actual_new_name
+            current_settings["prompt_ko"] = prompt_text
+            changed = True
+
+        if changed:
+            save_config(current_settings)
+
+        voices = gpt_engine.get_available_reference_voices()
+        return web.json_response({
+            "status": "ok",
+            "new_filename": actual_new_name,
+            "available_voices": voices,
+            "settings": current_settings
+        })
+    except Exception as e:
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
+
+async def handle_delete_voice(request):
+    global current_settings
+    try:
+        data = await request.json()
+        filename = data.get("filename", "").strip()
+        gpt_engine.delete_voice(filename)
+
+        voices = gpt_engine.get_available_reference_voices()
+        # Fallback if active voice was deleted
+        changed = False
+        if voices:
+            fallback = voices[0]["filename"]
+            if current_settings.get("voice_en") == filename:
+                current_settings["voice_en"] = fallback
+                changed = True
+            if current_settings.get("voice_ko") == filename:
+                current_settings["voice_ko"] = fallback
+                changed = True
+            if changed:
+                save_config(current_settings)
+
+        return web.json_response({
+            "status": "ok",
+            "available_voices": voices,
+            "settings": current_settings
+        })
+    except Exception as e:
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
+
 async def handle_shutdown(request):
     async def shutdown_process():
         await asyncio.sleep(0.3)
@@ -543,8 +610,11 @@ def main():
     app.router.add_post('/api/test_speak', handle_test_speak)
     app.router.add_post('/api/shutdown', handle_shutdown)
     app.router.add_post('/api/trim_audio', handle_trim_audio)
+    app.router.add_post('/api/rename_voice', handle_rename_voice)
+    app.router.add_post('/api/delete_voice', handle_delete_voice)
     app.router.add_get('/api/status', handle_status)
     app.router.add_get('/api/logs', handle_get_logs)
+    app.router.add_static('/reference_voices/', REFERENCE_DIR)
     
     app.on_startup.append(start_background_tasks)
     app.on_cleanup.append(cleanup_background_tasks)

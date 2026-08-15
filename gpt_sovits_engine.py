@@ -75,6 +75,59 @@ class GPTSoVITSEngine:
             print(f"[Error saving voice prompt metadata] {e}")
             return False
 
+    def rename_voice(self, old_filename, new_filename, new_prompt_text=None, new_prompt_lang="auto"):
+        if not old_filename or not new_filename:
+            return False, "Invalid filename"
+        
+        old_base, old_ext = os.path.splitext(old_filename)
+        if not old_ext:
+            old_ext = ".wav"
+            old_filename = old_base + old_ext
+            
+        new_base, new_ext = os.path.splitext(new_filename)
+        if not new_ext:
+            new_ext = old_ext
+            new_filename = new_base + new_ext
+
+        old_audio_path = os.path.join(self.ref_dir, old_filename)
+        new_audio_path = os.path.join(self.ref_dir, new_filename)
+        old_txt_path = os.path.join(self.ref_dir, f"{old_base}.txt")
+        new_txt_path = os.path.join(self.ref_dir, f"{new_base}.txt")
+
+        if not os.path.exists(old_audio_path):
+            return False, f"File '{old_filename}' not found"
+
+        if old_filename != new_filename and os.path.exists(new_audio_path):
+            return False, f"Target filename '{new_filename}' already exists"
+
+        # 1. Rename audio file
+        if old_audio_path != new_audio_path:
+            os.rename(old_audio_path, new_audio_path)
+
+        # 2. Rename or update companion txt file simultaneously
+        if new_prompt_text is not None:
+            self.save_voice_metadata(new_filename, new_prompt_text, new_prompt_lang)
+            if old_txt_path != new_txt_path and os.path.exists(old_txt_path):
+                try: os.remove(old_txt_path)
+                except: pass
+        else:
+            if os.path.exists(old_txt_path) and old_txt_path != new_txt_path:
+                os.rename(old_txt_path, new_txt_path)
+
+        return True, new_filename
+
+    def delete_voice(self, filename):
+        base, ext = os.path.splitext(filename)
+        audio_path = os.path.join(self.ref_dir, filename)
+        txt_path = os.path.join(self.ref_dir, f"{base}.txt")
+        if os.path.exists(audio_path):
+            try: os.remove(audio_path)
+            except: pass
+        if os.path.exists(txt_path):
+            try: os.remove(txt_path)
+            except: pass
+        return True
+
     def get_available_reference_voices(self):
         if not os.path.exists(self.ref_dir):
             os.makedirs(self.ref_dir, exist_ok=True)

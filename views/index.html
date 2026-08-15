@@ -513,8 +513,8 @@
     .voice-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      max-height: 380px;
+      gap: 14px;
+      max-height: 480px;
       overflow-y: auto;
     }
 
@@ -522,21 +522,59 @@
       background: var(--card-inner);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 14px 18px;
+      padding: 16px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 12px;
+      transition: var(--transition);
     }
 
-    .voice-item-info h4 {
-      font-size: 14px;
-      font-weight: 600;
+    .voice-item:hover {
+      border-color: rgba(255, 255, 255, 0.18);
     }
 
-    .voice-item-info p {
+    .btn-play-preview {
+      background: rgba(70, 140, 246, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(70, 140, 246, 0.35);
+      padding: 7px 12px;
+      border-radius: 6px;
       font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 3px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .btn-play-preview:hover {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    .btn-play-preview.playing {
+      background: #32D74B;
+      color: #FFFFFF;
+      border-color: #32D74B;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.85; }
+      to { opacity: 1; transform: scale(1.02); }
+    }
+
+    .btn-danger {
+      background: rgba(255, 69, 58, 0.12);
+      color: var(--danger);
+      border: 1px solid rgba(255, 69, 58, 0.25);
+      cursor: pointer;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #FFFFFF;
     }
   </style>
 </head>
@@ -1246,6 +1284,102 @@
       });
     }
 
+    let currentPreviewAudio = null;
+    let currentPreviewBtn = null;
+
+    function playVoiceSample(btn, filename) {
+      if (currentPreviewAudio) {
+        currentPreviewAudio.pause();
+        if (currentPreviewBtn) {
+          currentPreviewBtn.classList.remove('playing');
+          currentPreviewBtn.innerHTML = '▶ Play';
+        }
+        if (currentPreviewBtn === btn) {
+          currentPreviewAudio = null;
+          currentPreviewBtn = null;
+          return;
+        }
+      }
+
+      const audioUrl = `/reference_voices/${encodeURIComponent(filename)}?t=${Date.now()}`;
+      const audio = new Audio(audioUrl);
+      currentPreviewAudio = audio;
+      currentPreviewBtn = btn;
+
+      btn.classList.add('playing');
+      btn.innerHTML = '⏸ Stop';
+
+      audio.play().catch(e => {
+        btn.classList.remove('playing');
+        btn.innerHTML = '▶ Play';
+        alert('Could not play audio sample: ' + e);
+      });
+
+      audio.onended = () => {
+        btn.classList.remove('playing');
+        btn.innerHTML = '▶ Play';
+        currentPreviewAudio = null;
+        currentPreviewBtn = null;
+      };
+    }
+
+    async function saveVoiceItem(oldFilename, nameInputId, promptInputId, btn) {
+      const newFilename = document.getElementById(nameInputId).value.trim();
+      const promptText = document.getElementById(promptInputId).value.trim();
+
+      if (!newFilename) {
+        alert('Please specify a valid filename.');
+        return;
+      }
+
+      btn.innerText = 'Saving...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/rename_voice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            old_filename: oldFilename,
+            new_filename: newFilename,
+            prompt_text: promptText
+          })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          btn.innerText = 'Saved!';
+          await loadSettings();
+        } else {
+          alert('Error: ' + (data.error || 'Failed to rename'));
+          btn.innerText = 'Save & Rename';
+          btn.disabled = false;
+        }
+      } catch (err) {
+        alert('Request failed');
+        btn.innerText = 'Save & Rename';
+        btn.disabled = false;
+      }
+    }
+
+    async function deleteVoiceItem(filename) {
+      if (!confirm(`정말로 "${filename}" 음성 샘플과 동봉된 대사 파일을 삭제하시겠습니까?`)) return;
+      if (currentPreviewAudio) {
+        currentPreviewAudio.pause();
+        currentPreviewAudio = null;
+      }
+      try {
+        const res = await fetch('/api/delete_voice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          await loadSettings();
+        }
+      } catch (err) {}
+    }
+
     function renderVoiceLibrary(voices) {
       voiceListContainer.innerHTML = '';
       if (!voices || voices.length === 0) {
@@ -1253,20 +1387,50 @@
         return;
       }
 
-      voices.forEach(v => {
+      voices.forEach((v, idx) => {
         const fname = typeof v === 'string' ? v : v.filename;
         const ptext = typeof v === 'object' ? v.prompt_text : "";
+        const nameInputId = `voice_name_${idx}`;
+        const promptInputId = `voice_prompt_${idx}`;
+        const saveBtnId = `voice_save_${idx}`;
 
         const item = document.createElement('div');
         item.className = 'voice-item';
         item.innerHTML = `
-          <div class="voice-item-info">
-            <h4>${fname}</h4>
-            <p>${ptext ? 'Script: "' + ptext + '"' : 'No companion script attached'}</p>
+          <!-- Top Row: Audio Player & Filename Editor -->
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn-play-preview" onclick="playVoiceSample(this, '${fname.replace(/'/g, "\\'")}')" type="button">
+              ▶ Play
+            </button>
+            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;">
+              <span style="font-size: 11px; color: var(--text-muted); margin-right: 6px;">File:</span>
+              <input type="text" id="${nameInputId}" value="${fname}" style="flex: 1; background: transparent; border: none; padding: 6px 0; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none;">
+            </div>
+            <button class="btn-secondary btn-sm" id="${saveBtnId}" onclick="saveVoiceItem('${fname.replace(/'/g, "\\'")}', '${nameInputId}', '${promptInputId}', this)" type="button">
+              💾 Save & Rename
+            </button>
+            <button class="btn-danger btn-sm" onclick="deleteVoiceItem('${fname.replace(/'/g, "\\'")}')" type="button">
+              🗑 Delete
+            </button>
           </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn-secondary btn-sm" onclick="setSlot('en', '${fname}', '${ptext.replace(/'/g, "\\'")}')">Use for EN</button>
-            <button class="btn-secondary btn-sm" onclick="setSlot('ko', '${fname}', '${ptext.replace(/'/g, "\\'")}')">Use for KO</button>
+
+          <!-- Middle Row: Editable Transcript -->
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between;">
+              <span>Companion Script (동봉된 대사 텍스트 .txt)</span>
+              <span style="color: var(--primary);">피치/억양 고정용</span>
+            </label>
+            <input type="text" id="${promptInputId}" value="${ptext.replace(/"/g, '&quot;')}" placeholder="예: 음성 샘플에서 발화한 실제 대사 입력" style="background: rgba(0,0,0,0.2); font-size: 12px; padding: 8px 10px;">
+          </div>
+
+          <!-- Bottom Row: 1-Click Slot Assignment -->
+          <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+            <button class="btn-secondary btn-sm" onclick="setSlot('en', '${fname.replace(/'/g, "\\'")}', document.getElementById('${promptInputId}').value)" type="button">
+              Use for English Slot (EN)
+            </button>
+            <button class="btn-secondary btn-sm" onclick="setSlot('ko', '${fname.replace(/'/g, "\\'")}', document.getElementById('${promptInputId}').value)" type="button">
+              Use for Korean Slot (KO)
+            </button>
           </div>
         `;
         voiceListContainer.appendChild(item);
