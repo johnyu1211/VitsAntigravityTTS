@@ -900,7 +900,7 @@ async def background_log_watcher():
 async def async_load_ai_engine():
     loop = asyncio.get_running_loop()
     t_start = time.perf_counter()
-    print("[Antigravity Studio] Initializing AI neural models into GPU VRAM in background...")
+    print("[Angra Voice Studio] Initializing AI neural models into GPU VRAM in background...")
     try:
         await loop.run_in_executor(None, gpt_sovits_engine.load_models)
         gpt_sovits_engine.apply_acceleration_settings(
@@ -908,9 +908,9 @@ async def async_load_ai_engine():
             current_settings.get("enable_torch_compile", False)
         )
         t_elapsed = time.perf_counter() - t_start
-        print(f"[Antigravity Studio] AI Neural Model loaded in {t_elapsed:.1f}s (CUDA SDPA & pre-warmed ready)!")
+        print(f"[Angra Voice Studio] AI Neural Model loaded in {t_elapsed:.1f}s (CUDA SDPA & pre-warmed ready)!")
     except Exception as e:
-        print(f"[Antigravity Studio] Neural Model load error: {e}")
+        print(f"[Angra Voice Studio] Neural Model load error: {e}")
 
 async def start_background_tasks(app):
     app['engine_loader'] = asyncio.create_task(async_load_ai_engine())

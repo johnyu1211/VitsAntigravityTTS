@@ -117,7 +117,7 @@ function createWindow() {
     minWidth: 980,
     minHeight: 650,
     backgroundColor: '#1c1c1e',
-    title: 'Antigravity Voice Studio',
+    title: 'Angra Voice Studio',
     icon: path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
     show: true,
     webPreferences: {
