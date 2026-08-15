@@ -8,6 +8,9 @@ import asyncio
 import webbrowser
 import shutil
 import warnings
+import base64
+import io
+import urllib.request
 
 # Protect against WinError 6 / invalid stdout handles when spawned by Electron/GUI
 try:
@@ -26,6 +29,7 @@ import soundfile as sf
 import librosa
 import pygame
 from aiohttp import web
+from PIL import Image
 from gpt_sovits_engine import gpt_sovits_engine
 
 # Initialize audio mixer for 32000Hz GPT-SoVITS audio
@@ -488,7 +492,8 @@ async def handle_save_voice_thumbnail(request):
             with open(target_img_path, "wb") as f:
                 f.write(raw_bytes)
 
-        voices = gpt_engine.get_available_reference_voices()
+        voices = gpt_sovits_engine.get_available_reference_voices()
+        print(f"[Thumbnail Saved] Saved 512x512 thumbnail avatar for: {filename}")
         return web.json_response({
             "status": "ok",
             "thumbnail": f"/reference_voices/{base_name}.png?t={int(time.time()*1000)}",

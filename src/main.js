@@ -177,13 +177,30 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-clipboard-image', async () => {
     try {
+      // 1. Raw image / screenshot / web-copied image
       const img = clipboard.readImage();
       if (!img.isEmpty()) {
         return { type: 'data', data: img.toDataURL() };
       }
-      const text = clipboard.readText();
+
+      // 2. Copied image file from Windows Explorer (e.g. Ctrl+C on an image file in folder)
+      try {
+        const rawPath = clipboard.read('FileNameW') || clipboard.read('FileName') || clipboard.readText();
+        if (rawPath) {
+          const cleanPath = rawPath.replace(/\0/g, '').trim().replace(/^"|"$/g, '');
+          if (fs.existsSync(cleanPath) && /\.(png|jpe?g|webp|bmp|gif)$/i.test(cleanPath)) {
+            const fileBuf = fs.readFileSync(cleanPath);
+            const ext = path.extname(cleanPath).toLowerCase();
+            const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+            return { type: 'data', data: `data:${mime};base64,${fileBuf.toString('base64')}` };
+          }
+        }
+      } catch (e) {}
+
+      // 3. Web URL or Base64 string copied to clipboard
+      const text = clipboard.readText().trim();
       if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
-        return { type: 'url', data: text.trim() };
+        return { type: 'url', data: text };
       }
     } catch (err) {
       console.error('[Electron Clipboard Read Error]', err);
