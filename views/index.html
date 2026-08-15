@@ -587,7 +587,10 @@
         <p>GPT-SoVITS V2 Real-Time Multilingual Voice Suite</p>
       </div>
       <div class="header-right">
-        <button class="btn-refresh" id="refreshBtn" type="button">🔄 Refresh Studio</button>
+        <button class="btn-refresh" id="refreshBtn" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          <span>Refresh Studio</span>
+        </button>
         <div class="status-badge" id="statusBadge">
           <div class="status-dot" id="statusDot"></div>
           <span id="statusText">Active</span>
@@ -623,11 +626,11 @@
           <div class="autosave-badge" id="autoSaveBadge">Auto-Saved</div>
         </div>
 
-        <!-- English Slot -->
+        <!-- English Slot (Primary) -->
         <div class="slot-box">
           <div class="slot-header">
-            <span class="slot-badge">English Speech Voice</span>
-            <span class="hint-text">영어로 말할 때 사용할 샘플</span>
+            <span class="slot-badge">English Voice (Primary Slot)</span>
+            <span class="hint-text">영어가 감지되었을 때 발화하는 1차 음성</span>
           </div>
           <div class="form-group">
             <label class="form-label" for="voiceSelectEn">Selected Voice File</label>
@@ -639,19 +642,19 @@
           </div>
         </div>
 
-        <!-- Korean Slot -->
+        <!-- Second Language Slot (Secondary / Multilingual) -->
         <div class="slot-box">
           <div class="slot-header">
-            <span class="slot-badge ko">Korean Speech Voice</span>
-            <span class="hint-text">한국어로 말할 때 사용할 샘플</span>
+            <span class="slot-badge ko">Second Language Voice (Secondary Slot)</span>
+            <span class="hint-text">영어를 제외한 2차 언어(한국어, 일본어, 중국어 등) 발화 시 자동 사용</span>
           </div>
           <div class="form-group">
             <label class="form-label" for="voiceSelectKo">Selected Voice File</label>
             <select id="voiceSelectKo"></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Companion Script (한국어 대사)</label>
-            <input type="text" id="promptKoInput" placeholder="한국어 샘플 오디오가 말한 실제 대사">
+            <label class="form-label">Companion Script (2차 언어 대사)</label>
+            <input type="text" id="promptKoInput" placeholder="2차 언어 샘플 오디오가 말한 실제 대사">
           </div>
         </div>
 
@@ -737,9 +740,18 @@
           <!-- Playback & Control Bar -->
           <div class="scrub-toolbar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: var(--radius-sm);">
             <div style="display: flex; gap: 8px; align-items: center;">
-              <button class="btn-primary btn-sm" id="btnPlaySelection" type="button">▶ Play Segment (구간 재생)</button>
-              <button class="btn-secondary btn-sm" id="btnPlayFull" type="button">▶ Play All</button>
-              <button class="btn-secondary btn-sm" id="btnPauseAudio" type="button">⏸ Pause</button>
+              <button class="btn-primary btn-sm" id="btnPlaySelection" type="button" style="display:flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Play Segment</span>
+              </button>
+              <button class="btn-secondary btn-sm" id="btnPlayFull" type="button" style="display:flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Play All</span>
+              </button>
+              <button class="btn-secondary btn-sm" id="btnPauseAudio" type="button" style="display:flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                <span>Pause</span>
+              </button>
             </div>
             <div style="font-size: 12px; font-weight: 600; color: var(--text-muted);">
               Current: <span id="currentPlaybackTime" style="color: var(--primary);">0.00s</span> / <span id="totalDurationDisplay">0.00s</span>
@@ -780,7 +792,10 @@
           <!-- Clip Duration & Quality Indicator -->
           <div class="trim-info" style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
             <span>Selected Clip Duration: <strong id="durationDisplay" style="color: var(--primary); font-size: 14px;">5.00s</strong></span>
-            <span id="clipGuideText" style="font-size: 11px; color: var(--success); font-weight: 600;">✓ Ideal speech length for voice cloning (3~6s)</span>
+            <span id="clipGuideText" style="font-size: 11px; color: var(--success); font-weight: 600; display:flex; align-items:center; gap:4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Ideal speech length for voice cloning (3~6s)</span>
+            </span>
           </div>
 
           <div class="form-group">
@@ -1004,13 +1019,13 @@
       durationBadge.innerText = `Selected: ${dur.toFixed(2)}s`;
 
       if (dur >= 2.5 && dur <= 6.5) {
-        clipGuideText.innerText = '✓ Ideal speech length for voice cloning (3~6s)';
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal speech length for voice cloning (3~6s)';
         clipGuideText.style.color = 'var(--success)';
       } else if (dur < 2.5) {
-        clipGuideText.innerText = '⚠️ Too short (Under 2.5s may reduce voice similarity)';
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too short (Under 2.5s may reduce voice similarity)';
         clipGuideText.style.color = '#FF9F0A';
       } else {
-        clipGuideText.innerText = '⚠️ Too long (Over 6.5s may cause memory/speed issues)';
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too long (Over 6.5s may cause memory/speed issues)';
         clipGuideText.style.color = '#FF9F0A';
       }
 
@@ -1292,7 +1307,10 @@
         currentPreviewAudio.pause();
         if (currentPreviewBtn) {
           currentPreviewBtn.classList.remove('playing');
-          currentPreviewBtn.innerHTML = '▶ Play';
+          currentPreviewBtn.innerHTML = `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            <span>Play</span>
+          `;
         }
         if (currentPreviewBtn === btn) {
           currentPreviewAudio = null;
@@ -1307,20 +1325,99 @@
       currentPreviewBtn = btn;
 
       btn.classList.add('playing');
-      btn.innerHTML = '⏸ Stop';
+      btn.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+        <span>Stop</span>
+      `;
 
       audio.play().catch(e => {
         btn.classList.remove('playing');
-        btn.innerHTML = '▶ Play';
+        btn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span>Play</span>
+        `;
         alert('Could not play audio sample: ' + e);
       });
 
       audio.onended = () => {
         btn.classList.remove('playing');
-        btn.innerHTML = '▶ Play';
+        btn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span>Play</span>
+        `;
         currentPreviewAudio = null;
         currentPreviewBtn = null;
       };
+    }
+
+    async function setVoiceThumbnail(filename) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.read) {
+          const items = await navigator.clipboard.read();
+          for (const item of items) {
+            for (const type of item.types) {
+              if (type.startsWith('image/')) {
+                const blob = await item.getType(type);
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  await uploadThumbnailBase64(filename, reader.result);
+                };
+                reader.readAsDataURL(blob);
+                return;
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      const input = prompt(`"${filename}" 보이스 썸네일 이미지 설정\n\n이미지 웹 URL을 입력하시거나, 클립보드에 이미지를 복사(Ctrl+C)한 상태에서 확인을 누르세요:`);
+      if (!input) return;
+
+      if (input.startsWith('http://') || input.startsWith('https://') || input.startsWith('data:image/')) {
+        if (input.startsWith('data:image/')) {
+          await uploadThumbnailBase64(filename, input);
+        } else {
+          await uploadThumbnailUrl(filename, input);
+        }
+      } else {
+        alert('올바른 이미지 URL(http... 또는 https...)을 입력해 주세요.');
+      }
+    }
+
+    async function uploadThumbnailBase64(filename, base64Data) {
+      try {
+        const res = await fetch('/api/save_voice_thumbnail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, image_data: base64Data })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          await loadSettings();
+        } else {
+          alert('Failed to save thumbnail: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Network error while saving thumbnail');
+      }
+    }
+
+    async function uploadThumbnailUrl(filename, imageUrl) {
+      try {
+        const res = await fetch('/api/save_voice_thumbnail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, image_url: imageUrl })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          await loadSettings();
+        } else {
+          alert('Failed to download thumbnail: ' + (data.error || 'Unknown error'));
+        }
+      } catch (err) {
+        alert('Network error while downloading thumbnail');
+      }
     }
 
     async function saveVoiceItem(oldFilename, nameInputId, promptInputId, btn) {
@@ -1390,64 +1487,76 @@
       voices.forEach((v, idx) => {
         const fname = typeof v === 'string' ? v : v.filename;
         const ptext = typeof v === 'object' ? v.prompt_text : "";
+        const thumb = typeof v === 'object' ? v.thumbnail : null;
         const nameInputId = `voice_name_${idx}`;
         const promptInputId = `voice_prompt_${idx}`;
         const saveBtnId = `voice_save_${idx}`;
 
         const item = document.createElement('div');
         item.className = 'voice-item';
+        item.tabIndex = 0;
+        
+        // Listen for direct Ctrl+V paste on this card
+        item.addEventListener('paste', async (e) => {
+          if (e.clipboardData && e.clipboardData.items) {
+            for (let i = 0; i < e.clipboardData.items.length; i++) {
+              const it = e.clipboardData.items[i];
+              if (it.type.indexOf('image') !== -1) {
+                const blob = it.getAsFile();
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  await uploadThumbnailBase64(fname, reader.result);
+                };
+                reader.readAsDataURL(blob);
+                e.preventDefault();
+                return;
+              }
+            }
+          }
+        });
+
         item.innerHTML = `
-          <!-- Top Row: Audio Player & Filename Editor -->
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="btn-play-preview" onclick="playVoiceSample(this, '${fname.replace(/'/g, "\\'")}')" type="button">
-              ▶ Play
-            </button>
-            <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;">
-              <span style="font-size: 11px; color: var(--text-muted); margin-right: 6px;">File:</span>
-              <input type="text" id="${nameInputId}" value="${fname}" style="flex: 1; background: transparent; border: none; padding: 6px 0; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none;">
+          <div style="display: flex; gap: 14px; align-items: center;">
+            <!-- Avatar Thumbnail Box (Click or Paste Image) -->
+            <div onclick="setVoiceThumbnail('${fname.replace(/'/g, "\\'")}')" title="클릭하여 썸네일 이미지 URL 입력 또는 클립보드 붙여넣기 (Ctrl+V)" style="width: 64px; min-width: 64px; height: 64px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: var(--transition);">
+              ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;flex-direction:column;align-items:center;color:var(--text-muted);font-size:10px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span style="margin-top:2px;font-size:9px;">+ Image</span></div>`}
             </div>
-            <button class="btn-secondary btn-sm" id="${saveBtnId}" onclick="saveVoiceItem('${fname.replace(/'/g, "\\'")}', '${nameInputId}', '${promptInputId}', this)" type="button">
-              💾 Save & Rename
-            </button>
-            <button class="btn-danger btn-sm" onclick="deleteVoiceItem('${fname.replace(/'/g, "\\'")}')" type="button">
-              🗑 Delete
-            </button>
-          </div>
 
-          <!-- Middle Row: Editable Transcript -->
-          <div style="display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between;">
-              <span>Companion Script (동봉된 대사 텍스트 .txt)</span>
-              <span style="color: var(--primary);">피치/억양 고정용</span>
-            </label>
-            <input type="text" id="${promptInputId}" value="${ptext.replace(/"/g, '&quot;')}" placeholder="예: 음성 샘플에서 발화한 실제 대사 입력" style="background: rgba(0,0,0,0.2); font-size: 12px; padding: 8px 10px;">
-          </div>
+            <!-- Content Area -->
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+              <!-- Top Row: Play / Filename / Image / Save / Delete -->
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn-play-preview" onclick="playVoiceSample(this, '${fname.replace(/'/g, "\\'")}')" type="button">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Play</span>
+                </button>
+                <div style="flex: 1; display: flex; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0 8px;">
+                  <span style="font-size: 11px; color: var(--text-muted); margin-right: 6px;">File:</span>
+                  <input type="text" id="${nameInputId}" value="${fname}" style="flex: 1; background: transparent; border: none; padding: 6px 0; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none;">
+                </div>
+                <button class="btn-secondary btn-sm" onclick="setVoiceThumbnail('${fname.replace(/'/g, "\\'")}')" type="button" title="URL 또는 클립보드 이미지 적용" style="display:flex;align-items:center;gap:4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <span>Image</span>
+                </button>
+                <button class="btn-secondary btn-sm" id="${saveBtnId}" onclick="saveVoiceItem('${fname.replace(/'/g, "\\'")}', '${nameInputId}', '${promptInputId}', this)" type="button" style="display:flex;align-items:center;gap:4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  <span>Save</span>
+                </button>
+                <button class="btn-danger btn-sm" onclick="deleteVoiceItem('${fname.replace(/'/g, "\\'")}')" type="button" title="Delete voice">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+              </div>
 
-          <!-- Bottom Row: 1-Click Slot Assignment -->
-          <div style="display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-            <button class="btn-secondary btn-sm" onclick="setSlot('en', '${fname.replace(/'/g, "\\'")}', document.getElementById('${promptInputId}').value)" type="button">
-              Use for English Slot (EN)
-            </button>
-            <button class="btn-secondary btn-sm" onclick="setSlot('ko', '${fname.replace(/'/g, "\\'")}', document.getElementById('${promptInputId}').value)" type="button">
-              Use for Korean Slot (KO)
-            </button>
+              <!-- Bottom Row: Transcript -->
+              <div>
+                <input type="text" id="${promptInputId}" value="${ptext.replace(/"/g, '&quot;')}" placeholder="Companion Script (동봉된 대사 .txt 입력)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); font-size: 12px; padding: 7px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main);">
+              </div>
+            </div>
           </div>
         `;
         voiceListContainer.appendChild(item);
       });
     }
-
-    window.setSlot = function(slot, fname, ptext) {
-      if (slot === 'en') {
-        voiceSelectEn.value = fname;
-        promptEnInput.value = ptext;
-      } else {
-        voiceSelectKo.value = fname;
-        promptKoInput.value = ptext;
-      }
-      saveSettingsAuto();
-      document.querySelector('[data-tab="tab-studio"]').click();
-    };
 
     async function loadSettings() {
       try {

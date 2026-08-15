@@ -277,18 +277,16 @@ async def speech_worker():
 
             lang = detect_language(chunk)
             
-            # Language-specific voice slot routing
+            # Universal Language Routing:
+            # 1. English -> Primary English Voice Slot
+            # 2. Any other language (KO, JA, ZH, etc.) -> Second Language Voice Slot
             if lang == "en":
                 ref_voice = current_settings.get("voice_en", "voiceSCOURCE.wav")
                 prompt_text = current_settings.get("prompt_en", "")
                 prompt_lang = "en"
-            elif lang == "ko":
+            else:
                 ref_voice = current_settings.get("voice_ko", current_settings.get("voice_en", "voiceSCOURCE.wav"))
                 prompt_text = current_settings.get("prompt_ko", "")
-                prompt_lang = "ko"
-            else:
-                ref_voice = current_settings.get("voice_default", current_settings.get("voice_en", "voiceSCOURCE.wav"))
-                prompt_text = current_settings.get("prompt_default", "")
                 prompt_lang = "auto"
 
             uid = f"{int(time.time()*1000)}_{os.getpid()}_{hash(chunk)%10000}"
@@ -443,6 +441,44 @@ async def handle_delete_voice(request):
             "status": "ok",
             "available_voices": voices,
             "settings": current_settings
+        })
+    except Exception as e:
+        return web.json_response({"status": "error", "error": str(e)}, status=500)
+
+async def handle_save_voice_thumbnail(request):
+    try:
+        data = await request.json()
+        filename = data.get("filename", "").strip()
+        image_data = data.get("image_data", "").strip()
+        image_url = data.get("image_url", "").strip()
+
+        if not filename:
+            return web.json_response({"status": "error", "error": "Filename required"}, status=400)
+
+        base_name = os.path.splitext(filename)[0]
+        target_img_path = os.path.join(REF_DIR, f"{base_name}.png")
+
+        if image_data:
+            if "," in image_data:
+                image_data = image_data.split(",", 1)[1]
+            raw_bytes = base64.b64decode(image_data)
+            with open(target_img_path, "wb") as f:
+                f.write(raw_bytes)
+        elif image_url:
+            req = urllib.request.Request(
+                image_url, 
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            )
+            with urllib.request.urlopen(req, timeout=10) as response, open(target_img_path, 'wb') as out_file:
+                out_file.write(response.read())
+        else:
+            return web.json_response({"status": "error", "error": "No image data or URL provided"}, status=400)
+
+        voices = gpt_engine.get_available_reference_voices()
+        return web.json_response({
+            "status": "ok",
+            "thumbnail": f"/reference_voices/{base_name}.png?t={int(time.time()*1000)}",
+            "available_voices": voices
         })
     except Exception as e:
         return web.json_response({"status": "error", "error": str(e)}, status=500)
@@ -612,6 +648,7 @@ def main():
     app.router.add_post('/api/trim_audio', handle_trim_audio)
     app.router.add_post('/api/rename_voice', handle_rename_voice)
     app.router.add_post('/api/delete_voice', handle_delete_voice)
+    app.router.add_post('/api/save_voice_thumbnail', handle_save_voice_thumbnail)
     app.router.add_get('/api/status', handle_status)
     app.router.add_get('/api/logs', handle_get_logs)
     app.router.add_static('/reference_voices/', REF_DIR)

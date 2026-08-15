@@ -145,6 +145,14 @@ class GPTSoVITSEngine:
             if os.path.exists(old_txt_path) and old_txt_path != new_txt_path:
                 os.rename(old_txt_path, new_txt_path)
 
+        # 3. Rename companion thumbnail image if exists
+        for ext in ['.png', '.jpg', '.jpeg', '.webp']:
+            old_img = os.path.join(self.ref_dir, f"{old_base}{ext}")
+            new_img = os.path.join(self.ref_dir, f"{new_base}{ext}")
+            if os.path.exists(old_img) and old_img != new_img:
+                try: os.rename(old_img, new_img)
+                except: pass
+
         return True, new_filename
 
     def delete_voice(self, filename):
@@ -157,7 +165,20 @@ class GPTSoVITSEngine:
         if os.path.exists(txt_path):
             try: os.remove(txt_path)
             except: pass
+        for img_ext in ['.png', '.jpg', '.jpeg', '.webp']:
+            img_path = os.path.join(self.ref_dir, f"{base}{img_ext}")
+            if os.path.exists(img_path):
+                try: os.remove(img_path)
+                except: pass
         return True
+
+    def get_voice_thumbnail(self, voice_filename):
+        base = os.path.splitext(voice_filename)[0]
+        for ext in ['.png', '.jpg', '.jpeg', '.webp']:
+            img_path = os.path.join(self.ref_dir, f"{base}{ext}")
+            if os.path.exists(img_path):
+                return f"/reference_voices/{base}{ext}"
+        return None
 
     def get_available_reference_voices(self):
         if not os.path.exists(self.ref_dir):
@@ -166,10 +187,12 @@ class GPTSoVITSEngine:
         for f in os.listdir(self.ref_dir):
             if f.lower().endswith(('.wav', '.mp3', '.flac')):
                 meta = self.get_voice_metadata(f)
+                thumb = self.get_voice_thumbnail(f)
                 voices.append({
                     "filename": f,
                     "prompt_text": meta.get("text", ""),
-                    "prompt_lang": meta.get("lang", "auto")
+                    "prompt_lang": meta.get("lang", "auto"),
+                    "thumbnail": thumb
                 })
         return sorted(voices, key=lambda x: x["filename"])
 
