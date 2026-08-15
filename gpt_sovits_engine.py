@@ -57,10 +57,10 @@ class GPTSoVITSEngine:
             if voices:
                 warmup_ref = os.path.join(self.ref_dir, voices[0]["filename"])
                 dummy_inputs = {
-                    'text': "Ready",
+                    'text': "Ready.",
                     'text_lang': "en",
                     'ref_audio_path': warmup_ref,
-                    'prompt_text': "",
+                    'prompt_text': "Ready.",
                     'prompt_lang': "en",
                     'top_k': 5,
                     'top_p': 1.0,
@@ -68,7 +68,8 @@ class GPTSoVITSEngine:
                     'text_split_method': 'cut0',
                     'speed_factor': 1.0,
                     'batch_size': 1,
-                    'stream_mode': 'normal'
+                    'stream_mode': 'normal',
+                    'parallel_infer': True
                 }
                 for _ in self.tts.run(dummy_inputs): pass
                 print("[GPT-SoVITS Engine] GPU kernels pre-warmed for ultra-low latency inference!")
