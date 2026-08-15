@@ -338,13 +338,7 @@ async def audio_player_worker():
 
         try:
             vol = float(current_settings.get("volume", 1.0))
-            if vol > 1.0:
-                # Apply high-fidelity analog volume boost on playback audio stream
-                audio_file = await asyncio.to_thread(apply_studio_volume_boost, audio_file, vol)
-                pygame.mixer.music.set_volume(1.0)
-            else:
-                pygame.mixer.music.set_volume(max(0.0, min(1.0, vol)))
-
+            pygame.mixer.music.set_volume(1.0 if vol > 1.0 else max(0.0, min(1.0, vol)))
             pygame.mixer.music.load(audio_file)
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy():

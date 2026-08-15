@@ -352,9 +352,12 @@ class GPTSoVITSEngine:
 
             if output_path:
                 if full_audio.dtype != np.int16:
-                    max_abs = np.max(np.abs(full_audio))
-                    if max_abs > 1.0:
-                        full_audio = full_audio / max_abs
+                    if volume and volume > 1.0:
+                        full_audio = np.clip(full_audio * float(volume), -1.0, 1.0)
+                    else:
+                        max_abs = np.max(np.abs(full_audio))
+                        if max_abs > 1.0:
+                            full_audio = full_audio / max_abs
                     full_audio = (full_audio * 32767.0).astype(np.int16)
                 sf.write(output_path, full_audio, sample_rate, subtype='PCM_16')
                 return True
