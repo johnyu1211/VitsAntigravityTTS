@@ -1299,8 +1299,11 @@
         <div class="logs-panel-card">
           <div class="section-header" style="margin-bottom: 10px;">
             <div class="section-title" style="font-size: 13px;">Logs</div>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 4px;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none;">
+                <input type="checkbox" id="showHttpLogsCheck" style="accent-color: var(--primary);"> HTTP Access
+              </label>
+              <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none;">
                 <input type="checkbox" id="autoScrollCheck" checked style="accent-color: var(--primary);"> Auto-Scroll
               </label>
               <button class="btn-icon" id="btnCopyLogs" type="button" title="Copy all logs">
@@ -2750,6 +2753,7 @@
     // ==============================================
     const logConsole = document.getElementById('logConsole');
     const autoScrollCheck = document.getElementById('autoScrollCheck');
+    const showHttpLogsCheck = document.getElementById('showHttpLogsCheck');
     const btnCopyLogs = document.getElementById('btnCopyLogs');
     let lastLogContent = "";
 
@@ -2778,7 +2782,16 @@
       return escaped;
     }
 
-    // Load persisted autoScroll preference
+    function isNoiseHttpLog(line) {
+      if (!line) return false;
+      const lower = line.toLowerCase();
+      return lower.includes('aiohttp.access') ||
+             lower.includes('get /api/status') ||
+             lower.includes('get /api/logs') ||
+             (lower.includes('http/1.1"') && (lower.includes('mozilla') || lower.includes('200 ')));
+    }
+
+    // Load persisted preferences
     const savedAutoScroll = localStorage.getItem('log_auto_scroll');
     if (savedAutoScroll !== null) {
       autoScrollCheck.checked = (savedAutoScroll === 'true');
@@ -2790,13 +2803,28 @@
       }
     });
 
+    const savedShowHttp = localStorage.getItem('log_show_http');
+    if (savedShowHttp !== null) {
+      showHttpLogsCheck.checked = (savedShowHttp === 'true');
+    }
+    showHttpLogsCheck.addEventListener('change', () => {
+      localStorage.setItem('log_show_http', showHttpLogsCheck.checked);
+      lastLogContent = ""; // force re-render
+      fetchSystemLogs();
+    });
+
     async function fetchSystemLogs() {
       if (isServerDead) return;
       try {
         const res = await fetch('/api/logs');
         const data = await res.json();
         if (data.logs && Array.isArray(data.logs)) {
-          const formatted = data.logs.map(colorizeLog).join('\n');
+          let lines = data.logs;
+          if (!showHttpLogsCheck.checked) {
+            lines = lines.filter(l => !isNoiseHttpLog(l));
+          }
+
+          const formatted = lines.map(colorizeLog).join('\n');
           if (formatted !== lastLogContent) {
             const currentScrollTop = logConsole.scrollTop;
 

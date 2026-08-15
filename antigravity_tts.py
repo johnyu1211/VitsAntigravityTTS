@@ -851,7 +851,7 @@ def main():
     
     if "--no-browser" not in sys.argv:
         webbrowser.open(f"http://localhost:{port}")
-    web.run_app(app, host='127.0.0.1', port=port)
+    web.run_app(app, host='127.0.0.1', port=port, access_log=None)
 
 if __name__ == "__main__":
     main()
