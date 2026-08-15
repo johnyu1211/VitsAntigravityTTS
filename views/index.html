@@ -676,8 +676,8 @@
           </div>
 
           <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 10px;">
-            <!-- Slot Avatar Thumbnail (Click to paste or choose image) -->
-            <div id="slotThumbEn" onclick="setVoiceThumbnail(voiceSelectEn.value)" ondragover="event.preventDefault(); this.style.borderColor='var(--primary)';" ondragleave="this.style.borderColor='var(--border-color)';" ondrop="handleThumbnailDrop(event, voiceSelectEn.value)" title="Click to paste/change thumbnail, or Drag & Drop image here" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+            <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
+            <div id="slotThumbEn" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             </div>
 
@@ -703,8 +703,8 @@
           </div>
 
           <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 10px;">
-            <!-- Slot Avatar Thumbnail (Click to paste or choose image) -->
-            <div id="slotThumbKo" onclick="setVoiceThumbnail(voiceSelectKo.value)" ondragover="event.preventDefault(); this.style.borderColor='var(--primary)';" ondragleave="this.style.borderColor='var(--border-color)';" ondrop="handleThumbnailDrop(event, voiceSelectKo.value)" title="Click to paste/change thumbnail, or Drag & Drop image here" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+            <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
+            <div id="slotThumbKo" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             </div>
 
@@ -907,9 +907,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Universal Hidden Thumbnail File Picker -->
-  <input type="file" id="globalThumbnailFileInput" accept="image/*" style="display: none;">
 
   <script>
     // Tab Navigation Logic
@@ -1581,27 +1578,10 @@
       };
     }
 
-    let currentThumbnailTargetVoice = null;
-    const globalThumbnailFileInput = document.getElementById('globalThumbnailFileInput');
-
-    if (globalThumbnailFileInput) {
-      globalThumbnailFileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file || !currentThumbnailTargetVoice) return;
-        const reader = new FileReader();
-        reader.onload = async () => {
-          await uploadThumbnailBase64(currentThumbnailTargetVoice, reader.result);
-          globalThumbnailFileInput.value = '';
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
     async function setVoiceThumbnail(filename) {
-      currentThumbnailTargetVoice = filename;
       let clipItem = null;
 
-      // 1. Try Electron native clipboard API (Handles raw images, copied files, and URLs)
+      // 1. Try Electron native clipboard API (100% reliable)
       if (window.electronAPI && window.electronAPI.getClipboardImage) {
         try {
           clipItem = await window.electronAPI.getClipboardImage();
@@ -1610,18 +1590,24 @@
         }
       }
 
-      // 2. If Electron retrieved an image or URL from clipboard, save immediately!
+      // 2. If Electron found an image in clipboard
       if (clipItem) {
         if (clipItem.type === 'data') {
-          await uploadThumbnailBase64(filename, clipItem.data);
+          if (confirm(`Do you want to paste the image from your clipboard as the thumbnail for "${filename}"?`)) {
+            await uploadThumbnailBase64(filename, clipItem.data);
+            return;
+          }
           return;
         } else if (clipItem.type === 'url') {
-          await uploadThumbnailUrl(filename, clipItem.data);
+          if (confirm(`Do you want to download and set this image URL as the thumbnail for "${filename}"?\n\n${clipItem.data}`)) {
+            await uploadThumbnailUrl(filename, clipItem.data);
+            return;
+          }
           return;
         }
       }
 
-      // 3. Try standard Web Clipboard API
+      // 3. Fallback: Browser Web Clipboard API
       try {
         if (navigator.clipboard && navigator.clipboard.read) {
           const items = await navigator.clipboard.read();
@@ -1631,7 +1617,9 @@
                 const blob = await item.getType(type);
                 const reader = new FileReader();
                 reader.onload = async () => {
-                  await uploadThumbnailBase64(filename, reader.result);
+                  if (confirm(`Do you want to paste the image from your clipboard as the thumbnail for "${filename}"?`)) {
+                    await uploadThumbnailBase64(filename, reader.result);
+                  }
                 };
                 reader.readAsDataURL(blob);
                 return;
@@ -1641,9 +1629,14 @@
         }
       } catch (e) {}
 
-      // 4. If no image found in clipboard, open File Picker directly!
-      if (globalThumbnailFileInput) {
-        globalThumbnailFileInput.click();
+      // 4. If no image found in clipboard, prompt for URL
+      const userUrl = prompt(`No image found in clipboard.\n\nPlease copy an image (Ctrl+C) first, or enter an Image URL to download:`);
+      if (userUrl && (userUrl.startsWith('http://') || userUrl.startsWith('https://') || userUrl.startsWith('data:image/'))) {
+        if (userUrl.startsWith('data:image/')) {
+          await uploadThumbnailBase64(filename, userUrl);
+        } else {
+          await uploadThumbnailUrl(filename, userUrl);
+        }
       }
     }
 
@@ -1797,9 +1790,9 @@
 
         item.innerHTML = `
           <div style="display: flex; gap: 16px; align-items: stretch;">
-            <!-- Extra Large Avatar Thumbnail Box (Click to paste/pick, or Drag & Drop) -->
-            <div ondragover="event.preventDefault(); this.style.borderColor='var(--primary)';" ondragleave="this.style.borderColor='var(--border-color)';" ondrop="handleThumbnailDrop(event, '${fname.replace(/'/g, "\\'")}')" onclick="setVoiceThumbnail('${fname.replace(/'/g, "\\'")}')" title="Click to paste/choose image, or Drag & Drop image here" style="width: 110px; min-width: 110px; height: 110px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: var(--transition); box-shadow: 0 4px 14px rgba(0,0,0,0.4);">
-              ${thumb ? `<img src="${thumb}${thumb.includes('?') ? '&' : '?'}t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;flex-direction:column;align-items:center;color:var(--text-muted);font-size:11px;font-weight:600;pointer-events:none;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span style="margin-top:5px;font-size:10px;">+ Image</span></div>`}
+            <!-- Extra Large Avatar Thumbnail Box (Click to paste image from clipboard) -->
+            <div onclick="setVoiceThumbnail('${fname.replace(/'/g, "\\'")}')" title="Click to paste image from clipboard" style="width: 110px; min-width: 110px; height: 110px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: var(--transition); box-shadow: 0 4px 14px rgba(0,0,0,0.4);">
+              ${thumb ? `<img src="${thumb}${thumb.includes('?') ? '&' : '?'}t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;flex-direction:column;align-items:center;color:var(--text-muted);font-size:11px;font-weight:600;pointer-events:none;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span style="margin-top:5px;font-size:10px;">+ Paste Image</span></div>`}
             </div>
 
             <!-- Content Area -->
