@@ -256,7 +256,12 @@ class GPTSoVITSEngine:
             full_audio = np.concatenate(audio_chunks, axis=0)
 
             if output_path:
-                sf.write(output_path, full_audio, sample_rate)
+                if full_audio.dtype != np.int16:
+                    max_abs = np.max(np.abs(full_audio))
+                    if max_abs > 1.0:
+                        full_audio = full_audio / max_abs
+                    full_audio = (full_audio * 32767.0).astype(np.int16)
+                sf.write(output_path, full_audio, sample_rate, subtype='PCM_16')
                 return True
             return full_audio, sample_rate
 

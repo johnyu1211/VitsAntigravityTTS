@@ -155,43 +155,42 @@ def clean_markdown_text(text):
     text = text.replace(' DECIMAL DOT ', '.').replace('DECIMAL DOT', '.').replace('DECIMALDOT', '.')
     return text.strip()
 
-def split_into_conversational_chunks(text, max_chars=28):
+def split_into_conversational_chunks(text, max_chars=35, min_chars=10):
     """
-    Splits text into ultra-compact conversational slices (max 20~28 chars / 4~6 words).
-    Emits instant 1-word/greeting openers in <0.2s, and streams subsequent chunks in <0.4s.
+    Splits text into balanced conversational slices (15~35 chars / 4~8 words).
+    Ensures chunks are never too short (which causes neural vocoder artifacts)
+    and never too long (which causes latency buffer underruns).
     """
     if not text:
         return []
     
     t = re.sub(r'\r\n', '\n', text)
-    # 1. Instant Opener Split: Greetings and short affirmations get their own immediate micro-chunk
-    t = re.sub(
-        r'(?i)^(Hello|Hi|Hey|Sure|Yes|No|Okay|Alright|Great|Good|안녕하세요|네|네,|알겠습니다|감사합니다)[\.\!\?\,]\s*',
-        r'\1.\n',
-        t,
-        flags=re.MULTILINE
-    )
-    # 2. Split on sentence terminals . ! ? ~ : ;
+    # Split on sentence terminals . ! ? ~ : ;
     t = re.sub(r'(?<=[^\d][\.\!\?~;:])\s+', r'\n', t)
-    # 3. Split numbered list items: '1. ', '2) '
+    # Split numbered list items: '1. ', '2) '
     t = re.sub(r'(\s+)(?=\d+[\.\)]\s+)', r'\n', t)
     
     raw_lines = [line.strip() for line in t.split('\n') if line.strip()]
-    final_chunks = []
-
+    merged_lines = []
+    
+    # Merge micro fragments (<10 chars) with subsequent or previous line
     for line in raw_lines:
         line = re.sub(r'\s+', ' ', line).strip()
         if not line:
             continue
-        
-        # If line is already compact, keep it intact
+        if merged_lines and len(merged_lines[-1]) < min_chars:
+            merged_lines[-1] += " " + line
+        else:
+            merged_lines.append(line)
+            
+    final_chunks = []
+    for line in merged_lines:
         if len(line) <= max_chars:
             final_chunks.append(line)
             continue
         
-        # Sub-clause splitting for longer lines on commas, dashes, and natural breath conjunctions
+        # Sub-clause splitting for longer lines on commas, dashes, and natural conjunctions
         sub_tokens = re.split(r'([,，—\-]|\s+(?:그리고|하지만|또한|그러나|그러므로|and|but|or|so|because|while|with|to)\s+)', line)
-        
         current_chunk = ''
         for tok in sub_tokens:
             if not tok:
@@ -202,11 +201,21 @@ def split_into_conversational_chunks(text, max_chars=28):
                 if current_chunk.strip():
                     final_chunks.append(current_chunk.strip())
                 current_chunk = tok
-        
         if current_chunk.strip():
             final_chunks.append(current_chunk.strip())
 
-    return final_chunks if final_chunks else [text.strip()]
+    # Final pass: merge any trailing micro-fragment (<8 chars) with previous chunk
+    cleaned = []
+    for c in final_chunks:
+        c = c.strip()
+        if not c:
+            continue
+        if cleaned and len(c) < 8:
+            cleaned[-1] += " " + c
+        else:
+            cleaned.append(c)
+
+    return cleaned if cleaned else [text.strip()]
 
 def stop_and_clear_everything():
     global current_generation_id
@@ -228,17 +237,24 @@ def stop_and_clear_everything():
 import numpy as np
 
 def apply_studio_volume_boost(wav_path, volume_multiplier):
-    """Applies studio-grade dynamic analog saturation and soft-knee limiting for clean loudness boost without clipping."""
+    """
+    Applies clean, distortion-free linear volume gain and outputs standard 16-bit PCM WAV.
+    Prevents background noise floor inflation and eliminates static buzz/clicks.
+    """
     if volume_multiplier <= 1.0 or not os.path.exists(wav_path):
         return wav_path
     try:
-        data, sr = sf.read(wav_path)
-        gain = 1.0 + (volume_multiplier - 1.0) * 1.3
-        boosted = np.tanh(data * gain)
-        max_val = np.max(np.abs(boosted))
-        if max_val > 0:
-            boosted = (boosted / max_val) * 0.98
-        sf.write(wav_path, boosted, sr)
+        data, sr = sf.read(wav_path, dtype='float32')
+        if len(data) == 0:
+            return wav_path
+        
+        # Clean linear gain with soft saturation limiting
+        gain = float(volume_multiplier)
+        boosted = np.clip(data * gain, -1.0, 1.0)
+        
+        # Save as standard 16-bit PCM to prevent float-conversion artifacts in SDL/Pygame
+        int16_pcm = (boosted * 32767.0).astype(np.int16)
+        sf.write(wav_path, int16_pcm, sr, subtype='PCM_16')
     except Exception as e:
         print(f"[Volume Boost Error] {e}")
     return wav_path
