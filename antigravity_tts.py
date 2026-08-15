@@ -458,21 +458,35 @@ async def handle_save_voice_thumbnail(request):
         base_name = os.path.splitext(filename)[0]
         target_img_path = os.path.join(REF_DIR, f"{base_name}.png")
 
+        raw_bytes = None
         if image_data:
             if "," in image_data:
                 image_data = image_data.split(",", 1)[1]
             raw_bytes = base64.b64decode(image_data)
-            with open(target_img_path, "wb") as f:
-                f.write(raw_bytes)
         elif image_url:
             req = urllib.request.Request(
                 image_url, 
                 headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
             )
-            with urllib.request.urlopen(req, timeout=10) as response, open(target_img_path, 'wb') as out_file:
-                out_file.write(response.read())
+            with urllib.request.urlopen(req, timeout=10) as response:
+                raw_bytes = response.read()
         else:
             return web.json_response({"status": "error", "error": "No image data or URL provided"}, status=400)
+
+        # Optimize and save image with PIL
+        try:
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(raw_bytes))
+            if img.mode not in ("RGB", "RGBA"):
+                img = img.convert("RGBA")
+            # Downscale giant images to crisp 512x512 max avatar
+            img.thumbnail((512, 512), Image.Resampling.LANCZOS)
+            img.save(target_img_path, format="PNG", optimize=True)
+        except Exception as pil_err:
+            print(f"[Thumbnail Save Warning] PIL optimize failed, saving raw bytes: {pil_err}")
+            with open(target_img_path, "wb") as f:
+                f.write(raw_bytes)
 
         voices = gpt_engine.get_available_reference_voices()
         return web.json_response({
@@ -481,6 +495,7 @@ async def handle_save_voice_thumbnail(request):
             "available_voices": voices
         })
     except Exception as e:
+        print(f"[Thumbnail Error] {e}")
         return web.json_response({"status": "error", "error": str(e)}, status=500)
 
 async def handle_shutdown(request):
@@ -639,7 +654,7 @@ async def cleanup_background_tasks(app):
     cleanup_temp_dir()
 
 def main():
-    app = web.Application()
+    app = web.Application(client_max_size=100 * 1024 * 1024)
     app.router.add_get('/', handle_index)
     app.router.add_get('/api/settings', handle_get_settings)
     app.router.add_post('/api/settings', handle_save_settings)
