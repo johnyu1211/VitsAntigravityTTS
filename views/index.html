@@ -706,21 +706,9 @@
           <div class="form-group">
             <label class="form-label">
               <span>Sample Script (구간에서 캐릭터가 실제로 말하는 대사)</span>
-              <span style="font-size:11px;color:var(--primary);">피치 고정 필수</span>
+              <span style="font-size:11px;color:var(--primary);">피치 고정용 텍스트</span>
             </label>
             <input type="text" id="trimmerPromptText" placeholder="예: Hello there / 안녕하세요, 반갑습니다!">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Target Slot Assignment (저장 후 자동 배정)</label>
-            <div class="radio-grid">
-              <label class="radio-label">
-                <input type="radio" name="slotAssign" value="en" checked> English Slot
-              </label>
-              <label class="radio-label">
-                <input type="radio" name="slotAssign" value="ko"> Korean Slot
-              </label>
-            </div>
           </div>
 
           <div class="form-group">
@@ -730,7 +718,7 @@
 
           <div class="btn-group">
             <button class="btn-secondary" id="previewTrimBtn" type="button">Preview Clip Segment</button>
-            <button class="btn-primary" id="trimSaveBtn" type="button">Extract, Convert to WAV & Save</button>
+            <button class="btn-primary" id="trimSaveBtn" type="button">Extract, Convert to WAV & Save to Library</button>
           </div>
         </div>
       </div>
@@ -963,7 +951,6 @@
       if (!filename) filename = "custom_sample.wav";
       if (!filename.toLowerCase().endsWith('.wav')) filename += ".wav";
 
-      const slotChoice = document.querySelector('input[name="slotAssign"]:checked').value;
       const promptText = trimmerPromptText.value.trim();
 
       const formData = new FormData();
@@ -972,7 +959,7 @@
       formData.append('end_sec', end);
       formData.append('filename', filename);
       formData.append('prompt_text', promptText);
-      formData.append('prompt_lang', slotChoice);
+      formData.append('prompt_lang', 'auto');
 
       trimSaveBtn.innerText = 'Extracting & Converting to WAV...';
       try {
@@ -982,31 +969,21 @@
         });
         const data = await res.json();
         if (data.status === 'ok') {
-          trimSaveBtn.innerText = 'Saved as 32kHz WAV!';
+          trimSaveBtn.innerText = 'Saved to Voice Library!';
           await loadSettings();
 
-          // Auto-assign to chosen slot
-          if (slotChoice === 'en') {
-            voiceSelectEn.value = filename;
-            promptEnInput.value = promptText;
-          } else {
-            voiceSelectKo.value = filename;
-            promptKoInput.value = promptText;
-          }
-          await saveSettingsAuto();
-
           setTimeout(() => {
-            trimSaveBtn.innerText = 'Extract, Convert to WAV & Save';
-            // Switch to studio tab to show immediate result
-            document.querySelector('[data-tab="tab-studio"]').click();
-          }, 1200);
+            trimSaveBtn.innerText = 'Extract, Convert to WAV & Save to Library';
+            // Switch to Library tab to show the newly extracted voice sample
+            document.querySelector('[data-tab="tab-library"]').click();
+          }, 1000);
         } else {
           trimSaveBtn.innerText = 'Error: ' + (data.error || 'Failed');
-          setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save', 3000);
+          setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save to Library', 3000);
         }
       } catch (err) {
         trimSaveBtn.innerText = 'Error';
-        setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save', 3000);
+        setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save to Library', 3000);
       }
     });
 
