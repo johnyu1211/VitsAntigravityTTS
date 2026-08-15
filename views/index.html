@@ -1481,17 +1481,6 @@
       triggerAutoSave();
     });
 
-    const refreshBtn = document.getElementById('refreshBtn');
-
-    refreshBtn.addEventListener('click', () => {
-      refreshBtn.innerHTML = `<span>Refreshing...</span>`;
-      if (window.electronAPI && window.electronAPI.reload) {
-        window.electronAPI.reload();
-      } else {
-        window.location.reload();
-      }
-    });
-
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) {
         e.preventDefault();
