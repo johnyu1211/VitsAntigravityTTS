@@ -1,13 +1,13 @@
 const { app, BrowserWindow, Menu, ipcMain, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn, exec } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const http = require('http');
 
 let mainWindow = null;
 let pythonProcess = null;
-let didSpawnBackend = false;
 let isConnected = false;
+let watchdogInterval = null;
 const SERVER_URL = 'http://127.0.0.1:7861';
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -49,13 +49,14 @@ function checkPortActive(callback) {
     callback(false);
   });
 
-  req.setTimeout(800, () => {
+  req.setTimeout(1000, () => {
     req.destroy();
     callback(false);
   });
 }
 
 function startPythonBackend() {
+  if (pythonProcess) return;
   console.log('[Electron] Starting Python Voice Engine in background...');
   const rootDir = path.resolve(__dirname, '..');
   const pyExe = getPythonExecutable();
@@ -78,10 +79,9 @@ function startPythonBackend() {
     stdio: ['ignore', outStream, outStream]
   });
 
-  didSpawnBackend = true;
-
   pythonProcess.on('error', (err) => {
     console.error('[Electron] Python spawn error:', err);
+    pythonProcess = null;
   });
 
   pythonProcess.on('exit', (code) => {
@@ -90,20 +90,18 @@ function startPythonBackend() {
   });
 }
 
-function pollAndLoadApp() {
-  if (isConnected || !mainWindow || mainWindow.isDestroyed()) return;
-
-  checkPortActive((active) => {
-    if (active) {
-      console.log('[Electron] Voice Engine is READY! Loading studio GUI...');
-      isConnected = true;
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.loadURL(SERVER_URL);
+function cleanupProcesses() {
+  if (pythonProcess && pythonProcess.pid) {
+    console.log(`[Electron] Cleaning up spawned backend (PID: ${pythonProcess.pid})...`);
+    try {
+      if (process.platform === 'win32') {
+        execSync(`taskkill /pid ${pythonProcess.pid} /T /F`, { stdio: 'ignore' });
+      } else {
+        pythonProcess.kill('SIGKILL');
       }
-    } else {
-      setTimeout(pollAndLoadApp, 400);
-    }
-  });
+    } catch (e) {}
+    pythonProcess = null;
+  }
 }
 
 app.commandLine.appendSwitch('disable-http-cache');
@@ -139,43 +137,41 @@ function createWindow() {
   mainWindow.loadFile(path.join(rootDir, 'views', 'index.html')).catch(() => {});
 
   // 2. Prevent blank screen if load ever fails
-  mainWindow.webContents.on('did-fail-load', (event, errorCode) => {
+  mainWindow.webContents.on('did-fail-load', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.loadFile(path.join(rootDir, 'views', 'index.html')).catch(() => {});
     }
   });
 
-  // 3. Check if backend is running or launch
+  // 3. Initial check and spawn
   checkPortActive((alreadyRunning) => {
     if (!alreadyRunning) {
       startPythonBackend();
     }
   });
 
+  // 4. Robust Watchdog: If backend ever dies or is inactive, auto-launch it
+  if (watchdogInterval) clearInterval(watchdogInterval);
+  watchdogInterval = setInterval(() => {
+    checkPortActive((active) => {
+      if (!active && !pythonProcess) {
+        console.log('[Electron Watchdog] Backend offline. Auto-starting Python engine...');
+        startPythonBackend();
+      }
+    });
+  }, 2500);
+
   mainWindow.on('closed', () => {
     mainWindow = null;
+    if (watchdogInterval) clearInterval(watchdogInterval);
   });
-}
-
-function cleanupProcesses() {
-  if (didSpawnBackend && pythonProcess && pythonProcess.pid) {
-    console.log(`[Electron] Cleaning up spawned backend (PID: ${pythonProcess.pid})...`);
-    try {
-      if (process.platform === 'win32') {
-        exec(`taskkill /pid ${pythonProcess.pid} /T /F`, () => {});
-      } else {
-        pythonProcess.kill('SIGKILL');
-      }
-    } catch (e) {}
-    pythonProcess = null;
-  }
 }
 
 app.whenReady().then(() => {
   createWindow();
 
   ipcMain.on('app-relaunch', () => {
-    console.log('[Electron] Relaunching application...');
+    console.log('[Electron] Rebooting application & backend...');
     cleanupProcesses();
     app.relaunch();
     app.exit(0);
@@ -219,18 +215,6 @@ app.whenReady().then(() => {
       console.error('[Electron Clipboard Read Error]', err);
     }
     return null;
-  });
-
-  ipcMain.on('app-relaunch', () => {
-    cleanupProcesses();
-    app.relaunch();
-    app.exit(0);
-  });
-
-  ipcMain.on('app-reload', () => {
-    if (mainWindow) {
-      mainWindow.reload();
-    }
   });
 
   app.on('activate', () => {

@@ -3134,7 +3134,9 @@
     function retryStartupConnection() {
       const subtext = document.getElementById('startupSubtext');
       if (subtext) subtext.innerText = 'Re-attempting connection to backend...';
+      startupStartTime = Date.now();
       loadSettings();
+      fetchSystemLogs();
     }
 
     window.playVoiceSample = playVoiceSample;
