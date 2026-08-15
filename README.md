@@ -1,78 +1,34 @@
-# Antigravity GPT-SoVITS Character Voice Studio
+# Antigravity Voice Studio (GPT-SoVITS Desktop)
 
-Real-time zero-shot AI voice cloning and Text-to-Speech (TTS) background reader for Google Antigravity. Automatically reads Antigravity AI responses aloud in any custom character voice using **GPT-SoVITS V2** neural voice synthesis.
-
----
-
-## Key Features
-
-- **Zero-Shot Character Voice Cloning**: Clone any character's voice from a short 3~10 second audio clip (`.wav`) in `reference_voices/`.
-- **Native Trilingual Support**: 100% natural pronunciation and expressive intonation for **Korean, English, and Japanese**.
-- **GPU In-Memory Acceleration**: Real-time CUDA inference with persistent model caching and low-latency audio streaming.
-- **Real-Time Log Tracking**: Automatically detects and reads active Antigravity session logs (`transcript.jsonl`) under `~/.gemini/antigravity/brain/`.
-- **Intelligent Text Sanitization**: Automatically strips code blocks, markdown tables, URLs, and LaTeX math formulas before synthesis.
-- **Instant Interrupt Handling**: Instantly stops speech when a new user message is submitted.
-- **Studio Web Controller**: Clean, dark-themed local GUI (`http://localhost:7861`) to switch character voice samples, adjust pitch, speed, and audio toggles.
+실시간 인공지능 신경망 음성 복제(GPT-SoVITS V2) 기반 **독립형 윈도우 데스크톱 애플리케이션**입니다.
 
 ---
 
-## Architecture
+## 주요 기능
 
-```text
-[ Antigravity IDE / CLI ]
-           |
-           v
-[ ~/.gemini/antigravity/brain/<session>/transcript.jsonl ]
-           | (Real-time Non-blocking Tailing)
-           v
-[ Text Cleaner & Language Detector ]
-           | (Korean / English / Japanese)
-           v
-[ GPT-SoVITS V2 Neural Audio Synthesizer ]
-           | (Zero-shot reference voice cloning)
-           v
-[ Speaker Output & Studio Web GUI (Port 7861) ]
-```
+1. **독립형 일렉트론 데스크톱 앱 (No CMD)**
+   - `run_app.vbs`로 실행 시 검은 콘솔 창 없이 순수 데스크톱 앱으로 구동.
+   - 창 종료 시 백그라운드 파이썬 프로세스 자동 100% 종료.
+2. **다국어 전용 보이스 슬롯 (English / Korean)**
+   - 영어로 말할 때와 한국어로 말할 때 각각 다른 음성 샘플을 실시간 자동 매칭 발화.
+3. **비디오/오디오 통합 음성 추출기 (Video-to-WAV Trimmer)**
+   - 애니메이션/유튜브/영화 동영상(`MP4`, `MKV`, `MOV`, `WebM`) 및 음원(`MP3`, `FLAC`, `WAV`, `M4A`)을 올려 비디오 화면을 보며 원하는 발화 장면(3~6초)을 1초 만에 지정.
+   - 고성능 FFmpeg 엔진으로 32kHz 무손실 모노 WAV로 자동 변환 및 슬롯 즉시 등록.
+4. **특수문자 및 호흡 잡음 100% 원천 정제**
+   - 괄호, 코드, 링크, 따옴표, 수식 기호 완벽 제거.
+   - 쉼표 과다 호흡(바람 소리) 제거 및 숫자 소수점(3.14) 완벽 보호.
 
 ---
 
-## Quick Start Guide
+## 실행 방법
 
-### 1. Prerequisites
-- Windows 10/11 (or Linux)
-- Python 3.10 or 3.11
-- NVIDIA GPU with CUDA support (4GB+ VRAM recommended)
-
-### 2. Clone Repository
-```bash
-git clone https://github.com/johnyu1211/RCV-AntigravityTTS.git
-cd RCV-AntigravityTTS
-```
-
-### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Add Character Voice Samples
-Place any 3~10 second character voice clips (`.wav`) into the `reference_voices/` folder:
-```text
-reference_voices/
-  ├── my_character.wav
-  └── anime_heroine.wav
-```
-
-### 5. Run
-On Windows:
-```bash
-run.bat
-```
-The Studio Web GUI will open automatically at `http://localhost:7861`.
+- **[run_app.vbs](run_app.vbs)**: 콘솔 창 없는 완전 무음 1-클릭 실행 (추천)
+- **[run_electron.bat](run_electron.bat)**: 배치 파일 실행
 
 ---
 
-## Legal & License
+## 탭 구성
 
-- **Engine Code**: Licensed under the **MIT License**.
-- **Core Architecture**: Powered by [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS) (MIT License).
-- **User Responsibility**: Model weights and audio samples in `reference_voices/` are managed locally by the user and are strictly excluded from the repository.
+- **`Voice Studio`**: 실시간 대사 스트림, 영어/한국어 음성 슬롯, 음량/속도/온도 튜닝
+- **`Video & Audio Trimmer`**: 동영상 및 오디오를 32kHz 음성 샘플로 추출/변환
+- **`Voice Library`**: 저장된 음성 샘플 및 스크립트 관리
