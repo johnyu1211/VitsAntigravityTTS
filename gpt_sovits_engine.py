@@ -90,7 +90,7 @@ class GPTSoVITSEngine:
         return sorted(voices, key=lambda x: x["filename"])
 
     @torch.inference_mode()
-    def synthesize(self, text, ref_audio_name="voiceSCOURCE.wav", text_lang="ko", speed=1.0, temperature=0.65, prompt_text="", prompt_lang="auto", output_path=None):
+    def synthesize(self, text, ref_audio_name="voiceSCOURCE.wav", text_lang="ko", speed=1.0, temperature=0.65, prompt_text="", prompt_lang="auto", output_path=None, volume=1.0):
         try:
             ref_path = os.path.join(self.ref_dir, ref_audio_name)
             if not os.path.exists(ref_path):
@@ -147,6 +147,12 @@ class GPTSoVITSEngine:
 
             import numpy as np
             full_audio = np.concatenate(audio_chunks, axis=0)
+
+            # Digital software volume preamp gain (supports up to 250% boost with soft limiter)
+            if volume != 1.0 and volume > 0:
+                full_audio = full_audio * float(volume)
+                # Soft limiter to prevent harsh digital distortion
+                full_audio = np.clip(full_audio, -0.99, 0.99)
 
             if output_path:
                 sf.write(output_path, full_audio, sample_rate)

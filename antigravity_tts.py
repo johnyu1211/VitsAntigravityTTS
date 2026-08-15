@@ -224,6 +224,7 @@ async def speech_worker():
             continue
 
         last_spoken_text = clean
+        vol = float(current_settings.get("volume", 1.0))
         speed = float(current_settings.get("speed", 1.0))
         temperature = float(current_settings.get("temperature", 0.65))
 
@@ -256,9 +257,9 @@ async def speech_worker():
             temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
 
             try:
-                print(f"[GPT-SoVITS] [{lang.upper()}] Voice: '{ref_voice}' (Temp: {temperature:.2f}) -> {chunk[:35]}...")
+                print(f"[GPT-SoVITS] [{lang.upper()}] Voice: '{ref_voice}' (Vol: {int(vol*100)}%, Temp: {temperature:.2f}) -> {chunk[:35]}...")
                 success = await asyncio.to_thread(
-                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out
+                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol
                 )
 
                 if gen_id != current_generation_id:
