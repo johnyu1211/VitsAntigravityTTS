@@ -94,6 +94,8 @@ function pollAndLoadApp() {
   });
 }
 
+app.commandLine.appendSwitch('disable-http-cache');
+
 function createWindow() {
   Menu.setApplicationMenu(null);
 
@@ -116,6 +118,11 @@ function createWindow() {
     }
   });
 
+  // Clear session cache immediately so fresh files are always loaded
+  try {
+    mainWindow.webContents.session.clearCache();
+  } catch (e) {}
+
   // 1. Show sleek loading screen first
   mainWindow.loadFile(path.join(rootDir, 'views', 'loading.html')).catch(() => {});
 
@@ -132,7 +139,7 @@ function createWindow() {
     if (alreadyRunning) {
       console.log('[Electron] Existing backend detected. Connecting immediately...');
       isConnected = true;
-      mainWindow.loadURL(SERVER_URL);
+      mainWindow.loadURL(SERVER_URL, { extraHeaders: 'pragma: no-cache\ncache-control: no-cache\n' });
     } else {
       startPythonBackend();
       pollAndLoadApp();

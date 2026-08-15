@@ -428,7 +428,11 @@ async def speech_worker():
 
 # Web Handlers
 async def handle_index(request):
-    return web.FileResponse(INDEX_HTML)
+    return web.FileResponse(INDEX_HTML, headers={
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    })
 
 async def handle_get_settings(request):
     return web.json_response({
