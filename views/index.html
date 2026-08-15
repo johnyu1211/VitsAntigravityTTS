@@ -2708,13 +2708,15 @@
           localStorage.setItem('cached_studio_data', JSON.stringify(data));
         } catch (e) {}
 
-        // Hide Startup Floating Overlay smoothly
-        const startupOverlay = document.getElementById('startupEngineOverlay');
-        if (startupOverlay && startupOverlay.style.display !== 'none') {
-          if (startupTimerInterval) clearInterval(startupTimerInterval);
-          startupOverlay.style.opacity = '0';
-          startupOverlay.style.transform = 'translate(-50%, -55%) scale(0.96)';
-          setTimeout(() => { startupOverlay.style.display = 'none'; }, 400);
+        // Only hide Startup Floating Overlay if AI neural models are ACTUALLY loaded in GPU!
+        if (data.model_ready) {
+          const startupOverlay = document.getElementById('startupEngineOverlay');
+          if (startupOverlay && startupOverlay.style.display !== 'none') {
+            if (startupTimerInterval) clearInterval(startupTimerInterval);
+            startupOverlay.style.opacity = '0';
+            startupOverlay.style.transform = 'translate(-50%, -55%) scale(0.96)';
+            setTimeout(() => { startupOverlay.style.display = 'none'; }, 400);
+          }
         }
         const s = data.settings;
         

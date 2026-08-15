@@ -464,7 +464,8 @@ async def handle_get_settings(request):
     return web.json_response({
         "status": "ok",
         "settings": current_settings,
-        "available_voices": gpt_sovits_engine.get_available_reference_voices()
+        "available_voices": gpt_sovits_engine.get_available_reference_voices(),
+        "model_ready": gpt_sovits_engine.is_ready() if gpt_sovits_engine else False
     })
 
 async def handle_save_settings(request):
