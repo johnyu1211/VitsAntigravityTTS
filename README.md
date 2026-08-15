@@ -1,33 +1,39 @@
 # Antigravity Voice Studio (GPT-SoVITS Desktop)
 
-실시간 인공지능 신경망 음성 복제(GPT-SoVITS V2) 기반 **독립형 윈도우 데스크톱 애플리케이션**입니다.
+A professional, real-time AI neural voice suite and standalone desktop application powered by **GPT-SoVITS V2**.
 
 ---
 
-## 주요 기능
+## Key Features
 
-1. **독립형 일렉트론 데스크톱 앱 (No CMD)**
-   - `run_app.vbs`로 실행 시 검은 콘솔 창 없이 순수 데스크톱 앱으로 구동.
-   - 창 종료 시 백그라운드 파이썬 프로세스 자동 100% 종료.
-2. **다국어 전용 보이스 슬롯 (English / Korean)**
-   - 영어로 말할 때와 한국어로 말할 때 각각 다른 음성 샘플을 실시간 자동 매칭 발화.
-3. **비디오/오디오 통합 음성 추출기 (Video-to-WAV Trimmer)**
-   - 애니메이션/유튜브/영화 동영상(`MP4`, `MKV`, `MOV`, `WebM`) 및 음원(`MP3`, `FLAC`, `WAV`, `M4A`)을 올려 비디오 화면을 보며 원하는 발화 장면(3~6초)을 1초 만에 지정.
-   - 고성능 FFmpeg 엔진으로 32kHz 무손실 모노 WAV로 자동 변환 및 슬롯 즉시 등록.
-4. **특수문자 및 호흡 잡음 100% 원천 정제**
-   - 괄호, 코드, 링크, 따옴표, 수식 기호 완벽 제거.
-   - 쉼표 과다 호흡(바람 소리) 제거 및 숫자 소수점(3.14) 완벽 보호.
+1. **Standalone Desktop Application (Clean GUI, No Console Window)**
+   - Launch silently via `run_app.vbs` without command prompt windows.
+   - Clean IPC lifecycle management ensures 100% background process cleanup upon window exit.
+2. **Universal Dual-Slot Language Routing (English Primary & Second Language Secondary)**
+   - Automatically routes spoken English text to **Slot 1 (English Voice)**.
+   - Automatically routes all other languages (Korean, Japanese, Chinese, etc.) to **Slot 2 (Second Language Voice)**.
+3. **Visual Waveform Sample Editor (Video & Audio Trimmer)**
+   - Load video files (`MP4`, `MKV`, `MOV`, `WebM`) or audio tracks (`MP3`, `FLAC`, `WAV`, `M4A`) with an interactive canvas waveform viewer.
+   - Fine-tune clip boundaries and extract 32kHz reference samples with a single click.
+4. **Voice Library & Avatar Thumbnails**
+   - Manage reference audio files and companion transcript scripts.
+   - Attach character avatar thumbnails directly via clipboard image paste (`Ctrl+V`) or web URLs.
+5. **Studio Analog Saturation Volume Booster (Up to 200%)**
+   - Non-linear soft-saturation limiter enhances voice clarity and punch without digital clipping distortion.
+6. **Robust Text Normalizer & Cleaner**
+   - Filters markdown, URLs, code blocks, and unwanted breath artifacts while preserving natural prosody and decimals.
 
 ---
 
-## 실행 방법
+## How to Run
 
-- **[run_app.vbs](run_app.vbs)**: 더블 클릭하여 완전 무음으로 데스크톱 앱 실행 (검은 콘솔 창 없음)
+- **[run_app.vbs](run_app.vbs)**: Double-click to launch the application silently in desktop mode.
 
 ---
 
-## 탭 구성
+## Tab Overview
 
-- **`Voice Studio`**: 실시간 대사 스트림, 영어/한국어 음성 슬롯, 음량/속도/온도 튜닝
-- **`Video & Audio Trimmer`**: 동영상 및 오디오를 32kHz 음성 샘플로 추출/변환
-- **`Voice Library`**: 저장된 음성 샘플 및 스크립트 관리
+- **`Voice Studio`**: Live transcript feed, primary English and secondary multilingual voice slots, speed, volume, and temperature tuning.
+- **`Video & Audio Trimmer`**: Interactive audio waveform trimmer with 32kHz high-fidelity extraction.
+- **`Voice Library`**: Reference voice manager with companion scripts and 90px character avatars.
+- **`System Logs`**: Live terminal log stream with auto-scroll and one-click log export.

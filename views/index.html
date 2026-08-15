@@ -630,14 +630,14 @@
         <div class="slot-box">
           <div class="slot-header">
             <span class="slot-badge">English Voice (Primary Slot)</span>
-            <span class="hint-text">영어가 감지되었을 때 발화하는 1차 음성</span>
+            <span class="hint-text">Primary voice used when English is detected</span>
           </div>
           <div class="form-group">
             <label class="form-label" for="voiceSelectEn">Selected Voice File</label>
             <select id="voiceSelectEn"></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Companion Script (영문 대사)</label>
+            <label class="form-label">Companion Script (English Prompt)</label>
             <input type="text" id="promptEnInput" placeholder="English transcript matching sample audio">
           </div>
         </div>
@@ -646,22 +646,22 @@
         <div class="slot-box">
           <div class="slot-header">
             <span class="slot-badge ko">Second Language Voice (Secondary Slot)</span>
-            <span class="hint-text">영어를 제외한 2차 언어(한국어, 일본어, 중국어 등) 발화 시 자동 사용</span>
+            <span class="hint-text">Universal fallback voice for non-English speech (Korean, Japanese, Chinese, etc.)</span>
           </div>
           <div class="form-group">
             <label class="form-label" for="voiceSelectKo">Selected Voice File</label>
             <select id="voiceSelectKo"></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Companion Script (2차 언어 대사)</label>
-            <input type="text" id="promptKoInput" placeholder="2차 언어 샘플 오디오가 말한 실제 대사">
+            <label class="form-label">Companion Script (Second Language Prompt)</label>
+            <input type="text" id="promptKoInput" placeholder="Transcript matching the second language reference audio">
           </div>
         </div>
 
         <!-- Master Tuning -->
         <div class="form-group">
           <label class="form-label">
-            <span>Temperature (권장: 0.60 ~ 0.70)</span>
+            <span>Temperature (Recommended: 0.60 ~ 0.70)</span>
             <span class="range-val" id="tempVal">0.65</span>
           </label>
           <div class="range-wrap">
@@ -671,7 +671,7 @@
 
         <div class="form-group">
           <label class="form-label">
-            <span>Volume (음량 및 스튜디오 증폭)</span>
+            <span>Volume & Studio Boost</span>
             <span class="range-val" id="volumeVal">100%</span>
           </label>
           <div class="range-wrap">
@@ -681,7 +681,7 @@
 
         <div class="form-group">
           <label class="form-label">
-            <span>Speaking Speed (말하기 속도)</span>
+            <span>Speaking Speed</span>
             <span class="range-val" id="speedVal">1.0x</span>
           </label>
           <div class="range-wrap">
@@ -715,11 +715,11 @@
           <div class="section-title">Visual Waveform Sample Editor</div>
           <div class="duration-badge" id="durationBadge" style="font-size:12px;font-weight:700;color:var(--primary);">No Media Loaded</div>
         </div>
-        <p class="hint-text">동영상(MP4, MKV, MOV, WebM)이나 음원(MP3, WAV, FLAC, M4A)의 음성 파형을 보면서 대사 구간을 정밀하게 잘라냅니다.</p>
+        <p class="hint-text">Extract and trim high-fidelity 32kHz voice samples directly from video (MP4, MKV, MOV, WebM) or audio files (MP3, WAV, FLAC, M4A).</p>
 
         <div class="trimmer-box">
           <div class="form-group">
-            <label class="form-label">Media File (동영상 또는 오디오 파일 선택)</label>
+            <label class="form-label">Select Video or Audio File</label>
             <input type="file" id="mediaFileInput" accept="audio/*,video/*">
           </div>
 
@@ -763,7 +763,7 @@
             <!-- Start Time Adjuster -->
             <div class="slot-box" style="padding: 12px;">
               <div class="slot-header">
-                <span style="font-size: 12px; font-weight: 700;">Start Point (시작점)</span>
+                <span style="font-size: 12px; font-weight: 700;">Start Time (sec)</span>
                 <input type="number" id="startTimeInput" step="0.05" min="0" value="0.00" style="width: 80px; padding: 4px 8px; font-size: 13px; text-align: right;">
               </div>
               <div style="display: flex; gap: 4px; margin-top: 6px;">
@@ -777,7 +777,7 @@
             <!-- End Time Adjuster -->
             <div class="slot-box" style="padding: 12px;">
               <div class="slot-header">
-                <span style="font-size: 12px; font-weight: 700;">End Point (종료점)</span>
+                <span style="font-size: 12px; font-weight: 700;">End Time (sec)</span>
                 <input type="number" id="endTimeInput" step="0.05" min="0" value="5.00" style="width: 80px; padding: 4px 8px; font-size: 13px; text-align: right;">
               </div>
               <div style="display: flex; gap: 4px; margin-top: 6px;">
@@ -800,10 +800,10 @@
 
           <div class="form-group">
             <label class="form-label">
-              <span>Companion Transcript (선택한 구간에서 캐릭터가 실제로 말하는 대사)</span>
-              <span style="font-size:11px;color:var(--primary);">피치 및 억양 고정용</span>
+              <span>Companion Transcript (Spoken text in selected clip)</span>
+              <span style="font-size:11px;color:var(--primary);">Prosody & Pitch Anchor</span>
             </label>
-            <input type="text" id="trimmerPromptText" placeholder="예: Hello there / 안녕하세요, 반갑습니다!">
+            <input type="text" id="trimmerPromptText" placeholder="e.g. Hello there! Welcome to my stream.">
           </div>
 
           <div class="form-group">
@@ -827,7 +827,7 @@
           <div class="section-title">Saved Voice Library (reference_voices/)</div>
           <button class="btn-secondary btn-sm" id="btnRefreshLibrary" type="button">Refresh</button>
         </div>
-        <p class="hint-text">등록된 모든 음성 샘플과 동봉된 대사 텍스트를 확인하고 관리할 수 있습니다.</p>
+        <p class="hint-text">Manage saved reference voices, thumbnails, and companion transcript scripts.</p>
 
         <div class="voice-list" id="voiceListContainer"></div>
       </div>
@@ -848,7 +848,7 @@
             <button class="btn-secondary btn-sm" id="btnClearLogs" type="button">Clear View</button>
           </div>
         </div>
-        <p class="hint-text">AI 음성 합성 엔진, 텍스트 라우팅, 실시간 백엔드 동작 로그가 실시간으로 스트리밍됩니다.</p>
+        <p class="hint-text">Live stream of neural voice synthesis, text routing, and background engine events.</p>
 
         <div id="logConsole" style="background: #111113; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 16px; height: 380px; overflow-y: auto; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; color: #D1D1D6; white-space: pre-wrap; word-break: break-all;">
           Loading system logs...
@@ -1463,7 +1463,7 @@
     }
 
     async function deleteVoiceItem(filename) {
-      if (!confirm(`정말로 "${filename}" 음성 샘플과 동봉된 대사 파일을 삭제하시겠습니까?`)) return;
+      if (!confirm(`Are you sure you want to permanently delete voice "${filename}" and its companion files?`)) return;
       if (currentPreviewAudio) {
         currentPreviewAudio.pause();
         currentPreviewAudio = null;
@@ -1549,7 +1549,7 @@
 
               <!-- Bottom Row: Transcript -->
               <div>
-                <input type="text" id="${promptInputId}" value="${ptext.replace(/"/g, '&quot;')}" placeholder="Companion Script (동봉된 대사 .txt 입력)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); font-size: 12px; padding: 7px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main);">
+                <input type="text" id="${promptInputId}" value="${ptext.replace(/"/g, '&quot;')}" placeholder="Companion Script (Transcript matching this voice in .txt)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); font-size: 12px; padding: 7px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-main);">
               </div>
             </div>
           </div>

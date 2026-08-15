@@ -350,7 +350,7 @@ async def handle_save_settings(request):
 async def handle_test_speak(request):
     global current_generation_id
     current_generation_id += 1
-    test_phrase = "Hello! This is English speech test. 그리고 이것은 한국어 전용 샘플 음성 테스트입니다."
+    test_phrase = "Hello! This is an English voice test. And this is a second language voice synthesis test."
     await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id})
     return web.json_response({"status": "queued"})
 
