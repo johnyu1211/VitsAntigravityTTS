@@ -140,6 +140,9 @@
       color: #D1D1D6;
       white-space: pre-wrap;
       word-break: break-all;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      cursor: text;
     }
 
     /* Header */
@@ -2931,6 +2934,11 @@
 
     async function fetchSystemLogs() {
       if (isServerDead) return;
+      // Do not interrupt active text selection/drag in the log console
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed && logConsole.contains(selection.anchorNode)) {
+        return;
+      }
       try {
         const res = await fetch(API_BASE + '/api/logs');
         const data = await res.json();

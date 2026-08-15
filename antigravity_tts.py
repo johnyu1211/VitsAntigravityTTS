@@ -12,12 +12,17 @@ import base64
 import io
 import urllib.request
 
-# Protect against WinError 6 / invalid stdout handles when spawned by Electron/GUI
+# Protect against WinError 6 / invalid stdout handles and force UTF-8 on Windows
 try:
     if sys.stdout is None or not hasattr(sys.stdout, 'write'):
         sys.stdout = open(os.devnull, 'w', encoding='utf-8')
+    elif hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='backslashreplace')
+        
     if sys.stderr is None or not hasattr(sys.stderr, 'write'):
         sys.stderr = open(os.devnull, 'w', encoding='utf-8')
+    elif hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='backslashreplace')
 except:
     pass
 
@@ -416,8 +421,9 @@ async def speech_worker():
 
             try:
                 fast_mode = current_settings.get("fast_pipeline", True)
-                pipe_tag = " [⚡FAST]" if fast_mode else ""
-                print(f"[GPT-SoVITS]{pipe_tag} [{lang.upper()}] Voice: '{ref_voice}' (Vol: {int(vol*100)}%, Temp: {temperature:.2f}) -> {chunk[:35]}...")
+                pipe_tag = " [FAST]" if fast_mode else ""
+                log_preview = chunk[:35].replace('\n', ' ')
+                print(f"[GPT-SoVITS]{pipe_tag} [{lang.upper()}] Voice: '{ref_voice}' (Vol: {int(vol*100)}%, Temp: {temperature:.2f}) -> {log_preview}...")
                 success = await asyncio.to_thread(
                     gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol, fast_mode
                 )
