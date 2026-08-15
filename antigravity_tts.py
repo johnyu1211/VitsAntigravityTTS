@@ -155,11 +155,17 @@ def clean_markdown_text(text):
     text = text.replace(' DECIMAL DOT ', '.').replace('DECIMAL DOT', '.').replace('DECIMALDOT', '.')
     return text.strip()
 
-def split_into_conversational_chunks(text, max_chars=35, min_chars=10):
+DANGLING_ENDINGS = re.compile(
+    r'\s+(?:and|but|or|so|because|while|with|to|that|for|as|of|in|on|at|by|if|when|than|'
+    r'그리고|하지만|또한|그러나|그러므로|그런데|따라서|및|또는|혹은|하면서|하며|하고)$',
+    re.IGNORECASE
+)
+
+def split_into_conversational_chunks(text, max_chars=36, min_chars=12):
     """
-    Splits text into balanced conversational slices (15~35 chars / 4~8 words).
-    Ensures chunks are never too short (which causes neural vocoder artifacts)
-    and never too long (which causes latency buffer underruns).
+    Splits text into balanced conversational slices (15~36 chars / 4~8 words).
+    Guarantees conjunctions/prepositions (and, but, so, 그리고, etc.) NEVER dangle
+    at the end of a chunk, ensuring natural, fluent prosodic speech.
     """
     if not text:
         return []
@@ -173,7 +179,7 @@ def split_into_conversational_chunks(text, max_chars=35, min_chars=10):
     raw_lines = [line.strip() for line in t.split('\n') if line.strip()]
     merged_lines = []
     
-    # Merge micro fragments (<10 chars) with subsequent or previous line
+    # Merge micro fragments (<12 chars) with subsequent or previous line
     for line in raw_lines:
         line = re.sub(r'\s+', ' ', line).strip()
         if not line:
@@ -204,9 +210,33 @@ def split_into_conversational_chunks(text, max_chars=35, min_chars=10):
         if current_chunk.strip():
             final_chunks.append(current_chunk.strip())
 
+    # Fix dangling conjunctions: move trailing conjunctions to the beginning of the next chunk
+    refined = []
+    carry_over = ''
+    for c in final_chunks:
+        c = (carry_over + ' ' + c).strip() if carry_over else c.strip()
+        carry_over = ''
+        if not c:
+            continue
+            
+        m = DANGLING_ENDINGS.search(c)
+        if m:
+            dangling_word = m.group().strip()
+            c = c[:m.start()].strip()
+            carry_over = dangling_word
+            
+        if c:
+            refined.append(c)
+            
+    if carry_over:
+        if refined:
+            refined[-1] += ' ' + carry_over
+        else:
+            refined.append(carry_over)
+
     # Final pass: merge any trailing micro-fragment (<8 chars) with previous chunk
     cleaned = []
-    for c in final_chunks:
+    for c in refined:
         c = c.strip()
         if not c:
             continue
