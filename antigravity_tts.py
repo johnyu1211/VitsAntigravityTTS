@@ -128,6 +128,9 @@ def clean_markdown_text(text):
     text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
     
     # 6. Comprehensive Special Character Purge
+    # Protect decimal points (e.g. 3.14, 2.0)
+    text = re.sub(r'(\d+)\.(\d+)', r'\1_DECIMAL_DOT_\2', text)
+    
     text = re.sub(r'[^\w\s\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?]', ' ', text)
     text = re.sub(r'[_]', ' ', text)
     
@@ -135,6 +138,9 @@ def clean_markdown_text(text):
     text = re.sub(r'[\.!\?]{2,}', '.', text)
     text = re.sub(r'\s*,\s*', ' ', text)
     text = re.sub(r'\s*([\.!\?])\s*', r'\1 ', text)
+    
+    # Restore decimal points
+    text = text.replace(' DECIMAL DOT ', '.').replace('DECIMAL DOT', '.').replace('DECIMALDOT', '.')
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
