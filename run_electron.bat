@@ -6,16 +6,12 @@ echo ===================================================
 echo   Antigravity Voice Studio - Electron Desktop App
 echo ===================================================
 
-:: Check node_modules
-if not exist "node_modules\electron" (
-    echo [INFO] Installing Electron dependencies (First run only)...
+:: Check if electron binary exists
+if not exist "node_modules\electron\dist\electron.exe" (
+    echo [INFO] Installing Electron desktop runtime (First run only)...
     call npm install
 )
 
-echo [INFO] Launching Desktop App...
-call npx electron .
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo [ERROR] Electron exited with error code %ERRORLEVEL%
-    pause
-)
+echo [INFO] Launching Desktop Application...
+start "" "node_modules\electron\dist\electron.exe" .
+exit /b 0
