@@ -553,7 +553,7 @@ async def handle_rename_voice(request):
         prompt_text = data.get("prompt_text", "").strip()
         prompt_lang = data.get("prompt_lang", "auto")
 
-        ok, msg = gpt_engine.rename_voice(old_filename, new_filename, new_prompt_text=prompt_text, new_prompt_lang=prompt_lang)
+        ok, msg = gpt_sovits_engine.rename_voice(old_filename, new_filename, new_prompt_text=prompt_text, new_prompt_lang=prompt_lang)
         if not ok:
             return web.json_response({"status": "error", "error": msg}, status=400)
 
@@ -572,7 +572,7 @@ async def handle_rename_voice(request):
         if changed:
             save_config(current_settings)
 
-        voices = gpt_engine.get_available_reference_voices()
+        voices = gpt_sovits_engine.get_available_reference_voices()
         return web.json_response({
             "status": "ok",
             "new_filename": actual_new_name,
@@ -587,9 +587,9 @@ async def handle_delete_voice(request):
     try:
         data = await request.json()
         filename = data.get("filename", "").strip()
-        gpt_engine.delete_voice(filename)
+        gpt_sovits_engine.delete_voice(filename)
 
-        voices = gpt_engine.get_available_reference_voices()
+        voices = gpt_sovits_engine.get_available_reference_voices()
         # Fallback if active voice was deleted
         changed = False
         if voices:
