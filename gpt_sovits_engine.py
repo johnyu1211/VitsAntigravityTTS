@@ -27,7 +27,7 @@ class GPTSoVITSEngine:
     def is_ready(self):
         return self._is_ready
 
-    def apply_acceleration_settings(self, enable_sdpa=True, enable_torch_compile=False):
+    def apply_acceleration_settings(self, enable_sdpa=True, enable_torch_compile=False, enable_int8=False):
         try:
             import torch
             if torch.cuda.is_available():
@@ -50,6 +50,9 @@ class GPTSoVITSEngine:
                     except:
                         pass
 
+            if enable_int8 and self._is_ready and self.tts:
+                self._apply_int8_quantization()
+
             if enable_torch_compile and self._is_ready and self.tts:
                 if hasattr(torch, 'compile') and not getattr(self, '_is_compiled', False):
                     try:
@@ -62,6 +65,49 @@ class GPTSoVITSEngine:
                         print(f"[GPT-SoVITS Torch Compile Notice] {e}")
         except Exception as e:
             print(f"[Acceleration Config Error] {e}")
+
+    def _apply_int8_quantization(self):
+        if getattr(self, '_is_int8_quantized', False):
+            return True
+        try:
+            import bitsandbytes as bnb
+            import torch.nn as nn
+            
+            def replace_linear_int8(module):
+                count = 0
+                for name, child in module.named_children():
+                    if isinstance(child, nn.Linear):
+                        has_bias = child.bias is not None
+                        in_features = child.in_features
+                        out_features = child.out_features
+                        new_linear = bnb.nn.Linear8bitLt(
+                            in_features,
+                            out_features,
+                            bias=has_bias,
+                            has_fp16_weights=False,
+                            threshold=6.0
+                        )
+                        new_linear.weight = bnb.nn.Int8Params(
+                            child.weight.data.clone(),
+                            requires_grad=False,
+                            has_fp16_weights=False
+                        ).to(child.weight.device)
+                        if has_bias:
+                            new_linear.bias = nn.Parameter(child.bias.data.clone(), requires_grad=False).to(child.bias.device)
+                        setattr(module, name, new_linear)
+                        count += 1
+                    else:
+                        count += replace_linear_int8(child)
+                return count
+
+            if self.tts and hasattr(self.tts, 't2s_model') and self.tts.t2s_model:
+                n = replace_linear_int8(self.tts.t2s_model.model)
+                self._is_int8_quantized = True
+                print(f"[GPT-SoVITS Engine] INT8 Quantization applied to {n} T2S Linear layers (GTX 1060 DP4A Active)!")
+                return True
+        except Exception as e:
+            print(f"[INT8 Quantization Notice] {e}")
+            return False
 
     def load_models(self):
         if self._is_ready:

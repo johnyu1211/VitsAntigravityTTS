@@ -76,7 +76,8 @@ current_settings = {
     "enable_chunking": True,
     "speed_mode": "ultra",
     "enable_sdpa": True,
-    "enable_torch_compile": False
+    "enable_torch_compile": False,
+    "enable_int8": False
 }
 
 speech_queue = asyncio.Queue()
@@ -507,10 +508,11 @@ async def handle_save_settings(request):
         except:
             pass
 
-    if "enable_sdpa" in data or "enable_torch_compile" in data:
+    if "enable_sdpa" in data or "enable_torch_compile" in data or "enable_int8" in data:
         gpt_sovits_engine.apply_acceleration_settings(
             current_settings.get("enable_sdpa", True),
-            current_settings.get("enable_torch_compile", False)
+            current_settings.get("enable_torch_compile", False),
+            current_settings.get("enable_int8", False)
         )
 
     return web.json_response({
@@ -908,7 +910,8 @@ async def async_load_ai_engine():
         await loop.run_in_executor(None, gpt_sovits_engine.load_models)
         gpt_sovits_engine.apply_acceleration_settings(
             current_settings.get("enable_sdpa", True),
-            current_settings.get("enable_torch_compile", False)
+            current_settings.get("enable_torch_compile", False),
+            current_settings.get("enable_int8", False)
         )
         t_elapsed = time.perf_counter() - t_start
         print(f"[Angra Voice Studio] AI Neural Model loaded in {t_elapsed:.1f}s (CUDA SDPA & pre-warmed ready)!")
