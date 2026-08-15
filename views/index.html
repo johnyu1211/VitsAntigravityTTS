@@ -810,36 +810,13 @@
     const speedVal = document.getElementById('speedVal');
     const masterToggle = document.getElementById('masterToggle');
     const testBtn = document.getElementById('testBtn');
-    const shutdownBtn = document.getElementById('shutdownBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
     const feedBadge = document.getElementById('feedBadge');
     const transcriptBox = document.getElementById('transcriptBox');
-
-    // Video/Audio Trimmer elements
-    const mediaFileInput = document.getElementById('mediaFileInput');
-    const playerContainer = document.getElementById('playerContainer');
-    const videoPreview = document.getElementById('videoPreview');
-    const audioPreview = document.getElementById('audioPreview');
-    const scrubToolbar = document.getElementById('scrubToolbar');
-    const currentPlaybackTime = document.getElementById('currentPlaybackTime');
-    const btnSetStart = document.getElementById('btnSetStart');
-    const btnSetEnd = document.getElementById('btnSetEnd');
-    const startTimeInput = document.getElementById('startTimeInput');
-    const endTimeInput = document.getElementById('endTimeInput');
-    const durationDisplay = document.getElementById('durationDisplay');
-    const totalDurationDisplay = document.getElementById('totalDurationDisplay');
-    const trimmerPromptText = document.getElementById('trimmerPromptText');
-    const targetFilename = document.getElementById('targetFilename');
-    const previewTrimBtn = document.getElementById('previewTrimBtn');
-    const trimSaveBtn = document.getElementById('trimSaveBtn');
     const voiceListContainer = document.getElementById('voiceListContainer');
     const btnRefreshLibrary = document.getElementById('btnRefreshLibrary');
-
-    let loadedMediaBlob = null;
-    let activePlayer = null;
-    let mediaDuration = 0;
     let saveTimeout = null;
     let voicesMetadata = {};
     let isServerDead = false;
