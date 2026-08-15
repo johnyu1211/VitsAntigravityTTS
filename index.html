@@ -41,50 +41,51 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px;
+      padding: 32px 20px 60px;
     }
 
     .container {
       width: 100%;
-      max-width: 680px;
+      max-width: 720px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
+    /* Header */
     .header-card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 24px 28px;
+      padding: 20px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
     .title-wrap h1 {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
       letter-spacing: -0.02em;
     }
 
     .title-wrap p {
-      font-size: 13px;
+      font-size: 12px;
       color: var(--text-muted);
-      margin-top: 4px;
+      margin-top: 3px;
     }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .status-badge {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
+      padding: 6px 12px;
       background: var(--card-inner);
       border-radius: 20px;
       font-size: 12px;
@@ -108,13 +109,13 @@
     }
 
     .btn-shutdown {
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
-      background: rgba(255, 69, 58, 0.15);
+      background: rgba(255, 69, 58, 0.12);
       color: var(--danger);
-      border: 1px solid rgba(255, 69, 58, 0.3);
+      border: 1px solid rgba(255, 69, 58, 0.25);
       cursor: pointer;
       transition: var(--transition);
     }
@@ -124,53 +125,55 @@
       color: #FFFFFF;
     }
 
-    /* Clean Spoken Transcript Card */
-    .speech-feed-card {
+    /* Navigation Tabs */
+    .tab-nav {
+      display: flex;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 24px 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .feed-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .feed-badge {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-muted);
-    }
-
-    .feed-badge.active {
-      background: var(--primary-subtle);
-      color: var(--primary);
-    }
-
-    .transcript-box {
-      font-size: 15px;
-      line-height: 1.65;
-      color: #E5E5EA;
-      background: var(--card-inner);
-      border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 16px 20px;
-      min-height: 70px;
-      max-height: 220px;
-      overflow-y: auto;
-      word-break: break-word;
-      white-space: pre-wrap;
+      padding: 4px;
+      gap: 4px;
     }
 
+    .tab-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(70, 140, 246, 0.3);
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Cards */
     .section-card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -178,7 +181,7 @@
       padding: 24px 28px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
     }
 
     .section-header {
@@ -207,11 +210,27 @@
       opacity: 1;
     }
 
+    /* Transcript Card */
+    .transcript-box {
+      font-size: 15px;
+      line-height: 1.65;
+      color: #E5E5EA;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      min-height: 70px;
+      max-height: 200px;
+      overflow-y: auto;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
     .slot-box {
       background: var(--card-inner);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 18px;
+      padding: 16px 18px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -241,7 +260,7 @@
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
     .form-label {
@@ -257,7 +276,7 @@
       background: rgba(0, 0, 0, 0.25);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 12px 14px;
+      padding: 11px 14px;
       color: var(--text-main);
       font-size: 14px;
       font-family: inherit;
@@ -301,7 +320,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
+      padding: 10px 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
 
@@ -364,15 +383,14 @@
 
     .btn-group {
       display: flex;
-      gap: 12px;
-      margin-top: 8px;
+      gap: 10px;
+      margin-top: 6px;
     }
 
     button {
-      flex: 1;
-      padding: 13px 20px;
+      padding: 12px 18px;
       border-radius: var(--radius-sm);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
@@ -383,6 +401,7 @@
     .btn-primary {
       background: var(--primary);
       color: #FFFFFF;
+      flex: 1;
     }
 
     .btn-primary:hover {
@@ -393,10 +412,17 @@
       background: var(--card-inner);
       color: var(--text-main);
       border: 1px solid var(--border-color);
+      flex: 1;
     }
 
     .btn-secondary:hover {
       background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-sm {
+      padding: 7px 12px;
+      font-size: 12px;
+      border-radius: 6px;
     }
 
     /* Trimmer Styles */
@@ -404,10 +430,37 @@
       background: var(--card-inner);
       border: 1px dashed var(--border-color);
       border-radius: var(--radius-md);
-      padding: 18px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
+    }
+
+    .player-container {
+      width: 100%;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 80px;
+    }
+
+    video, audio {
+      width: 100%;
+      outline: none;
+      max-height: 280px;
+    }
+
+    .scrub-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
     }
 
     .time-grid {
@@ -421,6 +474,7 @@
       color: var(--text-muted);
       display: flex;
       justify-content: space-between;
+      padding: 4px 0;
     }
 
     .hint-text {
@@ -428,17 +482,70 @@
       color: var(--text-muted);
       line-height: 1.4;
     }
+
+    .radio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .radio-label input {
+      accent-color: var(--primary);
+    }
+
+    /* Library List */
+    .voice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .voice-item {
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .voice-item-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .voice-item-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Header -->
     <div class="header-card">
       <div class="title-wrap">
         <h1>Antigravity Studio</h1>
-        <p>GPT-SoVITS V2 Language-Mapped Voice Cloning</p>
+        <p>GPT-SoVITS V2 Real-Time Multilingual Voice Suite</p>
       </div>
       <div class="header-right">
-        <button class="btn-shutdown" id="shutdownBtn" type="button">Shutdown Server</button>
+        <button class="btn-shutdown" id="shutdownBtn" type="button">Shutdown</button>
         <div class="status-badge" id="statusBadge">
           <div class="status-dot" id="statusDot"></div>
           <span id="statusText">Active</span>
@@ -446,148 +553,222 @@
       </div>
     </div>
 
-    <!-- Clean Spoken Transcript Card -->
-    <div class="speech-feed-card">
-      <div class="feed-header">
-        <div class="section-title">Spoken Text Stream</div>
-        <div class="feed-badge" id="feedBadge">Idle</div>
-      </div>
-      <div class="transcript-box" id="transcriptBox">Waiting for speech activity...</div>
-    </div>
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-studio" type="button">Voice Studio</button>
+      <button class="tab-btn" data-tab="tab-trimmer" type="button">Video & Audio Trimmer</button>
+      <button class="tab-btn" data-tab="tab-library" type="button">Voice Library</button>
+    </nav>
 
-    <!-- Language-Mapped Character Voice Slots -->
-    <div class="section-card">
-      <div class="section-header">
-        <div class="section-title">Language-Specific Voice Slots (언어별 전용 목소리)</div>
-        <div class="autosave-badge" id="autoSaveBadge">Auto-Saved</div>
-      </div>
-
-      <!-- English Voice Slot -->
-      <div class="slot-box">
-        <div class="slot-header">
-          <span class="slot-badge">English Speech Voice (영어 답변 전용)</span>
-          <span class="hint-text">영어로 말할 때 사용할 샘플</span>
+    <!-- ============================================== -->
+    <!-- TAB 1: MAIN VOICE STUDIO                       -->
+    <!-- ============================================== -->
+    <div class="tab-content active" id="tab-studio">
+      <!-- Live Spoken Transcript -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Spoken Text Stream</div>
+          <div class="feed-badge" id="feedBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);">Idle</div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="voiceSelectEn">English Reference Voice (.wav)</label>
-          <select id="voiceSelectEn"></select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">English Sample Script (대사 텍스트)</label>
-          <input type="text" id="promptEnInput" placeholder="English transcript matching sample audio">
-        </div>
+        <div class="transcript-box" id="transcriptBox">Waiting for speech activity...</div>
       </div>
 
-      <!-- Korean Voice Slot -->
-      <div class="slot-box">
-        <div class="slot-header">
-          <span class="slot-badge ko">Korean Speech Voice (한국어 답변 전용)</span>
-          <span class="hint-text">한국어로 말할 때 사용할 샘플</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="voiceSelectKo">Korean Reference Voice (.wav)</label>
-          <select id="voiceSelectKo"></select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Korean Sample Script (한국어 대사 텍스트)</label>
-          <input type="text" id="promptKoInput" placeholder="한국어 샘플 오디오가 말한 실제 대사">
-        </div>
-      </div>
-
-      <!-- Audio Dynamics -->
-      <div class="form-group">
-        <label class="form-label">
-          <span>Temperature (권장: 0.60 ~ 0.70)</span>
-          <span class="range-val" id="tempVal">0.65</span>
-        </label>
-        <div class="range-wrap">
-          <input type="range" id="tempRange" min="0.5" max="0.95" step="0.05" value="0.65">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">
-          <span>Volume (음량 크기)</span>
-          <span class="range-val" id="volumeVal">100%</span>
-        </label>
-        <div class="range-wrap">
-          <input type="range" id="volumeRange" min="0" max="100" step="1" value="100">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">
-          <span>Speaking Speed (말하기 속도)</span>
-          <span class="range-val" id="speedVal">1.0x</span>
-        </label>
-        <div class="range-wrap">
-          <input type="range" id="speedRange" min="0.7" max="1.5" step="0.05" value="1.0">
-        </div>
-      </div>
-
-      <div class="toggle-row">
-        <div class="toggle-text">
-          <h4>Master Audio Output</h4>
-          <p>Toggle GPT-SoVITS voice synthesis on/off</p>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="masterToggle" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="btn-group">
-        <button class="btn-primary" id="testBtn">Test Bilingual Voice</button>
-      </div>
-    </div>
-
-    <!-- Audio Trimmer & Sample Maker Tool -->
-    <div class="section-card">
-      <div class="section-title">Audio Trimmer & Sample Maker</div>
-
-      <div class="trimmer-box">
-        <div class="form-group">
-          <label class="form-label">Select Audio File (.mp3, .wav, .flac, .m4a)</label>
-          <input type="file" id="audioFileInput" accept="audio/*">
+      <!-- Language Voice Slots -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Voice Character Slots</div>
+          <div class="autosave-badge" id="autoSaveBadge">Auto-Saved</div>
         </div>
 
-        <audio id="audioPreview" controls style="width: 100%; margin-top: 4px; display: none;"></audio>
-
-        <div class="time-grid">
-          <div class="form-group">
-            <label class="form-label">Start Time (Seconds)</label>
-            <input type="number" id="startTimeInput" step="0.1" min="0" value="0.0">
+        <!-- English Slot -->
+        <div class="slot-box">
+          <div class="slot-header">
+            <span class="slot-badge">English Speech Voice</span>
+            <span class="hint-text">영어로 말할 때 사용할 샘플</span>
           </div>
           <div class="form-group">
-            <label class="form-label">End Time (Seconds)</label>
-            <input type="number" id="endTimeInput" step="0.1" min="0" value="5.0">
+            <label class="form-label" for="voiceSelectEn">Selected Voice File</label>
+            <select id="voiceSelectEn"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Companion Script (영문 대사)</label>
+            <input type="text" id="promptEnInput" placeholder="English transcript matching sample audio">
           </div>
         </div>
 
-        <div class="trim-info">
-          <span>Selected Duration: <strong id="durationDisplay" style="color: var(--primary);">5.0s</strong> (Recommended: 3~6s)</span>
-          <span id="totalDurationDisplay">Total: 0.0s</span>
+        <!-- Korean Slot -->
+        <div class="slot-box">
+          <div class="slot-header">
+            <span class="slot-badge ko">Korean Speech Voice</span>
+            <span class="hint-text">한국어로 말할 때 사용할 샘플</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="voiceSelectKo">Selected Voice File</label>
+            <select id="voiceSelectKo"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Companion Script (한국어 대사)</label>
+            <input type="text" id="promptKoInput" placeholder="한국어 샘플 오디오가 말한 실제 대사">
+          </div>
+        </div>
+
+        <!-- Master Tuning -->
+        <div class="form-group">
+          <label class="form-label">
+            <span>Temperature (권장: 0.60 ~ 0.70)</span>
+            <span class="range-val" id="tempVal">0.65</span>
+          </label>
+          <div class="range-wrap">
+            <input type="range" id="tempRange" min="0.5" max="0.95" step="0.05" value="0.65">
+          </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Sample Script (구간에서 캐릭터가 말하는 대사)</label>
-          <input type="text" id="trimmerPromptText" placeholder="예: Hello there / 안녕하세요 좋은 하루입니다!">
+          <label class="form-label">
+            <span>Volume (음량)</span>
+            <span class="range-val" id="volumeVal">100%</span>
+          </label>
+          <div class="range-wrap">
+            <input type="range" id="volumeRange" min="0" max="100" step="1" value="100">
+          </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Save Filename</label>
-          <input type="text" id="targetFilename" placeholder="my_character.wav" value="korean_sample.wav">
+          <label class="form-label">
+            <span>Speaking Speed (말하기 속도)</span>
+            <span class="range-val" id="speedVal">1.0x</span>
+          </label>
+          <div class="range-wrap">
+            <input type="range" id="speedRange" min="0.7" max="1.5" step="0.05" value="1.0">
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-text">
+            <h4>Master Audio Output</h4>
+            <p>Toggle GPT-SoVITS voice synthesis on/off</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="masterToggle" checked>
+            <span class="slider"></span>
+          </label>
         </div>
 
         <div class="btn-group">
-          <button class="btn-secondary" id="previewTrimBtn" type="button">Preview Segment</button>
-          <button class="btn-primary" id="trimSaveBtn" type="button">Trim & Save to reference_voices/</button>
+          <button class="btn-primary" id="testBtn">Test Bilingual Voice</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: VIDEO & AUDIO TRIMMER                   -->
+    <!-- ============================================== -->
+    <div class="tab-content" id="tab-trimmer">
+      <div class="section-card">
+        <div class="section-title">Video & Audio Sample Trimmer (32kHz WAV Auto-Converter)</div>
+        <p class="hint-text">동영상(MP4, MKV, MOV, WebM) 또는 음원(MP3, WAV, FLAC, M4A)을 올리면 자동으로 고음질 32kHz 음성 샘플로 추출 및 변환합니다.</p>
+
+        <div class="trimmer-box">
+          <div class="form-group">
+            <label class="form-label">Select Video or Audio File</label>
+            <input type="file" id="mediaFileInput" accept="audio/*,video/*">
+          </div>
+
+          <!-- Video / Audio Visual Player -->
+          <div class="player-container" id="playerContainer" style="display: none;">
+            <video id="videoPreview" controls style="display: none;"></video>
+            <audio id="audioPreview" controls style="display: none;"></audio>
+          </div>
+
+          <!-- Quick Scrub Toolbar -->
+          <div class="scrub-toolbar" id="scrubToolbar" style="display: none;">
+            <button class="btn-secondary btn-sm" id="btnSetStart" type="button">Set Current Time as Start</button>
+            <span id="currentPlaybackTime" style="font-size:12px;font-weight:600;color:var(--primary);">0.0s</span>
+            <button class="btn-secondary btn-sm" id="btnSetEnd" type="button">Set Current Time as End</button>
+          </div>
+
+          <div class="time-grid">
+            <div class="form-group">
+              <label class="form-label">Start Time (초)</label>
+              <input type="number" id="startTimeInput" step="0.1" min="0" value="0.0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Time (초)</label>
+              <input type="number" id="endTimeInput" step="0.1" min="0" value="5.0">
+            </div>
+          </div>
+
+          <div class="trim-info">
+            <span>Selected Clip Duration: <strong id="durationDisplay" style="color: var(--primary);">5.0s</strong> (Recommended: 3~6s)</span>
+            <span id="totalDurationDisplay">Total Media: 0.0s</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <span>Sample Script (구간에서 캐릭터가 실제로 말하는 대사)</span>
+              <span style="font-size:11px;color:var(--primary);">피치 고정 필수</span>
+            </label>
+            <input type="text" id="trimmerPromptText" placeholder="예: Hello there / 안녕하세요, 반갑습니다!">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Target Slot Assignment (저장 후 자동 배정)</label>
+            <div class="radio-grid">
+              <label class="radio-label">
+                <input type="radio" name="slotAssign" value="en" checked> English Slot
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="slotAssign" value="ko"> Korean Slot
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Save Filename (.wav)</label>
+            <input type="text" id="targetFilename" placeholder="my_sample.wav" value="custom_sample.wav">
+          </div>
+
+          <div class="btn-group">
+            <button class="btn-secondary" id="previewTrimBtn" type="button">Preview Clip Segment</button>
+            <button class="btn-primary" id="trimSaveBtn" type="button">Extract, Convert to WAV & Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: VOICE LIBRARY                           -->
+    <!-- ============================================== -->
+    <div class="tab-content" id="tab-library">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">Saved Voice Library (reference_voices/)</div>
+          <button class="btn-secondary btn-sm" id="btnRefreshLibrary" type="button">Refresh</button>
+        </div>
+        <p class="hint-text">등록된 모든 음성 샘플과 동봉된 대사 텍스트를 확인하고 관리할 수 있습니다.</p>
+
+        <div class="voice-list" id="voiceListContainer"></div>
       </div>
     </div>
   </div>
 
   <script>
+    // Tab Navigation Logic
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+
+        btn.classList.add('active');
+        const target = document.getElementById(btn.dataset.tab);
+        if (target) target.classList.add('active');
+      });
+    });
+
+    // Voice Studio elements
     const voiceSelectEn = document.getElementById('voiceSelectEn');
     const promptEnInput = document.getElementById('promptEnInput');
     const voiceSelectKo = document.getElementById('voiceSelectKo');
@@ -608,9 +789,15 @@
     const feedBadge = document.getElementById('feedBadge');
     const transcriptBox = document.getElementById('transcriptBox');
 
-    // Trimmer elements
-    const audioFileInput = document.getElementById('audioFileInput');
+    // Video/Audio Trimmer elements
+    const mediaFileInput = document.getElementById('mediaFileInput');
+    const playerContainer = document.getElementById('playerContainer');
+    const videoPreview = document.getElementById('videoPreview');
     const audioPreview = document.getElementById('audioPreview');
+    const scrubToolbar = document.getElementById('scrubToolbar');
+    const currentPlaybackTime = document.getElementById('currentPlaybackTime');
+    const btnSetStart = document.getElementById('btnSetStart');
+    const btnSetEnd = document.getElementById('btnSetEnd');
     const startTimeInput = document.getElementById('startTimeInput');
     const endTimeInput = document.getElementById('endTimeInput');
     const durationDisplay = document.getElementById('durationDisplay');
@@ -619,9 +806,12 @@
     const targetFilename = document.getElementById('targetFilename');
     const previewTrimBtn = document.getElementById('previewTrimBtn');
     const trimSaveBtn = document.getElementById('trimSaveBtn');
+    const voiceListContainer = document.getElementById('voiceListContainer');
+    const btnRefreshLibrary = document.getElementById('btnRefreshLibrary');
 
-    let loadedAudioBlob = null;
-    let audioDuration = 0;
+    let loadedMediaBlob = null;
+    let activePlayer = null;
+    let mediaDuration = 0;
     let saveTimeout = null;
     let voicesMetadata = {};
     let isServerDead = false;
@@ -669,13 +859,12 @@
     masterToggle.addEventListener('change', triggerAutoSave);
 
     shutdownBtn.addEventListener('click', async () => {
-      if (!confirm('Shutdown Antigravity Voice Engine Server?')) return;
-      shutdownBtn.innerText = 'Server Stopped';
+      if (!confirm('Shutdown Antigravity Voice Engine?')) return;
+      shutdownBtn.innerText = 'Stopped';
       shutdownBtn.disabled = true;
       statusDot.className = 'status-dot stopped';
       statusText.innerText = 'Offline';
       feedBadge.innerText = 'Offline';
-      feedBadge.classList.remove('active');
       isServerDead = true;
 
       try {
@@ -683,6 +872,9 @@
       } catch (err) {}
     });
 
+    // ==============================================
+    // MEDIA TRIMMER & VIDEO CONVERTER LOGIC
+    // ==============================================
     function updateDuration() {
       const start = Math.max(0, parseFloat(startTimeInput.value) || 0);
       const end = Math.max(start, parseFloat(endTimeInput.value) || 0);
@@ -693,62 +885,96 @@
     startTimeInput.addEventListener('input', updateDuration);
     endTimeInput.addEventListener('input', updateDuration);
 
-    audioFileInput.addEventListener('change', (e) => {
+    mediaFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      loadedAudioBlob = file;
+      loadedMediaBlob = file;
       const url = URL.createObjectURL(file);
-      audioPreview.src = url;
-      audioPreview.style.display = 'block';
+      const isVideo = file.type.startsWith('video') || /\.(mp4|mkv|mov|webm|avi)$/i.test(file.name);
 
-      audioPreview.onloadedmetadata = () => {
-        audioDuration = audioPreview.duration;
-        totalDurationDisplay.innerText = 'Total: ' + audioDuration.toFixed(1) + 's';
+      playerContainer.style.display = 'flex';
+      scrubToolbar.style.display = 'flex';
+
+      if (isVideo) {
+        audioPreview.style.display = 'none';
+        videoPreview.style.display = 'block';
+        videoPreview.src = url;
+        activePlayer = videoPreview;
+      } else {
+        videoPreview.style.display = 'none';
+        audioPreview.style.display = 'block';
+        audioPreview.src = url;
+        activePlayer = audioPreview;
+      }
+
+      activePlayer.onloadedmetadata = () => {
+        mediaDuration = activePlayer.duration;
+        totalDurationDisplay.innerText = 'Total Media: ' + mediaDuration.toFixed(1) + 's';
         startTimeInput.value = '0.0';
-        endTimeInput.value = Math.min(5.0, audioDuration).toFixed(1);
+        endTimeInput.value = Math.min(5.0, mediaDuration).toFixed(1);
         updateDuration();
         
         let baseName = file.name.replace(/\.[^/.]+$/, "") + ".wav";
         targetFilename.value = baseName;
       };
+
+      activePlayer.ontimeupdate = () => {
+        currentPlaybackTime.innerText = activePlayer.currentTime.toFixed(1) + 's';
+      };
+    });
+
+    btnSetStart.addEventListener('click', () => {
+      if (!activePlayer) return;
+      startTimeInput.value = activePlayer.currentTime.toFixed(1);
+      updateDuration();
+    });
+
+    btnSetEnd.addEventListener('click', () => {
+      if (!activePlayer) return;
+      endTimeInput.value = activePlayer.currentTime.toFixed(1);
+      updateDuration();
     });
 
     previewTrimBtn.addEventListener('click', () => {
-      if (!audioPreview.src) return;
+      if (!activePlayer) return;
       const start = parseFloat(startTimeInput.value) || 0;
-      const end = parseFloat(endTimeInput.value) || audioDuration;
-      audioPreview.currentTime = start;
-      audioPreview.play();
+      const end = parseFloat(endTimeInput.value) || mediaDuration;
+      activePlayer.currentTime = start;
+      activePlayer.play();
 
       const checkTime = () => {
-        if (audioPreview.currentTime >= end) {
-          audioPreview.pause();
-          audioPreview.removeEventListener('timeupdate', checkTime);
+        if (activePlayer.currentTime >= end) {
+          activePlayer.pause();
+          activePlayer.removeEventListener('timeupdate', checkTime);
         }
       };
-      audioPreview.addEventListener('timeupdate', checkTime);
+      activePlayer.addEventListener('timeupdate', checkTime);
     });
 
     trimSaveBtn.addEventListener('click', async () => {
-      if (!loadedAudioBlob) {
-        alert('Please select an audio file first.');
+      if (!loadedMediaBlob) {
+        alert('Please select a video or audio file first.');
         return;
       }
 
       const start = parseFloat(startTimeInput.value) || 0;
       const end = parseFloat(endTimeInput.value) || 5.0;
       let filename = targetFilename.value.trim();
-      if (!filename) filename = "sample.wav";
+      if (!filename) filename = "custom_sample.wav";
       if (!filename.toLowerCase().endsWith('.wav')) filename += ".wav";
 
+      const slotChoice = document.querySelector('input[name="slotAssign"]:checked').value;
+      const promptText = trimmerPromptText.value.trim();
+
       const formData = new FormData();
-      formData.append('audio', loadedAudioBlob);
+      formData.append('audio', loadedMediaBlob);
       formData.append('start_sec', start);
       formData.append('end_sec', end);
       formData.append('filename', filename);
-      formData.append('prompt_text', trimmerPromptText.value.trim());
+      formData.append('prompt_text', promptText);
+      formData.append('prompt_lang', slotChoice);
 
-      trimSaveBtn.innerText = 'Trimming & Saving...';
+      trimSaveBtn.innerText = 'Extracting & Converting to WAV...';
       try {
         const res = await fetch('/api/trim_audio', {
           method: 'POST',
@@ -756,21 +982,35 @@
         });
         const data = await res.json();
         if (data.status === 'ok') {
-          trimSaveBtn.innerText = 'Saved with Script!';
+          trimSaveBtn.innerText = 'Saved as 32kHz WAV!';
           await loadSettings();
-          voiceSelectKo.value = filename;
-          promptKoInput.value = trimmerPromptText.value.trim();
+
+          // Auto-assign to chosen slot
+          if (slotChoice === 'en') {
+            voiceSelectEn.value = filename;
+            promptEnInput.value = promptText;
+          } else {
+            voiceSelectKo.value = filename;
+            promptKoInput.value = promptText;
+          }
           await saveSettingsAuto();
-          setTimeout(() => trimSaveBtn.innerText = 'Trim & Save to reference_voices/', 2000);
+
+          setTimeout(() => {
+            trimSaveBtn.innerText = 'Extract, Convert to WAV & Save';
+            // Switch to studio tab to show immediate result
+            document.querySelector('[data-tab="tab-studio"]').click();
+          }, 1200);
         } else {
           trimSaveBtn.innerText = 'Error: ' + (data.error || 'Failed');
-          setTimeout(() => trimSaveBtn.innerText = 'Trim & Save to reference_voices/', 3000);
+          setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save', 3000);
         }
       } catch (err) {
         trimSaveBtn.innerText = 'Error';
-        setTimeout(() => trimSaveBtn.innerText = 'Trim & Save to reference_voices/', 3000);
+        setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save', 3000);
       }
     });
+
+    btnRefreshLibrary.addEventListener('click', loadSettings);
 
     function populateSelect(selectEl, voices, selectedVal) {
       selectEl.innerHTML = '';
@@ -783,6 +1023,45 @@
         selectEl.appendChild(opt);
       });
     }
+
+    function renderVoiceLibrary(voices) {
+      voiceListContainer.innerHTML = '';
+      if (!voices || voices.length === 0) {
+        voiceListContainer.innerHTML = '<p class="hint-text">No voices found in reference_voices/</p>';
+        return;
+      }
+
+      voices.forEach(v => {
+        const fname = typeof v === 'string' ? v : v.filename;
+        const ptext = typeof v === 'object' ? v.prompt_text : "";
+
+        const item = document.createElement('div');
+        item.className = 'voice-item';
+        item.innerHTML = `
+          <div class="voice-item-info">
+            <h4>${fname}</h4>
+            <p>${ptext ? 'Script: "' + ptext + '"' : 'No companion script attached'}</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-secondary btn-sm" onclick="setSlot('en', '${fname}', '${ptext.replace(/'/g, "\\'")}')">Use for EN</button>
+            <button class="btn-secondary btn-sm" onclick="setSlot('ko', '${fname}', '${ptext.replace(/'/g, "\\'")}')">Use for KO</button>
+          </div>
+        `;
+        voiceListContainer.appendChild(item);
+      });
+    }
+
+    window.setSlot = function(slot, fname, ptext) {
+      if (slot === 'en') {
+        voiceSelectEn.value = fname;
+        promptEnInput.value = ptext;
+      } else {
+        voiceSelectKo.value = fname;
+        promptKoInput.value = ptext;
+      }
+      saveSettingsAuto();
+      document.querySelector('[data-tab="tab-studio"]').click();
+    };
 
     async function loadSettings() {
       try {
@@ -800,6 +1079,7 @@
 
           populateSelect(voiceSelectEn, data.available_voices, s.voice_en || "voiceSCOURCE.wav");
           populateSelect(voiceSelectKo, data.available_voices, s.voice_ko || "voiceSCOURCE.wav");
+          renderVoiceLibrary(data.available_voices);
         }
 
         if (s.prompt_en !== undefined) promptEnInput.value = s.prompt_en;
@@ -850,6 +1130,7 @@
             const ptext = typeof v === 'object' ? v.prompt_text : "";
             voicesMetadata[fname] = { prompt_text: ptext };
           });
+          renderVoiceLibrary(data.available_voices);
         }
         showAutoSaveNotification();
       } catch (err) {}
@@ -874,12 +1155,12 @@
 
         if (data.is_playing) {
           feedBadge.innerText = 'Speaking';
-          feedBadge.classList.add('active');
+          feedBadge.style.color = 'var(--primary)';
           statusDot.classList.add('speaking');
           statusText.innerText = 'Speaking';
         } else {
           feedBadge.innerText = 'Idle';
-          feedBadge.classList.remove('active');
+          feedBadge.style.color = 'var(--text-muted)';
           statusDot.classList.remove('speaking');
           statusText.innerText = masterToggle.checked ? 'Active' : 'Muted';
         }

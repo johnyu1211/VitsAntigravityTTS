@@ -381,35 +381,42 @@ async def handle_trim_audio(request):
             elif field.name == 'prompt_lang':
                 prompt_lang = (await field.text()).strip()
 
-        if not audio_bytes:
-            return web.json_response({"status": "error", "error": "No audio data received"}, status=400)
-
-        if not filename.lower().endswith('.wav'):
-            filename += '.wav'
-
-        temp_input = os.path.join(TEMP_DIR, f"upload_{int(time.time()*1000)}.bin")
+        temp_input = os.path.join(TEMP_DIR, f"upload_{int(time.time()*1000)}_{filename}")
         with open(temp_input, 'wb') as f:
             f.write(audio_bytes)
 
-        audio_data, sr = librosa.load(temp_input, sr=32000, mono=True)
-        if os.path.exists(temp_input):
-            try: os.remove(temp_input)
-            except: pass
-
-        start_frame = max(0, int(start_sec * sr))
-        end_frame = min(len(audio_data), int(end_sec * sr))
-
-        if start_frame >= end_frame:
-            return web.json_response({"status": "error", "error": "Invalid start/end time range"}, status=400)
-
-        trimmed_audio = audio_data[start_frame:end_frame]
         target_path = os.path.join(REF_DIR, filename)
-        sf.write(target_path, trimmed_audio, sr)
+
+        # Universal extraction and trimming using FFmpeg (Supports Video: MP4, MKV, WebM, MOV, AVI / Audio: MP3, AAC, FLAC, WAV, M4A)
+        try:
+            cmd = [
+                'ffmpeg', '-y',
+                '-ss', str(start_sec),
+                '-to', str(end_sec),
+                '-i', temp_input,
+                '-vn',
+                '-acodec', 'pcm_s16le',
+                '-ar', '32000',
+                '-ac', '1',
+                target_path
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode != 0:
+                # Fallback to librosa/soundfile if ffmpeg fails
+                audio_data, sr = librosa.load(temp_input, sr=32000, mono=True)
+                start_frame = max(0, int(start_sec * sr))
+                end_frame = min(len(audio_data), int(end_sec * sr))
+                trimmed_audio = audio_data[start_frame:end_frame]
+                sf.write(target_path, trimmed_audio, sr)
+        finally:
+            if os.path.exists(temp_input):
+                try: os.remove(temp_input)
+                except: pass
 
         if prompt_text:
             gpt_sovits_engine.save_voice_metadata(filename, prompt_text, prompt_lang)
 
-        print(f"[Audio Trimmer] Saved: {target_path} (Prompt: '{prompt_text}')")
+        print(f"[Media Trimmer] Saved 32kHz WAV: {target_path} (Prompt: '{prompt_text}')")
 
         return web.json_response({
             "status": "ok",
@@ -418,7 +425,7 @@ async def handle_trim_audio(request):
         })
 
     except Exception as e:
-        print(f"[Audio Trimmer Error] {e}")
+        print(f"[Media Trimmer Error] {e}")
         return web.json_response({"status": "error", "error": str(e)}, status=500)
 
 def get_latest_transcript_path():
