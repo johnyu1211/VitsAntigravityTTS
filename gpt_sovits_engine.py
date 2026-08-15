@@ -100,11 +100,15 @@ class GPTSoVITSEngine:
                         count += replace_linear_int8(child)
                 return count
 
+            n_t2s = 0
+            n_bert = 0
+            if self.tts and hasattr(self.tts, 'bert_model') and self.tts.bert_model:
+                n_bert = replace_linear_int8(self.tts.bert_model)
             if self.tts and hasattr(self.tts, 't2s_model') and self.tts.t2s_model:
-                n = replace_linear_int8(self.tts.t2s_model.model)
-                self._is_int8_quantized = True
-                print(f"[GPT-SoVITS Engine] INT8 Quantization applied to {n} T2S Linear layers (8-bit Quant Active)!")
-                return True
+                n_t2s = replace_linear_int8(self.tts.t2s_model.model)
+            self._is_int8_quantized = True
+            print(f"[GPT-SoVITS Engine] INT8 Quantization applied to {n_t2s} T2S + {n_bert} RoBERTa BERT Linear layers (8-bit Core Active)!")
+            return True
         except Exception as e:
             print(f"[INT8 Quantization Notice] {e}")
             return False
