@@ -412,6 +412,10 @@ async def speech_worker():
             if not chunk or not chunk.strip():
                 continue
 
+            # Completely strip all breathing/prosody punctuation (. ! ? , ~ : ;) into pure clean text
+            chunk = re.sub(r'[\.\!\?,~;:，。！？…—\-_/\\`"\']', ' ', chunk)
+            chunk = re.sub(r'\s+', ' ', chunk).strip()
+
             # Must contain at least one actual pronounceable character (Hangul, English, Kana, Hanzi)
             if not re.search(r'[\uac00-\ud7a3a-zA-Z\u3040-\u30ff\u4e00-\u9fff]', chunk):
                 continue
