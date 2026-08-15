@@ -513,6 +513,7 @@ async def handle_trim_audio(request):
         audio_bytes = None
         start_sec = 0.0
         end_sec = 5.0
+        segments_json = None
         filename = "custom_sample.wav"
         prompt_text = ""
         prompt_lang = "auto"
@@ -523,6 +524,8 @@ async def handle_trim_audio(request):
                 break
             if field.name == 'audio':
                 audio_bytes = await field.read()
+            elif field.name == 'segments':
+                segments_json = await field.text()
             elif field.name == 'start_sec':
                 start_sec = float(await field.text())
             elif field.name == 'end_sec':
@@ -534,33 +537,55 @@ async def handle_trim_audio(request):
             elif field.name == 'prompt_lang':
                 prompt_lang = (await field.text()).strip()
 
+        if not audio_bytes:
+            return web.json_response({"status": "error", "error": "No audio/video file received"}, status=400)
+
+        # Parse multi-segment configurations
+        segments = []
+        if segments_json:
+            try:
+                segments = json.loads(segments_json)
+            except Exception as pe:
+                print(f"[Segment Parse Warning] {pe}")
+        if not segments:
+            segments = [{"start": start_sec, "end": end_sec}]
+
         temp_input = os.path.join(TEMP_DIR, f"upload_{int(time.time()*1000)}_{filename}")
         with open(temp_input, 'wb') as f:
             f.write(audio_bytes)
 
         target_path = os.path.join(REF_DIR, filename)
 
-        # Universal extraction and trimming using FFmpeg (Supports Video: MP4, MKV, WebM, MOV, AVI / Audio: MP3, AAC, FLAC, WAV, M4A)
         try:
-            cmd = [
-                'ffmpeg', '-y',
-                '-ss', str(start_sec),
-                '-to', str(end_sec),
-                '-i', temp_input,
-                '-vn',
-                '-acodec', 'pcm_s16le',
-                '-ar', '32000',
-                '-ac', '1',
-                target_path
-            ]
-            res = subprocess.run(cmd, capture_output=True, text=True)
-            if res.returncode != 0:
-                # Fallback to librosa/soundfile if ffmpeg fails
-                audio_data, sr = librosa.load(temp_input, sr=32000, mono=True)
-                start_frame = max(0, int(start_sec * sr))
-                end_frame = min(len(audio_data), int(end_sec * sr))
-                trimmed_audio = audio_data[start_frame:end_frame]
-                sf.write(target_path, trimmed_audio, sr)
+            # High-precision multi-segment extraction and splice via librosa + soundfile
+            import numpy as np
+            audio_data, sr = librosa.load(temp_input, sr=32000, mono=True)
+            total_samples = len(audio_data)
+
+            chunks = []
+            for seg in segments:
+                s_sec = max(0.0, float(seg.get('start', 0.0)))
+                e_sec = min(total_samples / sr, float(seg.get('end', s_sec + 0.1)))
+                if e_sec > s_sec:
+                    s_idx = max(0, int(s_sec * sr))
+                    e_idx = min(total_samples, int(e_sec * sr))
+                    chunk = audio_data[s_idx:e_idx].copy()
+                    
+                    # 5ms micro-fade in/out to eliminate zero-crossing pops and clicks between segments
+                    fade_len = int(0.005 * sr)
+                    if len(chunk) > fade_len * 2:
+                        fade_in = np.linspace(0.0, 1.0, fade_len)
+                        fade_out = np.linspace(1.0, 0.0, fade_len)
+                        chunk[:fade_len] *= fade_in
+                        chunk[-fade_len:] *= fade_out
+                    chunks.append(chunk)
+
+            if chunks:
+                merged_audio = np.concatenate(chunks)
+            else:
+                merged_audio = audio_data[:int(min(5.0 * sr, total_samples))]
+
+            sf.write(target_path, merged_audio, sr)
         finally:
             if os.path.exists(temp_input):
                 try: os.remove(temp_input)
@@ -569,7 +594,7 @@ async def handle_trim_audio(request):
         if prompt_text:
             gpt_sovits_engine.save_voice_metadata(filename, prompt_text, prompt_lang)
 
-        print(f"[Media Trimmer] Saved 32kHz WAV: {target_path} (Prompt: '{prompt_text}')")
+        print(f"[Media Trimmer] Extracted and merged {len(segments)} segments into 32kHz WAV: {target_path} (Prompt: '{prompt_text}')")
 
         return web.json_response({
             "status": "ok",

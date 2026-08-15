@@ -2,7 +2,7 @@
   "name": "antigravity-voice-studio",
   "version": "1.0.0",
   "description": "Antigravity GPT-SoVITS Real-Time Voice Cloning Desktop Studio",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron ."

@@ -576,6 +576,48 @@
       background: var(--danger);
       color: #FFFFFF;
     }
+
+    .segment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .segment-card {
+      background: #141416;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: var(--transition);
+    }
+
+    .segment-card.active {
+      border-color: var(--primary);
+      background: rgba(70, 140, 246, 0.08);
+      box-shadow: 0 0 0 1px rgba(70, 140, 246, 0.25);
+    }
+
+    .segment-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .segment-card.active .segment-badge {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
   </style>
 </head>
 <body>
@@ -740,9 +782,13 @@
           <!-- Playback & Control Bar -->
           <div class="scrub-toolbar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: var(--radius-sm);">
             <div style="display: flex; gap: 8px; align-items: center;">
-              <button class="btn-primary btn-sm" id="btnPlaySelection" type="button" style="display:flex;align-items:center;gap:5px;">
+              <button class="btn-primary btn-sm" id="btnPlayMerged" type="button" style="display:flex;align-items:center;gap:5px;" title="Play all selected segments sequentially">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                <span>Play Segment</span>
+                <span>Play Merged Clips</span>
+              </button>
+              <button class="btn-secondary btn-sm" id="btnPlaySelection" type="button" style="display:flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Play Active Clip</span>
               </button>
               <button class="btn-secondary btn-sm" id="btnPlayFull" type="button" style="display:flex;align-items:center;gap:5px;">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -758,49 +804,32 @@
             </div>
           </div>
 
-          <!-- Precision Fine-Tuning Grid -->
-          <div class="time-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-            <!-- Start Time Adjuster -->
-            <div class="slot-box" style="padding: 12px;">
-              <div class="slot-header">
-                <span style="font-size: 12px; font-weight: 700;">Start Time (sec)</span>
-                <input type="number" id="startTimeInput" step="0.05" min="0" value="0.00" style="width: 80px; padding: 4px 8px; font-size: 13px; text-align: right;">
-              </div>
-              <div style="display: flex; gap: 4px; margin-top: 6px;">
-                <button class="btn-secondary btn-sm" id="btnStartMinusBig" type="button" style="flex:1;">-0.5s</button>
-                <button class="btn-secondary btn-sm" id="btnStartMinusSmall" type="button" style="flex:1;">-0.1s</button>
-                <button class="btn-secondary btn-sm" id="btnStartPlusSmall" type="button" style="flex:1;">+0.1s</button>
-                <button class="btn-secondary btn-sm" id="btnStartPlusBig" type="button" style="flex:1;">+0.5s</button>
-              </div>
+          <!-- Multi-Segment Slices Manager -->
+          <div style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 13px; font-weight: 700; color: var(--text-main);">Voice Clip Slices (Multi-Segment Non-Contiguous Splicing)</span>
+              <button class="btn-secondary btn-sm" id="btnAddSegment" type="button" style="display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Add Clip Segment</span>
+              </button>
             </div>
+            <p class="hint-text" style="margin-bottom: 8px;">대화 중 상대방 목소리나 배경 잡음 구간을 건너뛰고, 원하는 캐릭터 대사 구간들만 지정하여 하나의 고품질 음성으로 병합 추출합니다.</p>
 
-            <!-- End Time Adjuster -->
-            <div class="slot-box" style="padding: 12px;">
-              <div class="slot-header">
-                <span style="font-size: 12px; font-weight: 700;">End Time (sec)</span>
-                <input type="number" id="endTimeInput" step="0.05" min="0" value="5.00" style="width: 80px; padding: 4px 8px; font-size: 13px; text-align: right;">
-              </div>
-              <div style="display: flex; gap: 4px; margin-top: 6px;">
-                <button class="btn-secondary btn-sm" id="btnEndMinusBig" type="button" style="flex:1;">-0.5s</button>
-                <button class="btn-secondary btn-sm" id="btnEndMinusSmall" type="button" style="flex:1;">-0.1s</button>
-                <button class="btn-secondary btn-sm" id="btnEndPlusSmall" type="button" style="flex:1;">+0.1s</button>
-                <button class="btn-secondary btn-sm" id="btnEndPlusBig" type="button" style="flex:1;">+0.5s</button>
-              </div>
-            </div>
+            <div class="segment-list" id="segmentListContainer"></div>
           </div>
 
-          <!-- Clip Duration & Quality Indicator -->
-          <div class="trim-info" style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
-            <span>Selected Clip Duration: <strong id="durationDisplay" style="color: var(--primary); font-size: 14px;">5.00s</strong></span>
+          <!-- Total Spliced Duration & Quality Indicator -->
+          <div class="trim-info" style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <span>Total Combined Duration: <strong id="durationDisplay" style="color: var(--primary); font-size: 14px;">0.00s</strong> <span id="segmentCountDisplay" style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">(1 clip)</span></span>
             <span id="clipGuideText" style="font-size: 11px; color: var(--success); font-weight: 600; display:flex; align-items:center; gap:4px;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               <span>Ideal speech length for voice cloning (3~6s)</span>
             </span>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" style="margin-top: 14px;">
             <label class="form-label">
-              <span>Companion Transcript (Spoken text in selected clip)</span>
+              <span>Companion Transcript (Combined text spoken across all selected clips)</span>
               <span style="font-size:11px;color:var(--primary);">Prosody & Pitch Anchor</span>
             </label>
             <input type="text" id="trimmerPromptText" placeholder="e.g. Hello there! Welcome to my stream.">
@@ -812,7 +841,7 @@
           </div>
 
           <div class="btn-group">
-            <button class="btn-primary" id="trimSaveBtn" type="button" style="padding: 14px; font-size: 14px;">Extract 32kHz WAV & Save to Voice Library</button>
+            <button class="btn-primary" id="trimSaveBtn" type="button" style="padding: 14px; font-size: 14px;">Extract & Merge Spliced 32kHz WAV</button>
           </div>
         </div>
       </div>
@@ -963,38 +992,29 @@
     });
 
     // ==============================================
-    // PRO VISUAL WAVEFORM & MEDIA TRIMMER ENGINE
+    // PRO MULTI-SEGMENT WAVEFORM & MEDIA TRIMMER DAW
     // ==============================================
     const mediaFileInput = document.getElementById('mediaFileInput');
     const playerContainer = document.getElementById('playerContainer');
     const videoPreview = document.getElementById('videoPreview');
     const audioPreview = document.getElementById('audioPreview');
     const waveformCanvas = document.getElementById('waveformCanvas');
-    const selectionOverlay = document.getElementById('selectionOverlay');
     const playheadCursor = document.getElementById('playheadCursor');
     const waveformLoading = document.getElementById('waveformLoading');
     const durationBadge = document.getElementById('durationBadge');
 
+    const btnPlayMerged = document.getElementById('btnPlayMerged');
     const btnPlaySelection = document.getElementById('btnPlaySelection');
     const btnPlayFull = document.getElementById('btnPlayFull');
     const btnPauseAudio = document.getElementById('btnPauseAudio');
     const currentPlaybackTime = document.getElementById('currentPlaybackTime');
     const totalDurationDisplay = document.getElementById('totalDurationDisplay');
 
-    const startTimeInput = document.getElementById('startTimeInput');
-    const endTimeInput = document.getElementById('endTimeInput');
+    const btnAddSegment = document.getElementById('btnAddSegment');
+    const segmentListContainer = document.getElementById('segmentListContainer');
     const durationDisplay = document.getElementById('durationDisplay');
+    const segmentCountDisplay = document.getElementById('segmentCountDisplay');
     const clipGuideText = document.getElementById('clipGuideText');
-
-    const btnStartMinusBig = document.getElementById('btnStartMinusBig');
-    const btnStartMinusSmall = document.getElementById('btnStartMinusSmall');
-    const btnStartPlusSmall = document.getElementById('btnStartPlusSmall');
-    const btnStartPlusBig = document.getElementById('btnStartPlusBig');
-
-    const btnEndMinusBig = document.getElementById('btnEndMinusBig');
-    const btnEndMinusSmall = document.getElementById('btnEndMinusSmall');
-    const btnEndPlusSmall = document.getElementById('btnEndPlusSmall');
-    const btnEndPlusBig = document.getElementById('btnEndPlusBig');
 
     const trimmerPromptText = document.getElementById('trimmerPromptText');
     const targetFilename = document.getElementById('targetFilename');
@@ -1007,72 +1027,144 @@
     let isDraggingWaveform = false;
     let dragStartX = 0;
     let segmentCheckInterval = null;
+    let mergedPlayTimeout = null;
+    let isPlayingMerged = false;
+
+    let nextSegmentId = 2;
+    let segments = [
+      { id: 1, start: 0.0, end: 2.5 }
+    ];
+    let activeSegmentId = 1;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function updateTrimmerUI() {
-      const start = Math.max(0, parseFloat(startTimeInput.value) || 0);
-      const end = Math.max(start + 0.05, Math.min(mediaDuration || 9999, parseFloat(endTimeInput.value) || 5.0));
-      const dur = (end - start);
+    function getActiveSegment() {
+      return segments.find(s => s.id === activeSegmentId) || segments[0];
+    }
 
-      durationDisplay.innerText = dur.toFixed(2) + 's';
-      durationBadge.innerText = `Selected: ${dur.toFixed(2)}s`;
+    function updateTrimmerSummary() {
+      let totalDur = 0;
+      segments.forEach(s => {
+        totalDur += Math.max(0, s.end - s.start);
+      });
 
-      if (dur >= 2.5 && dur <= 6.5) {
-        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal speech length for voice cloning (3~6s)';
+      durationDisplay.innerText = totalDur.toFixed(2) + 's';
+      segmentCountDisplay.innerText = `(${segments.length} ${segments.length === 1 ? 'clip' : 'clips merged'})`;
+      durationBadge.innerText = `Combined: ${totalDur.toFixed(2)}s`;
+
+      if (totalDur >= 2.5 && totalDur <= 7.0) {
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal combined speech length for voice cloning (3~6s)';
         clipGuideText.style.color = 'var(--success)';
-      } else if (dur < 2.5) {
-        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too short (Under 2.5s may reduce voice similarity)';
+      } else if (totalDur < 2.5) {
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too short (Under 2.5s may reduce clone accuracy)';
         clipGuideText.style.color = '#FF9F0A';
       } else {
-        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too long (Over 6.5s may cause memory/speed issues)';
+        clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too long (Over 7s may increase inference latency)';
         clipGuideText.style.color = '#FF9F0A';
       }
+    }
 
-      // Update overlay box on canvas
-      if (mediaDuration > 0) {
-        const leftPct = (start / mediaDuration) * 100;
-        const widthPct = ((end - start) / mediaDuration) * 100;
-        selectionOverlay.style.left = leftPct + '%';
-        selectionOverlay.style.width = widthPct + '%';
-        selectionOverlay.style.display = 'block';
+    function renderSegmentsList() {
+      if (!segmentListContainer) return;
+      segmentListContainer.innerHTML = '';
+
+      segments.forEach((seg, idx) => {
+        const dur = Math.max(0, seg.end - seg.start);
+        const card = document.createElement('div');
+        card.className = `segment-card ${seg.id === activeSegmentId ? 'active' : ''}`;
+        card.onclick = (e) => {
+          if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+            activeSegmentId = seg.id;
+            renderSegmentsList();
+            renderWaveform();
+          }
+        };
+
+        card.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; flex-wrap: wrap;">
+            <span class="segment-badge">#${idx + 1} Clip</span>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
+              <span>Start:</span>
+              <input type="number" step="0.05" min="0" value="${seg.start.toFixed(2)}" onchange="updateSegmentStart(${seg.id}, this.value)" style="width: 70px; padding: 4px 6px; font-size: 12px; text-align: right; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-main);">
+              <span>s</span>
+              <span style="margin-left: 8px;">End:</span>
+              <input type="number" step="0.05" min="0" value="${seg.end.toFixed(2)}" onchange="updateSegmentEnd(${seg.id}, this.value)" style="width: 70px; padding: 4px 6px; font-size: 12px; text-align: right; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-main);">
+              <span>s</span>
+              <span style="margin-left: 10px; color: var(--primary); font-weight: 700;">(${dur.toFixed(2)}s)</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 5px; align-items: center;">
+            <button class="btn-secondary btn-sm" onclick="playSingleSegment(${seg.id})" type="button" title="Play this clip" style="display:flex;align-items:center;gap:3px;padding:5px 9px;">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Play</span>
+            </button>
+            <button class="btn-secondary btn-sm" onclick="nudgeSegment(${seg.id}, -0.1)" type="button" style="padding: 4px 6px; font-size: 11px;">-0.1s</button>
+            <button class="btn-secondary btn-sm" onclick="nudgeSegment(${seg.id}, +0.1)" type="button" style="padding: 4px 6px; font-size: 11px;">+0.1s</button>
+            ${segments.length > 1 ? `<button class="btn-danger btn-sm" onclick="removeSegment(${seg.id})" type="button" title="Remove clip" style="padding: 5px 8px; font-size: 11px; font-weight:700;">✕</button>` : ''}
+          </div>
+        `;
+        segmentListContainer.appendChild(card);
+      });
+
+      updateTrimmerSummary();
+      renderWaveform();
+    }
+
+    window.updateSegmentStart = function(id, val) {
+      const seg = segments.find(s => s.id === id);
+      if (seg) {
+        seg.start = Math.max(0, parseFloat(val) || 0);
+        if (seg.end <= seg.start) seg.end = Math.min(mediaDuration || 999, seg.start + 1.0);
+        if (activePlayer) activePlayer.currentTime = seg.start;
+        renderSegmentsList();
       }
-    }
+    };
 
-    function setStartTime(val) {
-      val = Math.max(0, Math.min(mediaDuration ? mediaDuration - 0.1 : 999, val));
-      startTimeInput.value = val.toFixed(2);
-      if (parseFloat(endTimeInput.value) <= val) {
-        endTimeInput.value = Math.min(mediaDuration || 999, val + 3.0).toFixed(2);
+    window.updateSegmentEnd = function(id, val) {
+      const seg = segments.find(s => s.id === id);
+      if (seg) {
+        seg.end = Math.max(seg.start + 0.05, Math.min(mediaDuration || 999, parseFloat(val) || 1.0));
+        if (activePlayer) activePlayer.currentTime = seg.end;
+        renderSegmentsList();
       }
-      if (activePlayer) activePlayer.currentTime = val;
-      updateTrimmerUI();
-    }
+    };
 
-    function setEndTime(val) {
-      const start = parseFloat(startTimeInput.value) || 0;
-      val = Math.max(start + 0.05, Math.min(mediaDuration || 999, val));
-      endTimeInput.value = val.toFixed(2);
-      if (activePlayer) activePlayer.currentTime = val;
-      updateTrimmerUI();
-    }
+    window.nudgeSegment = function(id, delta) {
+      const seg = segments.find(s => s.id === id);
+      if (seg) {
+        seg.start = Math.max(0, seg.start + delta);
+        seg.end = Math.max(seg.start + 0.05, Math.min(mediaDuration || 999, seg.end + delta));
+        if (activePlayer) activePlayer.currentTime = seg.start;
+        renderSegmentsList();
+      }
+    };
 
-    // Step adjustment buttons
-    btnStartMinusBig.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) - 0.5));
-    btnStartMinusSmall.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) - 0.1));
-    btnStartPlusSmall.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) + 0.1));
-    btnStartPlusBig.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) + 0.5));
+    window.removeSegment = function(id) {
+      if (segments.length <= 1) return;
+      segments = segments.filter(s => s.id !== id);
+      if (activeSegmentId === id) activeSegmentId = segments[0].id;
+      renderSegmentsList();
+    };
 
-    btnEndMinusBig.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) - 0.5));
-    btnEndMinusSmall.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) - 0.1));
-    btnEndPlusSmall.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) + 0.1));
-    btnEndPlusBig.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) + 0.5));
+    btnAddSegment.addEventListener('click', () => {
+      let newStart = 0;
+      if (activePlayer && activePlayer.currentTime) {
+        newStart = activePlayer.currentTime;
+      } else if (segments.length > 0) {
+        const last = segments[segments.length - 1];
+        newStart = Math.min(mediaDuration ? mediaDuration - 1.0 : 999, last.end + 0.5);
+      }
+      const newEnd = Math.min(mediaDuration || 999, newStart + 2.0);
+      const newId = nextSegmentId++;
+      segments.push({ id: newId, start: newStart, end: newEnd });
+      activeSegmentId = newId;
+      renderSegmentsList();
+    });
 
-    startTimeInput.addEventListener('input', updateTrimmerUI);
-    endTimeInput.addEventListener('input', updateTrimmerUI);
-
-    // Waveform Drawing
-    function renderWaveform(buffer) {
+    // Waveform Drawing (renders audio background + all colored segments)
+    function renderWaveform() {
+      if (!audioBufferData) return;
       waveformCanvas.width = waveformCanvas.parentElement.clientWidth * window.devicePixelRatio || 1200;
       waveformCanvas.height = 120 * window.devicePixelRatio || 240;
       const ctx = waveformCanvas.getContext('2d');
@@ -1081,11 +1173,11 @@
 
       ctx.clearRect(0, 0, width, height);
 
-      const data = buffer.getChannelData(0);
+      const data = audioBufferData.getChannelData(0);
       const step = Math.ceil(data.length / width);
       const amp = height / 2;
 
-      // Draw subtle background grid
+      // Draw subtle midline
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -1094,7 +1186,7 @@
       ctx.stroke();
 
       // Draw waveform bars
-      ctx.fillStyle = '#468CF6';
+      ctx.fillStyle = '#3A3A3C';
       for (let i = 0; i < width; i += 3) {
         let min = 1.0;
         let max = -1.0;
@@ -1105,8 +1197,49 @@
         }
         const barHeight = Math.max(3, (max - min) * amp * 0.9);
         const y = amp - (barHeight / 2);
-        
         ctx.fillRect(i, y, 2, barHeight);
+      }
+
+      // Draw overlay for every segment
+      if (mediaDuration > 0) {
+        segments.forEach((seg, idx) => {
+          const left = (seg.start / mediaDuration) * width;
+          const w = ((seg.end - seg.start) / mediaDuration) * width;
+          const isActive = seg.id === activeSegmentId;
+
+          // Segment highlight fill
+          ctx.fillStyle = isActive ? 'rgba(70, 140, 246, 0.32)' : 'rgba(191, 90, 242, 0.22)';
+          ctx.fillRect(left, 0, w, height);
+
+          // Highlighted waveform bars inside segment
+          ctx.fillStyle = isActive ? '#468CF6' : '#BF5AF2';
+          const startIdx = Math.floor(left);
+          const endIdx = Math.min(width, Math.ceil(left + w));
+          for (let i = startIdx; i < endIdx; i += 3) {
+            let min = 1.0;
+            let max = -1.0;
+            for (let j = 0; j < step; j++) {
+              const datum = data[(i * step) + j];
+              if (datum < min) min = datum;
+              if (datum > max) max = datum;
+            }
+            const barHeight = Math.max(3, (max - min) * amp * 0.9);
+            const y = amp - (barHeight / 2);
+            ctx.fillRect(i, y, 2, barHeight);
+          }
+
+          // Boundary borders
+          ctx.strokeStyle = isActive ? '#468CF6' : '#BF5AF2';
+          ctx.lineWidth = isActive ? 3 : 1.5;
+          ctx.strokeRect(left, 0, w, height);
+
+          // Segment Label Tag
+          ctx.fillStyle = isActive ? '#468CF6' : '#BF5AF2';
+          ctx.fillRect(left, 0, Math.min(w, 54), 18);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 10px -apple-system, sans-serif';
+          ctx.fillText(`#${idx + 1} (${(seg.end - seg.start).toFixed(1)}s)`, left + 4, 13);
+        });
       }
     }
 
@@ -1132,7 +1265,6 @@
         activePlayer = audioPreview;
       }
 
-      // Decode audio for waveform
       waveformLoading.style.display = 'flex';
       try {
         const arrayBuffer = await file.arrayBuffer();
@@ -1140,24 +1272,24 @@
         mediaDuration = audioBufferData.duration;
         totalDurationDisplay.innerText = mediaDuration.toFixed(2) + 's';
 
-        renderWaveform(audioBufferData);
+        segments = [
+          { id: 1, start: 0.0, end: Math.min(3.0, mediaDuration) }
+        ];
+        activeSegmentId = 1;
+        renderSegmentsList();
         waveformLoading.style.display = 'none';
-
-        startTimeInput.value = '0.00';
-        endTimeInput.value = Math.min(5.0, mediaDuration).toFixed(2);
-        updateTrimmerUI();
 
         let baseName = file.name.replace(/\.[^/.]+$/, "") + ".wav";
         targetFilename.value = baseName;
       } catch (err) {
-        waveformLoading.innerText = 'Video loaded (Playing via player)';
+        waveformLoading.innerText = 'File loaded';
       }
 
       activePlayer.onloadedmetadata = () => {
         if (!mediaDuration) {
           mediaDuration = activePlayer.duration;
           totalDurationDisplay.innerText = mediaDuration.toFixed(2) + 's';
-          updateTrimmerUI();
+          renderSegmentsList();
         }
       };
 
@@ -1171,7 +1303,7 @@
       };
     });
 
-    // Waveform Canvas Drag & Click Selection
+    // Waveform Canvas Drag & Selection
     const waveformBox = waveformCanvas.parentElement;
 
     waveformBox.addEventListener('mousedown', (e) => {
@@ -1180,7 +1312,11 @@
       const rect = waveformBox.getBoundingClientRect();
       dragStartX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
       const startTime = (dragStartX / rect.width) * mediaDuration;
-      setStartTime(startTime);
+      
+      const act = getActiveSegment();
+      act.start = startTime;
+      act.end = Math.min(mediaDuration, startTime + 0.1);
+      renderSegmentsList();
     });
 
     window.addEventListener('mousemove', (e) => {
@@ -1191,76 +1327,114 @@
       const t1 = (dragStartX / rect.width) * mediaDuration;
       const t2 = (currentX / rect.width) * mediaDuration;
 
-      const start = Math.min(t1, t2);
-      const end = Math.max(t1, t2);
-
-      startTimeInput.value = start.toFixed(2);
-      endTimeInput.value = Math.max(start + 0.1, end).toFixed(2);
-      updateTrimmerUI();
+      const act = getActiveSegment();
+      act.start = Math.min(t1, t2);
+      act.end = Math.max(act.start + 0.05, Math.max(t1, t2));
+      renderSegmentsList();
     });
 
     window.addEventListener('mouseup', () => {
       if (isDraggingWaveform) {
         isDraggingWaveform = false;
-        updateTrimmerUI();
+        renderSegmentsList();
       }
     });
 
-    // Playback Controls
-    btnPlaySelection.addEventListener('click', () => {
-      if (!activePlayer) return;
-      const start = parseFloat(startTimeInput.value) || 0;
-      const end = parseFloat(endTimeInput.value) || mediaDuration;
-
+    // Playback Controller
+    window.playSingleSegment = function(id) {
+      const seg = segments.find(s => s.id === id);
+      if (!seg || !activePlayer) return;
       if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
+      isPlayingMerged = false;
 
-      activePlayer.currentTime = start;
-      activePlayer.play();
+      activePlayer.currentTime = seg.start;
+      activePlayer.play().catch(() => {});
 
       segmentCheckInterval = setInterval(() => {
-        if (activePlayer.currentTime >= end || activePlayer.paused) {
+        if (activePlayer.currentTime >= seg.end || activePlayer.paused) {
           activePlayer.pause();
           clearInterval(segmentCheckInterval);
         }
       }, 30);
+    };
+
+    btnPlaySelection.addEventListener('click', () => {
+      const act = getActiveSegment();
+      if (act) playSingleSegment(act.id);
+    });
+
+    btnPlayMerged.addEventListener('click', () => {
+      if (!activePlayer || !mediaDuration || segments.length === 0) return;
+      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
+
+      const sorted = [...segments].sort((a, b) => a.start - b.start);
+      let curIdx = 0;
+      isPlayingMerged = true;
+
+      function playNext() {
+        if (!isPlayingMerged || curIdx >= sorted.length) {
+          isPlayingMerged = false;
+          activePlayer.pause();
+          return;
+        }
+
+        const seg = sorted[curIdx];
+        activePlayer.currentTime = seg.start;
+        activePlayer.play().catch(() => {});
+
+        const durMs = Math.max(80, (seg.end - seg.start) * 1000);
+        mergedPlayTimeout = setTimeout(() => {
+          curIdx++;
+          playNext();
+        }, durMs);
+      }
+
+      playNext();
     });
 
     btnPlayFull.addEventListener('click', () => {
       if (!activePlayer) return;
       if (segmentCheckInterval) clearInterval(segmentCheckInterval);
-      activePlayer.play();
+      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
+      isPlayingMerged = false;
+      activePlayer.play().catch(() => {});
     });
 
     btnPauseAudio.addEventListener('click', () => {
       if (!activePlayer) return;
       if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      if (mergedPlayTimeout) clearTimeout(mergedPlayTimeout);
+      isPlayingMerged = false;
       activePlayer.pause();
     });
 
-    // Save Trimmed Audio
+    // Save Extracted & Merged Audio
     trimSaveBtn.addEventListener('click', async () => {
       if (!loadedMediaBlob) {
         alert('Please select a video or audio file first.');
         return;
       }
 
-      const start = parseFloat(startTimeInput.value) || 0;
-      const end = parseFloat(endTimeInput.value) || 5.0;
       let filename = targetFilename.value.trim();
       if (!filename) filename = "custom_sample.wav";
       if (!filename.toLowerCase().endsWith('.wav')) filename += ".wav";
 
       const promptText = trimmerPromptText.value.trim();
 
+      const sortedSegments = [...segments].sort((a, b) => a.start - b.start);
+
       const formData = new FormData();
       formData.append('audio', loadedMediaBlob);
-      formData.append('start_sec', start);
-      formData.append('end_sec', end);
+      formData.append('segments', JSON.stringify(sortedSegments));
       formData.append('filename', filename);
       formData.append('prompt_text', promptText);
       formData.append('prompt_lang', 'auto');
 
-      trimSaveBtn.innerText = 'Extracting 32kHz WAV...';
+      trimSaveBtn.innerText = 'Extracting & Merging Slices...';
+      trimSaveBtn.disabled = true;
+
       try {
         const res = await fetch('/api/trim_audio', {
           method: 'POST',
@@ -1272,16 +1446,19 @@
           await loadSettings();
 
           setTimeout(() => {
-            trimSaveBtn.innerText = 'Extract 32kHz WAV & Save to Voice Library';
+            trimSaveBtn.innerText = 'Extract & Merge Spliced 32kHz WAV';
+            trimSaveBtn.disabled = false;
             document.querySelector('[data-tab="tab-library"]').click();
           }, 1000);
         } else {
-          trimSaveBtn.innerText = 'Error: ' + (data.error || 'Failed');
-          setTimeout(() => trimSaveBtn.innerText = 'Extract 32kHz WAV & Save to Voice Library', 3000);
+          alert('Error: ' + (data.error || 'Failed to extract audio'));
+          trimSaveBtn.innerText = 'Extract & Merge Spliced 32kHz WAV';
+          trimSaveBtn.disabled = false;
         }
       } catch (err) {
-        trimSaveBtn.innerText = 'Error';
-        setTimeout(() => trimSaveBtn.innerText = 'Extract 32kHz WAV & Save to Voice Library', 3000);
+        alert('Request failed: ' + err);
+        trimSaveBtn.innerText = 'Extract & Merge Spliced 32kHz WAV';
+        trimSaveBtn.disabled = false;
       }
     });
 
