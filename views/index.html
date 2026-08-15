@@ -1705,8 +1705,9 @@
     async function confirmThumbModal() {
       if (!activeModalVoiceFilename) return;
       const urlInput = document.getElementById('thumbModalUrlInput');
-      const customUrl = urlInput.value.trim();
+      const customUrl = urlInput ? urlInput.value.trim() : '';
       const filename = activeModalVoiceFilename;
+      const clipItem = activeModalClipItem;
 
       closeThumbModal();
 
@@ -1716,11 +1717,11 @@
         } else {
           await uploadThumbnailUrl(filename, customUrl);
         }
-      } else if (activeModalClipItem) {
-        if (activeModalClipItem.type === 'data') {
-          await uploadThumbnailBase64(filename, activeModalClipItem.data);
-        } else if (activeModalClipItem.type === 'url') {
-          await uploadThumbnailUrl(filename, activeModalClipItem.data);
+      } else if (clipItem) {
+        if (clipItem.type === 'data') {
+          await uploadThumbnailBase64(filename, clipItem.data);
+        } else if (clipItem.type === 'url') {
+          await uploadThumbnailUrl(filename, clipItem.data);
         }
       }
     }
