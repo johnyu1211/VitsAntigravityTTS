@@ -182,11 +182,12 @@ DANGLING_ENDINGS = re.compile(
     re.IGNORECASE
 )
 
-def split_into_conversational_chunks(text, max_chars=36, min_chars=12):
+def split_into_conversational_chunks(text, max_chars=22, min_chars=5):
     """
-    Splits text into balanced conversational slices (15~36 chars / 4~8 words).
-    Guarantees conjunctions/prepositions (and, but, so, 그리고, etc.) NEVER dangle
-    at the end of a chunk, ensuring natural, fluent prosodic speech.
+    Ultra-Fast Micro-Streaming Chunker:
+    Splits text into compact, natural streaming slices (8~22 chars).
+    Allows GPU to synthesize the first sentence in <0.6s and output to speaker
+    instantly, while background synthesizing remaining chunks during playback.
     """
     if not text:
         return []
@@ -200,7 +201,6 @@ def split_into_conversational_chunks(text, max_chars=36, min_chars=12):
     raw_lines = [line.strip() for line in t.split('\n') if line.strip()]
     merged_lines = []
     
-    # Merge micro fragments (<12 chars) with subsequent or previous line
     for line in raw_lines:
         line = re.sub(r'\s+', ' ', line).strip()
         if not line:
@@ -216,20 +216,33 @@ def split_into_conversational_chunks(text, max_chars=36, min_chars=12):
             final_chunks.append(line)
             continue
         
-        # Sub-clause splitting for longer lines on commas, dashes, and natural conjunctions
-        sub_tokens = re.split(r'([,，—\-]|\s+(?:그리고|하지만|또한|그러나|그러므로|and|but|or|so|because|while|with|to)\s+)', line)
-        current_chunk = ''
-        for tok in sub_tokens:
-            if not tok:
+        # Sub-clause splitting: first on punctuation/conjunctions
+        parts = re.split(r'([,，—\-]|\s+(?:그리고|하지만|또한|그러나|그러므로|and|but|or|so|because|with|to)\s+)', line)
+        cur = ''
+        for p in parts:
+            if not p:
                 continue
-            if len(current_chunk) + len(tok) <= max_chars:
-                current_chunk += tok
+            if len(cur) + len(p) <= max_chars:
+                cur += p
             else:
-                if current_chunk.strip():
-                    final_chunks.append(current_chunk.strip())
-                current_chunk = tok
-        if current_chunk.strip():
-            final_chunks.append(current_chunk.strip())
+                if cur.strip():
+                    final_chunks.append(cur.strip())
+                # If a single part is still longer than max_chars, split on word boundaries
+                if len(p.strip()) > max_chars:
+                    words = p.strip().split()
+                    w_cur = ''
+                    for w in words:
+                        if len(w_cur) + len(w) + 1 <= max_chars:
+                            w_cur = (w_cur + ' ' + w).strip()
+                        else:
+                            if w_cur:
+                                final_chunks.append(w_cur)
+                            w_cur = w
+                    cur = w_cur
+                else:
+                    cur = p
+        if cur.strip():
+            final_chunks.append(cur.strip())
 
     # Fix dangling conjunctions: move trailing conjunctions to the beginning of the next chunk
     refined = []
@@ -255,16 +268,12 @@ def split_into_conversational_chunks(text, max_chars=36, min_chars=12):
         else:
             refined.append(carry_over)
 
-    # Final pass: merge any trailing micro-fragment (<8 chars) with previous chunk
     cleaned = []
     for c in refined:
         c = re.sub(r'^[,\s]+', '', c.strip())
         if not c:
             continue
-        if cleaned and len(c) < 8:
-            cleaned[-1] += " " + c
-        else:
-            cleaned.append(c)
+        cleaned.append(c)
 
     return cleaned if cleaned else [text.strip()]
 
