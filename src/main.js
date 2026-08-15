@@ -108,7 +108,7 @@ function createWindow() {
     minHeight: 650,
     backgroundColor: '#1c1c1e',
     title: 'Antigravity Voice Studio',
-    icon: path.join(__dirname, 'assets', 'icon.png'),
+    icon: path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
     show: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
