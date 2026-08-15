@@ -507,11 +507,11 @@
 
       <div class="form-group">
         <label class="form-label">
-          <span>Volume (음량 증폭 조절)</span>
+          <span>Volume (음량 크기)</span>
           <span class="range-val" id="volumeVal">100%</span>
         </label>
         <div class="range-wrap">
-          <input type="range" id="volumeRange" min="0" max="250" step="5" value="100">
+          <input type="range" id="volumeRange" min="0" max="100" step="1" value="100">
         </div>
       </div>
 
@@ -657,8 +657,7 @@
     });
 
     volumeRange.addEventListener('input', () => {
-      const val = parseInt(volumeRange.value);
-      volumeVal.innerText = val > 100 ? `${val}% (Boost)` : `${val}%`;
+      volumeVal.innerText = volumeRange.value + '%';
       triggerAutoSave();
     });
 
