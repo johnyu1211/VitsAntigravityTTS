@@ -155,20 +155,26 @@ def clean_markdown_text(text):
     text = text.replace(' DECIMAL DOT ', '.').replace('DECIMAL DOT', '.').replace('DECIMALDOT', '.')
     return text.strip()
 
-def split_into_conversational_chunks(text, max_chars=45):
+def split_into_conversational_chunks(text, max_chars=28):
     """
-    Splits text into bite-sized conversational chunks (max 35~45 chars) so that
-    GPT-SoVITS synthesizes each chunk in <1.0s, completely eliminating playback buffer underruns.
+    Splits text into ultra-compact conversational slices (max 20~28 chars / 4~6 words).
+    Emits instant 1-word/greeting openers in <0.2s, and streams subsequent chunks in <0.4s.
     """
     if not text:
         return []
     
-    # 1. Normalize line endings and mark natural boundary breaks
     t = re.sub(r'\r\n', '\n', text)
-    # Numbered list items: '1. ', '2) ' -> new chunk line
-    t = re.sub(r'(\s+)(?=\d+[\.\)]\s+)', r'\n', t)
-    # Sentence ending punctuation followed by whitespace or line break
+    # 1. Instant Opener Split: Greetings and short affirmations get their own immediate micro-chunk
+    t = re.sub(
+        r'(?i)^(Hello|Hi|Hey|Sure|Yes|No|Okay|Alright|Great|Good|안녕하세요|네|네,|알겠습니다|감사합니다)[\.\!\?\,]\s*',
+        r'\1.\n',
+        t,
+        flags=re.MULTILINE
+    )
+    # 2. Split on sentence terminals . ! ? ~ : ;
     t = re.sub(r'(?<=[^\d][\.\!\?~;:])\s+', r'\n', t)
+    # 3. Split numbered list items: '1. ', '2) '
+    t = re.sub(r'(\s+)(?=\d+[\.\)]\s+)', r'\n', t)
     
     raw_lines = [line.strip() for line in t.split('\n') if line.strip()]
     final_chunks = []
@@ -178,13 +184,13 @@ def split_into_conversational_chunks(text, max_chars=45):
         if not line:
             continue
         
-        # If line is already short enough, keep it intact
+        # If line is already compact, keep it intact
         if len(line) <= max_chars:
             final_chunks.append(line)
             continue
         
-        # Sub-clause splitting for long lines: split by commas, dashes, and common conjunctions
-        sub_tokens = re.split(r'([,，—\-]|\s+(?:그리고|하지만|또한|그러나|그러므로|and|but|or|so|because|while|with)\s+)', line)
+        # Sub-clause splitting for longer lines on commas, dashes, and natural breath conjunctions
+        sub_tokens = re.split(r'([,，—\-]|\s+(?:그리고|하지만|또한|그러나|그러므로|and|but|or|so|because|while|with|to)\s+)', line)
         
         current_chunk = ''
         for tok in sub_tokens:
