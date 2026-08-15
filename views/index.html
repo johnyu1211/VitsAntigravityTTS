@@ -1124,6 +1124,28 @@
               </div>
             </div>
 
+            <!-- Conversational Sentence Chunking Toggle -->
+            <div class="toggle-row">
+              <div class="toggle-text">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#468CF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                  </svg>
+                  <h4 style="margin:0;">Conversational Sentence Chunking</h4>
+                </div>
+                <p>Splits text into natural streaming chunks. Turn OFF to synthesize entire message as one monolithic audio</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="chunkingToggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
             <div class="toggle-row">
               <div class="toggle-text">
                 <div style="display:flex;align-items:center;gap:7px;">
@@ -1440,6 +1462,7 @@
     const volumeVal = document.getElementById('volumeVal');
     const speedRange = document.getElementById('speedRange');
     const speedVal = document.getElementById('speedVal');
+    const chunkingToggle = document.getElementById('chunkingToggle');
     const fastPipelineToggle = document.getElementById('fastPipelineToggle');
     const testBtn = document.getElementById('testBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
@@ -1555,6 +1578,7 @@
       triggerAutoSave();
     });
 
+    chunkingToggle.addEventListener('change', triggerAutoSave);
     fastPipelineToggle.addEventListener('change', triggerAutoSave);
 
     window.addEventListener('keydown', (e) => {
@@ -2728,6 +2752,9 @@
           speedRange.value = s.speed;
           speedVal.innerText = s.speed + 'x';
         }
+        if (s.enable_chunking !== undefined) {
+          chunkingToggle.checked = s.enable_chunking !== false;
+        }
         if (s.fast_pipeline !== undefined) {
           fastPipelineToggle.checked = s.fast_pipeline !== false;
         }
@@ -2748,6 +2775,7 @@
         temperature: parseFloat(tempRange.value),
         volume: parseFloat(volumeRange.value) / 100.0,
         speed: parseFloat(speedRange.value),
+        enable_chunking: chunkingToggle.checked,
         fast_pipeline: fastPipelineToggle.checked,
         enabled: true
       };
@@ -3017,6 +3045,9 @@
           if (s.speed) {
             speedRange.value = s.speed;
             speedVal.innerText = s.speed + 'x';
+          }
+          if (s.enable_chunking !== undefined) {
+            chunkingToggle.checked = s.enable_chunking !== false;
           }
           if (s.fast_pipeline !== undefined) {
             fastPipelineToggle.checked = s.fast_pipeline !== false;

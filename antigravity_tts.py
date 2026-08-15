@@ -71,7 +71,9 @@ current_settings = {
     "volume": 1.0,
     "speed": 1.0,
     "enabled": True,
-    "skip_code": True
+    "skip_code": True,
+    "fast_pipeline": True,
+    "enable_chunking": True
 }
 
 speech_queue = asyncio.Queue()
@@ -381,7 +383,10 @@ async def speech_worker():
         speed = float(current_settings.get("speed", 1.0))
         temperature = float(current_settings.get("temperature", 0.65))
 
-        chunks = split_into_conversational_chunks(clean)
+        if current_settings.get("enable_chunking", True):
+            chunks = split_into_conversational_chunks(clean)
+        else:
+            chunks = [clean.strip()] if clean and clean.strip() else []
         slot_override = item.get("slot_override")
 
         for chunk in chunks:
