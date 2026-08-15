@@ -19,8 +19,6 @@ process.on('unhandledRejection', (reason) => {
 });
 
 function getPythonExecutable() {
-  const localPyw = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python311', 'pythonw.exe');
-  if (fs.existsSync(localPyw)) return localPyw;
   const localPy = path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Python', 'Python311', 'python.exe');
   if (fs.existsSync(localPy)) return localPy;
   return 'python';
@@ -46,7 +44,7 @@ function checkPortActive(callback) {
 }
 
 function startPythonBackend() {
-  console.log('[Electron] Starting Python Voice Engine in windowless background mode...');
+  console.log('[Electron] Starting Python Voice Engine in background...');
   const rootDir = path.resolve(__dirname, '..');
   const pyExe = getPythonExecutable();
   const pyScript = path.join(rootDir, 'antigravity_tts.py');
@@ -108,6 +106,7 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#1c1c1e',
     title: 'Antigravity Voice Studio',
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     show: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
