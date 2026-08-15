@@ -197,7 +197,7 @@ class GPTSoVITSEngine:
         return sorted(voices, key=lambda x: x["filename"])
 
     @torch.inference_mode()
-    def synthesize(self, text, ref_audio_name="voiceSCOURCE.wav", text_lang="ko", speed=1.0, temperature=0.65, prompt_text="", prompt_lang="auto", output_path=None, volume=1.0):
+    def synthesize(self, text, ref_audio_name="voiceSCOURCE.wav", text_lang="ko", speed=1.0, temperature=0.65, prompt_text="", prompt_lang="auto", output_path=None, volume=1.0, fast_mode=True):
         try:
             ref_path = os.path.join(self.ref_dir, ref_audio_name)
             if not os.path.exists(ref_path):
@@ -233,13 +233,14 @@ class GPTSoVITSEngine:
                 'ref_audio_path': ref_path,
                 'prompt_text': prompt_text,
                 'prompt_lang': prompt_lang if prompt_text else text_lang,
-                'top_k': 5,
-                'top_p': 0.95,
+                'top_k': 5 if fast_mode else 15,
+                'top_p': 0.85 if fast_mode else 0.95,
                 'temperature': max(0.5, min(1.0, float(temperature))),
                 'text_split_method': 'cut0',
                 'speed_factor': speed,
                 'batch_size': 1,
-                'stream_mode': 'normal'
+                'stream_mode': 'normal',
+                'parallel_infer': True if fast_mode else False
             }
 
             audio_chunks = []

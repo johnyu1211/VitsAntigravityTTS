@@ -1109,6 +1109,20 @@
 
             <div class="toggle-row">
               <div class="toggle-text">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <h4 style="margin:0;">High-Speed Stream Pipeline</h4>
+                  <span style="font-size:10px;font-weight:700;background:rgba(70,140,246,0.15);color:var(--primary);border:1px solid rgba(70,140,246,0.3);border-radius:4px;padding:1px 6px;">⚡ FAST</span>
+                </div>
+                <p>Synthesizes upcoming sentence chunks in parallel while playing current audio</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="fastPipelineToggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-text">
                 <h4>Master Audio Output</h4>
                 <p>Toggle GPT-SoVITS voice synthesis on/off</p>
               </div>
@@ -1397,6 +1411,7 @@
     const volumeVal = document.getElementById('volumeVal');
     const speedRange = document.getElementById('speedRange');
     const speedVal = document.getElementById('speedVal');
+    const fastPipelineToggle = document.getElementById('fastPipelineToggle');
     const masterToggle = document.getElementById('masterToggle');
     const testBtn = document.getElementById('testBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
@@ -1493,6 +1508,8 @@
       speedVal.innerText = speedRange.value + 'x';
       triggerAutoSave();
     });
+
+    fastPipelineToggle.addEventListener('change', triggerAutoSave);
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) {
@@ -2643,6 +2660,9 @@
           speedRange.value = s.speed;
           speedVal.innerText = s.speed + 'x';
         }
+        if (s.fast_pipeline !== undefined) {
+          fastPipelineToggle.checked = s.fast_pipeline !== false;
+        }
         masterToggle.checked = s.enabled !== false;
       } catch (err) {
         // Backend still booting up, retry loading settings in 500ms
@@ -2660,6 +2680,7 @@
         temperature: parseFloat(tempRange.value),
         volume: parseFloat(volumeRange.value) / 100.0,
         speed: parseFloat(speedRange.value),
+        fast_pipeline: fastPipelineToggle.checked,
         enabled: masterToggle.checked
       };
 
@@ -2913,6 +2934,12 @@
           if (s.speed) {
             speedRange.value = s.speed;
             speedVal.innerText = s.speed + 'x';
+          }
+          if (s.fast_pipeline !== undefined) {
+            fastPipelineToggle.checked = s.fast_pipeline !== false;
+          }
+          if (s.enabled !== undefined) {
+            masterToggle.checked = s.enabled !== false;
           }
         }
       } catch (e) {}

@@ -405,9 +405,11 @@ async def speech_worker():
             temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
 
             try:
-                print(f"[GPT-SoVITS] [{lang.upper()}] Voice: '{ref_voice}' (Vol: {int(vol*100)}%, Temp: {temperature:.2f}) -> {chunk[:35]}...")
+                fast_mode = current_settings.get("fast_pipeline", True)
+                pipe_tag = " [⚡FAST]" if fast_mode else ""
+                print(f"[GPT-SoVITS]{pipe_tag} [{lang.upper()}] Voice: '{ref_voice}' (Vol: {int(vol*100)}%, Temp: {temperature:.2f}) -> {chunk[:35]}...")
                 success = await asyncio.to_thread(
-                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol
+                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol, fast_mode
                 )
 
                 if gen_id != current_generation_id:
