@@ -138,18 +138,25 @@ def clean_markdown_text(text):
     text = re.sub(r'\$\$[\s\S]*?\$\$', ' ', text)
     text = re.sub(r'\$[^\$]+?\$', ' ', text)
     text = re.sub(r'#+\s*', '', text)
-    text = re.sub(r'^\s*[-+*•·]\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^\s*[-+*•·▪▫►✔✕]\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
     
-    # 6. Protect decimal points (e.g. 3.14, 2.0)
+    # 6. Box drawings, arrows, bullets, and divider symbols
+    text = re.sub(r'[─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬▲▼◀▶►◄→←↑↓⇒⇔•·▪▫►✔✕★☆✓✗]', ' ', text)
+
+    # 7. Protect decimal points (e.g. 3.14, 2.0)
     text = re.sub(r'(\d+)\.(\d+)', r'\1_DECIMAL_DOT_\2', text)
     
-    # 7. Keep letters, numbers, spaces, newlines, and key punctuation
-    text = re.sub(r'[^\w\s\n\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?\~,;:—\-]', ' ', text)
-    text = re.sub(r'[_]', ' ', text)
+    # 8. Complete symbol purge via translation table (removes hyphens, em-dashes, brackets, tildes, colons)
+    symbol_table = str.maketrans({c: ' ' for c in '-—–_~:;/\\|()[]{}<>#*+=`^$%@&"\'“”‘’'})
+    text = text.translate(symbol_table)
     
-    # 8. Normalize multiple punctuations
+    # 9. Keep ONLY letters, numbers, spaces, newlines, and standard sentence terminals (. ! ? ,)
+    text = re.sub(r'[^\w\s\n\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?,]', ' ', text)
+    
+    # 10. Normalize multiple punctuations & spaces
     text = re.sub(r'[\.!\?]{2,}', '.', text)
+    text = re.sub(r'[,]{2,}', ',', text)
     
     # Restore decimal points
     text = text.replace(' DECIMAL DOT ', '.').replace('DECIMAL DOT', '.').replace('DECIMALDOT', '.')
@@ -364,6 +371,10 @@ async def speech_worker():
                 break
 
             if not chunk or not chunk.strip():
+                continue
+
+            # Must contain at least one actual pronounceable character (Hangul, English, Kana, Hanzi)
+            if not re.search(r'[\uac00-\ud7a3a-zA-Z\u3040-\u30ff\u4e00-\u9fff]', chunk):
                 continue
 
             lang = detect_language(chunk)
