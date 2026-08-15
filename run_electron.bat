@@ -6,12 +6,12 @@ echo ===================================================
 echo   Antigravity Voice Studio - Electron Desktop App
 echo ===================================================
 
-:: Check if electron binary exists
-if not exist "node_modules\electron\dist\electron.exe" (
-    echo [INFO] Installing Electron desktop runtime (First run only)...
+REM Check if electron binary exists
+if not exist "%~dp0node_modules\electron\dist\electron.exe" (
+    echo [INFO] Installing Electron desktop runtime...
     call npm install
 )
 
 echo [INFO] Launching Desktop Application...
-start "" "node_modules\electron\dist\electron.exe" .
+start "" "%~dp0node_modules\electron\dist\electron.exe" "%~dp0."
 exit /b 0
