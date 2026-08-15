@@ -661,52 +661,89 @@
     </div>
 
     <!-- ============================================== -->
-    <!-- TAB 2: VIDEO & AUDIO TRIMMER                   -->
+    <!-- TAB 2: PRO VIDEO & AUDIO WAVEFORM EDITOR       -->
     <!-- ============================================== -->
     <div class="tab-content" id="tab-trimmer">
       <div class="section-card">
-        <div class="section-title">Video & Audio Sample Trimmer (32kHz WAV Auto-Converter)</div>
-        <p class="hint-text">동영상(MP4, MKV, MOV, WebM) 또는 음원(MP3, WAV, FLAC, M4A)을 올리면 자동으로 고음질 32kHz 음성 샘플로 추출 및 변환합니다.</p>
+        <div class="section-header">
+          <div class="section-title">Visual Waveform Sample Editor</div>
+          <div class="duration-badge" id="durationBadge" style="font-size:12px;font-weight:700;color:var(--primary);">No Media Loaded</div>
+        </div>
+        <p class="hint-text">동영상(MP4, MKV, MOV, WebM)이나 음원(MP3, WAV, FLAC, M4A)의 음성 파형을 보면서 대사 구간을 정밀하게 잘라냅니다.</p>
 
         <div class="trimmer-box">
           <div class="form-group">
-            <label class="form-label">Select Video or Audio File</label>
+            <label class="form-label">Media File (동영상 또는 오디오 파일 선택)</label>
             <input type="file" id="mediaFileInput" accept="audio/*,video/*">
           </div>
 
-          <!-- Video / Audio Visual Player -->
-          <div class="player-container" id="playerContainer" style="display: none;">
-            <video id="videoPreview" controls style="display: none;"></video>
-            <audio id="audioPreview" controls style="display: none;"></audio>
+          <!-- Video Preview Container (Only shown for video files) -->
+          <div class="player-container" id="playerContainer" style="display: none; margin-bottom: 4px;">
+            <video id="videoPreview" controls style="display: none; max-height: 220px;"></video>
+            <audio id="audioPreview" style="display: none;"></audio>
           </div>
 
-          <!-- Quick Scrub Toolbar -->
-          <div class="scrub-toolbar" id="scrubToolbar" style="display: none;">
-            <button class="btn-secondary btn-sm" id="btnSetStart" type="button">Set Current Time as Start</button>
-            <span id="currentPlaybackTime" style="font-size:12px;font-weight:600;color:var(--primary);">0.0s</span>
-            <button class="btn-secondary btn-sm" id="btnSetEnd" type="button">Set Current Time as End</button>
+          <!-- Interactive Waveform Visualizer -->
+          <div class="waveform-container" style="position: relative; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-sm); height: 120px; overflow: hidden; cursor: crosshair;">
+            <canvas id="waveformCanvas" style="width: 100%; height: 100%; display: block;"></canvas>
+            <div id="selectionOverlay" style="position: absolute; top: 0; bottom: 0; left: 0%; width: 30%; background: rgba(70, 140, 246, 0.25); border-left: 2px solid var(--primary); border-right: 2px solid var(--primary); pointer-events: none; display: none;"></div>
+            <div id="playheadCursor" style="position: absolute; top: 0; bottom: 0; left: 0%; width: 2px; background: #FF453A; pointer-events: none; display: none;"></div>
+            <div id="waveformLoading" style="position: absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; background: rgba(20,20,22,0.8); font-size:12px; color:var(--text-muted); display: none;">Rendering audio waveform...</div>
           </div>
 
-          <div class="time-grid">
-            <div class="form-group">
-              <label class="form-label">Start Time (초)</label>
-              <input type="number" id="startTimeInput" step="0.1" min="0" value="0.0">
+          <!-- Playback & Control Bar -->
+          <div class="scrub-toolbar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: var(--radius-sm);">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn-primary btn-sm" id="btnPlaySelection" type="button">▶ Play Segment (구간 재생)</button>
+              <button class="btn-secondary btn-sm" id="btnPlayFull" type="button">▶ Play All</button>
+              <button class="btn-secondary btn-sm" id="btnPauseAudio" type="button">⏸ Pause</button>
             </div>
-            <div class="form-group">
-              <label class="form-label">End Time (초)</label>
-              <input type="number" id="endTimeInput" step="0.1" min="0" value="5.0">
+            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted);">
+              Current: <span id="currentPlaybackTime" style="color: var(--primary);">0.00s</span> / <span id="totalDurationDisplay">0.00s</span>
             </div>
           </div>
 
-          <div class="trim-info">
-            <span>Selected Clip Duration: <strong id="durationDisplay" style="color: var(--primary);">5.0s</strong> (Recommended: 3~6s)</span>
-            <span id="totalDurationDisplay">Total Media: 0.0s</span>
+          <!-- Precision Fine-Tuning Grid -->
+          <div class="time-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <!-- Start Time Adjuster -->
+            <div class="slot-box" style="padding: 12px;">
+              <div class="slot-header">
+                <span style="font-size: 12px; font-weight: 700;">Start Point (시작점)</span>
+                <input type="number" id="startTimeInput" step="0.05" min="0" value="0.00" style="width: 80px; padding: 4px 8px; font-size: 13px; text-align: right;">
+              </div>
+              <div style="display: flex; gap: 4px; margin-top: 6px;">
+                <button class="btn-secondary btn-sm" id="btnStartMinusBig" type="button" style="flex:1;">-0.5s</button>
+                <button class="btn-secondary btn-sm" id="btnStartMinusSmall" type="button" style="flex:1;">-0.1s</button>
+                <button class="btn-secondary btn-sm" id="btnStartPlusSmall" type="button" style="flex:1;">+0.1s</button>
+                <button class="btn-secondary btn-sm" id="btnStartPlusBig" type="button" style="flex:1;">+0.5s</button>
+              </div>
+            </div>
+
+            <!-- End Time Adjuster -->
+            <div class="slot-box" style="padding: 12px;">
+              <div class="slot-header">
+                <span style="font-size: 12px; font-weight: 700;">End Point (종료점)</span>
+                <input type="number" id="endTimeInput" step="0.05" min="0" value="5.00" style="width: 80px; padding: 4px 8px; font-size: 13px; text-align: right;">
+              </div>
+              <div style="display: flex; gap: 4px; margin-top: 6px;">
+                <button class="btn-secondary btn-sm" id="btnEndMinusBig" type="button" style="flex:1;">-0.5s</button>
+                <button class="btn-secondary btn-sm" id="btnEndMinusSmall" type="button" style="flex:1;">-0.1s</button>
+                <button class="btn-secondary btn-sm" id="btnEndPlusSmall" type="button" style="flex:1;">+0.1s</button>
+                <button class="btn-secondary btn-sm" id="btnEndPlusBig" type="button" style="flex:1;">+0.5s</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clip Duration & Quality Indicator -->
+          <div class="trim-info" style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+            <span>Selected Clip Duration: <strong id="durationDisplay" style="color: var(--primary); font-size: 14px;">5.00s</strong></span>
+            <span id="clipGuideText" style="font-size: 11px; color: var(--success); font-weight: 600;">✓ Ideal speech length for voice cloning (3~6s)</span>
           </div>
 
           <div class="form-group">
             <label class="form-label">
-              <span>Sample Script (구간에서 캐릭터가 실제로 말하는 대사)</span>
-              <span style="font-size:11px;color:var(--primary);">피치 고정용 텍스트</span>
+              <span>Companion Transcript (선택한 구간에서 캐릭터가 실제로 말하는 대사)</span>
+              <span style="font-size:11px;color:var(--primary);">피치 및 억양 고정용</span>
             </label>
             <input type="text" id="trimmerPromptText" placeholder="예: Hello there / 안녕하세요, 반갑습니다!">
           </div>
@@ -717,8 +754,7 @@
           </div>
 
           <div class="btn-group">
-            <button class="btn-secondary" id="previewTrimBtn" type="button">Preview Clip Segment</button>
-            <button class="btn-primary" id="trimSaveBtn" type="button">Extract, Convert to WAV & Save to Library</button>
+            <button class="btn-primary" id="trimSaveBtn" type="button" style="padding: 14px; font-size: 14px;">Extract 32kHz WAV & Save to Voice Library</button>
           </div>
         </div>
       </div>
@@ -861,84 +897,281 @@
     });
 
     // ==============================================
-    // MEDIA TRIMMER & VIDEO CONVERTER LOGIC
+    // PRO VISUAL WAVEFORM & MEDIA TRIMMER ENGINE
     // ==============================================
-    function updateDuration() {
+    const mediaFileInput = document.getElementById('mediaFileInput');
+    const playerContainer = document.getElementById('playerContainer');
+    const videoPreview = document.getElementById('videoPreview');
+    const audioPreview = document.getElementById('audioPreview');
+    const waveformCanvas = document.getElementById('waveformCanvas');
+    const selectionOverlay = document.getElementById('selectionOverlay');
+    const playheadCursor = document.getElementById('playheadCursor');
+    const waveformLoading = document.getElementById('waveformLoading');
+    const durationBadge = document.getElementById('durationBadge');
+
+    const btnPlaySelection = document.getElementById('btnPlaySelection');
+    const btnPlayFull = document.getElementById('btnPlayFull');
+    const btnPauseAudio = document.getElementById('btnPauseAudio');
+    const currentPlaybackTime = document.getElementById('currentPlaybackTime');
+    const totalDurationDisplay = document.getElementById('totalDurationDisplay');
+
+    const startTimeInput = document.getElementById('startTimeInput');
+    const endTimeInput = document.getElementById('endTimeInput');
+    const durationDisplay = document.getElementById('durationDisplay');
+    const clipGuideText = document.getElementById('clipGuideText');
+
+    const btnStartMinusBig = document.getElementById('btnStartMinusBig');
+    const btnStartMinusSmall = document.getElementById('btnStartMinusSmall');
+    const btnStartPlusSmall = document.getElementById('btnStartPlusSmall');
+    const btnStartPlusBig = document.getElementById('btnStartPlusBig');
+
+    const btnEndMinusBig = document.getElementById('btnEndMinusBig');
+    const btnEndMinusSmall = document.getElementById('btnEndMinusSmall');
+    const btnEndPlusSmall = document.getElementById('btnEndPlusSmall');
+    const btnEndPlusBig = document.getElementById('btnEndPlusBig');
+
+    const trimmerPromptText = document.getElementById('trimmerPromptText');
+    const targetFilename = document.getElementById('targetFilename');
+    const trimSaveBtn = document.getElementById('trimSaveBtn');
+
+    let loadedMediaBlob = null;
+    let activePlayer = null;
+    let audioBufferData = null;
+    let mediaDuration = 0;
+    let isDraggingWaveform = false;
+    let dragStartX = 0;
+    let segmentCheckInterval = null;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function updateTrimmerUI() {
       const start = Math.max(0, parseFloat(startTimeInput.value) || 0);
-      const end = Math.max(start, parseFloat(endTimeInput.value) || 0);
-      const dur = (end - start).toFixed(1);
-      durationDisplay.innerText = dur + 's';
+      const end = Math.max(start + 0.05, Math.min(mediaDuration || 9999, parseFloat(endTimeInput.value) || 5.0));
+      const dur = (end - start);
+
+      durationDisplay.innerText = dur.toFixed(2) + 's';
+      durationBadge.innerText = `Selected: ${dur.toFixed(2)}s`;
+
+      if (dur >= 2.5 && dur <= 6.5) {
+        clipGuideText.innerText = '✓ Ideal speech length for voice cloning (3~6s)';
+        clipGuideText.style.color = 'var(--success)';
+      } else if (dur < 2.5) {
+        clipGuideText.innerText = '⚠️ Too short (Under 2.5s may reduce voice similarity)';
+        clipGuideText.style.color = '#FF9F0A';
+      } else {
+        clipGuideText.innerText = '⚠️ Too long (Over 6.5s may cause memory/speed issues)';
+        clipGuideText.style.color = '#FF9F0A';
+      }
+
+      // Update overlay box on canvas
+      if (mediaDuration > 0) {
+        const leftPct = (start / mediaDuration) * 100;
+        const widthPct = ((end - start) / mediaDuration) * 100;
+        selectionOverlay.style.left = leftPct + '%';
+        selectionOverlay.style.width = widthPct + '%';
+        selectionOverlay.style.display = 'block';
+      }
     }
 
-    startTimeInput.addEventListener('input', updateDuration);
-    endTimeInput.addEventListener('input', updateDuration);
+    function setStartTime(val) {
+      val = Math.max(0, Math.min(mediaDuration ? mediaDuration - 0.1 : 999, val));
+      startTimeInput.value = val.toFixed(2);
+      if (parseFloat(endTimeInput.value) <= val) {
+        endTimeInput.value = Math.min(mediaDuration || 999, val + 3.0).toFixed(2);
+      }
+      if (activePlayer) activePlayer.currentTime = val;
+      updateTrimmerUI();
+    }
 
-    mediaFileInput.addEventListener('change', (e) => {
+    function setEndTime(val) {
+      const start = parseFloat(startTimeInput.value) || 0;
+      val = Math.max(start + 0.05, Math.min(mediaDuration || 999, val));
+      endTimeInput.value = val.toFixed(2);
+      if (activePlayer) activePlayer.currentTime = val;
+      updateTrimmerUI();
+    }
+
+    // Step adjustment buttons
+    btnStartMinusBig.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) - 0.5));
+    btnStartMinusSmall.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) - 0.1));
+    btnStartPlusSmall.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) + 0.1));
+    btnStartPlusBig.addEventListener('click', () => setStartTime((parseFloat(startTimeInput.value) || 0) + 0.5));
+
+    btnEndMinusBig.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) - 0.5));
+    btnEndMinusSmall.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) - 0.1));
+    btnEndPlusSmall.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) + 0.1));
+    btnEndPlusBig.addEventListener('click', () => setEndTime((parseFloat(endTimeInput.value) || 0) + 0.5));
+
+    startTimeInput.addEventListener('input', updateTrimmerUI);
+    endTimeInput.addEventListener('input', updateTrimmerUI);
+
+    // Waveform Drawing
+    function renderWaveform(buffer) {
+      waveformCanvas.width = waveformCanvas.parentElement.clientWidth * window.devicePixelRatio || 1200;
+      waveformCanvas.height = 120 * window.devicePixelRatio || 240;
+      const ctx = waveformCanvas.getContext('2d');
+      const width = waveformCanvas.width;
+      const height = waveformCanvas.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const data = buffer.getChannelData(0);
+      const step = Math.ceil(data.length / width);
+      const amp = height / 2;
+
+      // Draw subtle background grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, amp);
+      ctx.lineTo(width, amp);
+      ctx.stroke();
+
+      // Draw waveform bars
+      ctx.fillStyle = '#468CF6';
+      for (let i = 0; i < width; i += 3) {
+        let min = 1.0;
+        let max = -1.0;
+        for (let j = 0; j < step; j++) {
+          const datum = data[(i * step) + j];
+          if (datum < min) min = datum;
+          if (datum > max) max = datum;
+        }
+        const barHeight = Math.max(3, (max - min) * amp * 0.9);
+        const y = amp - (barHeight / 2);
+        
+        ctx.fillRect(i, y, 2, barHeight);
+      }
+    }
+
+    // Media File Loading
+    mediaFileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       loadedMediaBlob = file;
       const url = URL.createObjectURL(file);
       const isVideo = file.type.startsWith('video') || /\.(mp4|mkv|mov|webm|avi)$/i.test(file.name);
 
-      playerContainer.style.display = 'flex';
-      scrubToolbar.style.display = 'flex';
-
       if (isVideo) {
+        playerContainer.style.display = 'flex';
         audioPreview.style.display = 'none';
         videoPreview.style.display = 'block';
         videoPreview.src = url;
         activePlayer = videoPreview;
       } else {
+        playerContainer.style.display = 'none';
         videoPreview.style.display = 'none';
         audioPreview.style.display = 'block';
         audioPreview.src = url;
         activePlayer = audioPreview;
       }
 
-      activePlayer.onloadedmetadata = () => {
-        mediaDuration = activePlayer.duration;
-        totalDurationDisplay.innerText = 'Total Media: ' + mediaDuration.toFixed(1) + 's';
-        startTimeInput.value = '0.0';
-        endTimeInput.value = Math.min(5.0, mediaDuration).toFixed(1);
-        updateDuration();
-        
+      // Decode audio for waveform
+      waveformLoading.style.display = 'flex';
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        audioBufferData = await audioCtx.decodeAudioData(arrayBuffer);
+        mediaDuration = audioBufferData.duration;
+        totalDurationDisplay.innerText = mediaDuration.toFixed(2) + 's';
+
+        renderWaveform(audioBufferData);
+        waveformLoading.style.display = 'none';
+
+        startTimeInput.value = '0.00';
+        endTimeInput.value = Math.min(5.0, mediaDuration).toFixed(2);
+        updateTrimmerUI();
+
         let baseName = file.name.replace(/\.[^/.]+$/, "") + ".wav";
         targetFilename.value = baseName;
+      } catch (err) {
+        waveformLoading.innerText = 'Video loaded (Playing via player)';
+      }
+
+      activePlayer.onloadedmetadata = () => {
+        if (!mediaDuration) {
+          mediaDuration = activePlayer.duration;
+          totalDurationDisplay.innerText = mediaDuration.toFixed(2) + 's';
+          updateTrimmerUI();
+        }
       };
 
       activePlayer.ontimeupdate = () => {
-        currentPlaybackTime.innerText = activePlayer.currentTime.toFixed(1) + 's';
+        const cur = activePlayer.currentTime;
+        currentPlaybackTime.innerText = cur.toFixed(2) + 's';
+        if (mediaDuration > 0) {
+          playheadCursor.style.left = ((cur / mediaDuration) * 100) + '%';
+          playheadCursor.style.display = 'block';
+        }
       };
     });
 
-    btnSetStart.addEventListener('click', () => {
-      if (!activePlayer) return;
-      startTimeInput.value = activePlayer.currentTime.toFixed(1);
-      updateDuration();
+    // Waveform Canvas Drag & Click Selection
+    const waveformBox = waveformCanvas.parentElement;
+
+    waveformBox.addEventListener('mousedown', (e) => {
+      if (!mediaDuration) return;
+      isDraggingWaveform = true;
+      const rect = waveformBox.getBoundingClientRect();
+      dragStartX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      const startTime = (dragStartX / rect.width) * mediaDuration;
+      setStartTime(startTime);
     });
 
-    btnSetEnd.addEventListener('click', () => {
-      if (!activePlayer) return;
-      endTimeInput.value = activePlayer.currentTime.toFixed(1);
-      updateDuration();
+    window.addEventListener('mousemove', (e) => {
+      if (!isDraggingWaveform || !mediaDuration) return;
+      const rect = waveformBox.getBoundingClientRect();
+      const currentX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      
+      const t1 = (dragStartX / rect.width) * mediaDuration;
+      const t2 = (currentX / rect.width) * mediaDuration;
+
+      const start = Math.min(t1, t2);
+      const end = Math.max(t1, t2);
+
+      startTimeInput.value = start.toFixed(2);
+      endTimeInput.value = Math.max(start + 0.1, end).toFixed(2);
+      updateTrimmerUI();
     });
 
-    previewTrimBtn.addEventListener('click', () => {
+    window.addEventListener('mouseup', () => {
+      if (isDraggingWaveform) {
+        isDraggingWaveform = false;
+        updateTrimmerUI();
+      }
+    });
+
+    // Playback Controls
+    btnPlaySelection.addEventListener('click', () => {
       if (!activePlayer) return;
       const start = parseFloat(startTimeInput.value) || 0;
       const end = parseFloat(endTimeInput.value) || mediaDuration;
+
+      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+
       activePlayer.currentTime = start;
       activePlayer.play();
 
-      const checkTime = () => {
-        if (activePlayer.currentTime >= end) {
+      segmentCheckInterval = setInterval(() => {
+        if (activePlayer.currentTime >= end || activePlayer.paused) {
           activePlayer.pause();
-          activePlayer.removeEventListener('timeupdate', checkTime);
+          clearInterval(segmentCheckInterval);
         }
-      };
-      activePlayer.addEventListener('timeupdate', checkTime);
+      }, 30);
     });
 
+    btnPlayFull.addEventListener('click', () => {
+      if (!activePlayer) return;
+      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      activePlayer.play();
+    });
+
+    btnPauseAudio.addEventListener('click', () => {
+      if (!activePlayer) return;
+      if (segmentCheckInterval) clearInterval(segmentCheckInterval);
+      activePlayer.pause();
+    });
+
+    // Save Trimmed Audio
     trimSaveBtn.addEventListener('click', async () => {
       if (!loadedMediaBlob) {
         alert('Please select a video or audio file first.');
@@ -961,7 +1194,7 @@
       formData.append('prompt_text', promptText);
       formData.append('prompt_lang', 'auto');
 
-      trimSaveBtn.innerText = 'Extracting & Converting to WAV...';
+      trimSaveBtn.innerText = 'Extracting 32kHz WAV...';
       try {
         const res = await fetch('/api/trim_audio', {
           method: 'POST',
@@ -973,17 +1206,16 @@
           await loadSettings();
 
           setTimeout(() => {
-            trimSaveBtn.innerText = 'Extract, Convert to WAV & Save to Library';
-            // Switch to Library tab to show the newly extracted voice sample
+            trimSaveBtn.innerText = 'Extract 32kHz WAV & Save to Voice Library';
             document.querySelector('[data-tab="tab-library"]').click();
           }, 1000);
         } else {
           trimSaveBtn.innerText = 'Error: ' + (data.error || 'Failed');
-          setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save to Library', 3000);
+          setTimeout(() => trimSaveBtn.innerText = 'Extract 32kHz WAV & Save to Voice Library', 3000);
         }
       } catch (err) {
         trimSaveBtn.innerText = 'Error';
-        setTimeout(() => trimSaveBtn.innerText = 'Extract, Convert to WAV & Save to Library', 3000);
+        setTimeout(() => trimSaveBtn.innerText = 'Extract 32kHz WAV & Save to Voice Library', 3000);
       }
     });
 
