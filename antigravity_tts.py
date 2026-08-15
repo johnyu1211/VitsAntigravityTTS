@@ -502,7 +502,8 @@ def main():
     print(f"Antigravity GPT-SoVITS Voice Studio: http://localhost:{port}")
     print("=" * 60)
     
-    webbrowser.open(f"http://localhost:{port}")
+    if "--no-browser" not in sys.argv:
+        webbrowser.open(f"http://localhost:{port}")
     web.run_app(app, host='127.0.0.1', port=port)
 
 if __name__ == "__main__":
