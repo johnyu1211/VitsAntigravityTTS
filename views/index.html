@@ -1389,8 +1389,6 @@
     const masterToggle = document.getElementById('masterToggle');
     const testBtn = document.getElementById('testBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
-    const statusDot = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
     const feedBadge = document.getElementById('feedBadge');
     const transcriptBox = document.getElementById('transcriptBox');
     const voiceListContainer = document.getElementById('voiceListContainer');
@@ -2727,24 +2725,24 @@
         const res = await fetch('/api/status');
         const data = await res.json();
 
-        if (data.last_spoken) {
+        if (data.last_spoken && transcriptBox) {
           transcriptBox.innerText = data.last_spoken;
         }
 
-        if (data.is_playing) {
-          feedBadge.innerText = 'Speaking';
-          feedBadge.style.color = 'var(--primary)';
-          statusDot.classList.add('speaking');
-          statusText.innerText = 'Speaking';
-        } else {
-          feedBadge.innerText = 'Idle';
-          feedBadge.style.color = 'var(--text-muted)';
-          statusDot.classList.remove('speaking');
-          statusText.innerText = masterToggle.checked ? 'Active' : 'Muted';
+        if (feedBadge) {
+          if (data.is_playing) {
+            feedBadge.innerText = 'Speaking';
+            feedBadge.style.color = 'var(--primary)';
+          } else {
+            feedBadge.innerText = 'Idle';
+            feedBadge.style.color = 'var(--text-muted)';
+          }
         }
-      } catch {
-        statusDot.className = 'status-dot stopped';
-        statusText.innerText = 'Offline';
+      } catch (err) {
+        if (feedBadge) {
+          feedBadge.innerText = 'Offline';
+          feedBadge.style.color = 'var(--danger)';
+        }
       }
     }, 300);
 
