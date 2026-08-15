@@ -1194,8 +1194,10 @@
         </div>
         <p class="hint-text">Manage saved reference voices, thumbnails, and companion transcript scripts.</p>
 
+        <div class="voice-list" id="voiceListContainer"></div>
       </div>
-    </div> <!-- end .left-pane -->
+    </div>
+  </div> <!-- end .left-pane -->
 
     <!-- RIGHT PANE: Persistent Live System Logs Sidebar -->
     <div class="right-pane">
@@ -1374,24 +1376,23 @@
 
     const refreshBtn = document.getElementById('refreshBtn');
 
-    refreshBtn.addEventListener('click', async () => {
-      refreshBtn.innerText = 'Rebooting...';
-      refreshBtn.disabled = true;
-      statusDot.className = 'status-dot';
-      statusText.innerText = 'Rebooting...';
-      feedBadge.innerText = 'Rebooting';
-
-      if (window.electronAPI && window.electronAPI.relaunch) {
-        setTimeout(() => {
-          window.electronAPI.relaunch();
-        }, 300);
+    refreshBtn.addEventListener('click', () => {
+      refreshBtn.innerHTML = `<span>Refreshing...</span>`;
+      if (window.electronAPI && window.electronAPI.reload) {
+        window.electronAPI.reload();
       } else {
-        try {
-          await fetch('/api/shutdown', { method: 'POST' });
-        } catch (err) {}
-        setTimeout(() => {
+        window.location.reload();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) {
+        e.preventDefault();
+        if (window.electronAPI && window.electronAPI.reload) {
+          window.electronAPI.reload();
+        } else {
           window.location.reload();
-        }, 1200);
+        }
       }
     });
 
