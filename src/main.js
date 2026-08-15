@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn, exec } = require('child_process');
@@ -173,6 +173,22 @@ app.whenReady().then(() => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.reload();
     }
+  });
+
+  ipcMain.handle('get-clipboard-image', async () => {
+    try {
+      const img = clipboard.readImage();
+      if (!img.isEmpty()) {
+        return { type: 'data', data: img.toDataURL() };
+      }
+      const text = clipboard.readText();
+      if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
+        return { type: 'url', data: text.trim() };
+      }
+    } catch (err) {
+      console.error('[Electron Clipboard Read Error]', err);
+    }
+    return null;
   });
 
   app.on('activate', () => {
