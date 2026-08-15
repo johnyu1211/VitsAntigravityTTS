@@ -1184,6 +1184,42 @@
               </div>
             </div>
 
+            <!-- Hardware Deep Acceleration Options -->
+            <div class="toggle-row" style="margin-top: 4px;">
+              <div class="toggle-text">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#468CF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  <h4 style="margin:0; font-size:12px;">FlashAttention-2 / SDPA Kernel</h4>
+                </div>
+                <p>Accelerates Transformer attention matrix computations via native CUDA SDPA kernels</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="sdpaToggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-text">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#468CF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                  </svg>
+                  <h4 style="margin:0; font-size:12px;">PyTorch Inductor JIT Compiler (torch.compile)</h4>
+                </div>
+                <p>Fuses neural network kernels and eliminates Python CPU-GPU launching overhead</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="torchCompileToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+
             <div class="btn-group">
               <button class="btn-primary" id="testBtn" type="button" style="width: 100%; height: 38px;">Test Voice Greeting</button>
             </div>
@@ -1486,6 +1522,8 @@
     const speedVal = document.getElementById('speedVal');
     const chunkingToggle = document.getElementById('chunkingToggle');
     const fastPipelineToggle = document.getElementById('fastPipelineToggle');
+    const sdpaToggle = document.getElementById('sdpaToggle');
+    const torchCompileToggle = document.getElementById('torchCompileToggle');
     const testBtn = document.getElementById('testBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
     const feedBadge = document.getElementById('feedBadge');
@@ -1635,6 +1673,8 @@
 
     chunkingToggle.addEventListener('change', triggerAutoSave);
     fastPipelineToggle.addEventListener('change', triggerAutoSave);
+    sdpaToggle.addEventListener('change', triggerAutoSave);
+    torchCompileToggle.addEventListener('change', triggerAutoSave);
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F5' || (e.ctrlKey && e.key.toLowerCase() === 'r')) {
@@ -2815,6 +2855,12 @@
         if (s.speed_mode) {
           setSpeedMode(s.speed_mode, false);
         }
+        if (s.enable_sdpa !== undefined) {
+          sdpaToggle.checked = s.enable_sdpa !== false;
+        }
+        if (s.enable_torch_compile !== undefined) {
+          torchCompileToggle.checked = s.enable_torch_compile === true;
+        }
         if (s.fast_pipeline !== undefined) {
           fastPipelineToggle.checked = s.fast_pipeline !== false;
         }
@@ -2837,6 +2883,8 @@
         speed: parseFloat(speedRange.value),
         enable_chunking: chunkingToggle.checked,
         speed_mode: currentSpeedMode,
+        enable_sdpa: sdpaToggle.checked,
+        enable_torch_compile: torchCompileToggle.checked,
         fast_pipeline: fastPipelineToggle.checked,
         enabled: true
       };
@@ -3135,6 +3183,12 @@
           }
           if (s.speed_mode) {
             setSpeedMode(s.speed_mode, false);
+          }
+          if (s.enable_sdpa !== undefined) {
+            sdpaToggle.checked = s.enable_sdpa !== false;
+          }
+          if (s.enable_torch_compile !== undefined) {
+            torchCompileToggle.checked = s.enable_torch_compile === true;
           }
           if (s.fast_pipeline !== undefined) {
             fastPipelineToggle.checked = s.fast_pipeline !== false;

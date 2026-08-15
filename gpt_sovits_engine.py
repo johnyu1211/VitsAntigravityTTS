@@ -27,6 +27,42 @@ class GPTSoVITSEngine:
     def is_ready(self):
         return self._is_ready
 
+    def apply_acceleration_settings(self, enable_sdpa=True, enable_torch_compile=False):
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.backends.cudnn.benchmark = True
+                try:
+                    torch.backends.cuda.matmul.allow_tf32 = True
+                    torch.backends.cudnn.allow_tf32 = True
+                except:
+                    pass
+                if hasattr(torch.backends.cuda, 'enable_flash_sdp'):
+                    try:
+                        torch.backends.cuda.enable_flash_sdp(bool(enable_sdpa))
+                        torch.backends.cuda.enable_mem_efficient_sdp(bool(enable_sdpa))
+                        torch.backends.cuda.enable_math_sdp(True)
+                    except:
+                        pass
+                if hasattr(torch, 'set_float32_matmul_precision'):
+                    try:
+                        torch.set_float32_matmul_precision('medium' if enable_sdpa else 'high')
+                    except:
+                        pass
+
+            if enable_torch_compile and self._is_ready and self.tts:
+                if hasattr(torch, 'compile') and not getattr(self, '_is_compiled', False):
+                    try:
+                        print("[GPT-SoVITS Engine] Applying PyTorch Inductor torch.compile to neural models...")
+                        if hasattr(self.tts, 'vits_model') and self.tts.vits_model:
+                            self.tts.vits_model = torch.compile(self.tts.vits_model, mode="reduce-overhead")
+                        self._is_compiled = True
+                        print("[GPT-SoVITS Engine] PyTorch Inductor JIT compilation active!")
+                    except Exception as e:
+                        print(f"[GPT-SoVITS Torch Compile Notice] {e}")
+        except Exception as e:
+            print(f"[Acceleration Config Error] {e}")
+
     def load_models(self):
         if self._is_ready:
             return True

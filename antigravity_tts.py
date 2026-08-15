@@ -74,7 +74,9 @@ current_settings = {
     "skip_code": True,
     "fast_pipeline": True,
     "enable_chunking": True,
-    "speed_mode": "ultra"
+    "speed_mode": "ultra",
+    "enable_sdpa": True,
+    "enable_torch_compile": False
 }
 
 speech_queue = asyncio.Queue()
@@ -492,6 +494,13 @@ async def handle_save_settings(request):
             pygame.mixer.music.set_volume(float(current_settings["volume"]))
         except:
             pass
+
+    if "enable_sdpa" in data or "enable_torch_compile" in data:
+        gpt_sovits_engine.apply_acceleration_settings(
+            current_settings.get("enable_sdpa", True),
+            current_settings.get("enable_torch_compile", False)
+        )
+
     return web.json_response({
         "status": "ok",
         "settings": current_settings,
@@ -882,8 +891,12 @@ async def async_load_ai_engine():
     print("[Antigravity Studio] Initializing AI neural models into GPU VRAM in background...")
     try:
         await loop.run_in_executor(None, gpt_sovits_engine.load_models)
+        gpt_sovits_engine.apply_acceleration_settings(
+            current_settings.get("enable_sdpa", True),
+            current_settings.get("enable_torch_compile", False)
+        )
         t_elapsed = time.perf_counter() - t_start
-        print(f"[Antigravity Studio] AI Neural Model loaded in {t_elapsed:.1f}s (CUDA pre-warmed & ready)!")
+        print(f"[Antigravity Studio] AI Neural Model loaded in {t_elapsed:.1f}s (CUDA SDPA & pre-warmed ready)!")
     except Exception as e:
         print(f"[Antigravity Studio] Neural Model load error: {e}")
 
