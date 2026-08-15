@@ -13,12 +13,23 @@ function startPythonBackend() {
   const pyScript = path.join(__dirname, 'antigravity_tts.py');
   pythonProcess = spawn('python', [pyScript, '--no-browser'], {
     cwd: __dirname,
-    stdio: 'inherit',
-    windowsHide: true
+    stdio: 'pipe'
   });
 
+  if (pythonProcess.stdout) {
+    pythonProcess.stdout.on('data', (data) => {
+      console.log(`[Python Engine] ${data.toString().trim()}`);
+    });
+  }
+
+  if (pythonProcess.stderr) {
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`[Python Error] ${data.toString().trim()}`);
+    });
+  }
+
   pythonProcess.on('error', (err) => {
-    console.error('[Electron] Failed to start Python process:', err);
+    console.error('[Electron] Failed to spawn Python process:', err);
   });
 
   pythonProcess.on('exit', (code, signal) => {
@@ -26,7 +37,7 @@ function startPythonBackend() {
   });
 }
 
-function checkServerReady(onReady, retries = 40) {
+function checkServerReady(onReady, retries = 60) {
   if (retries <= 0) {
     console.error('[Electron] Server health check timed out.');
     return;
@@ -37,10 +48,10 @@ function checkServerReady(onReady, retries = 40) {
       console.log('[Electron] Python Voice Engine is healthy and ready!');
       onReady();
     } else {
-      setTimeout(() => checkServerReady(onReady, retries - 1), 350);
+      setTimeout(() => checkServerReady(onReady, retries - 1), 400);
     }
   }).on('error', () => {
-    setTimeout(() => checkServerReady(onReady, retries - 1), 350);
+    setTimeout(() => checkServerReady(onReady, retries - 1), 400);
   });
 }
 
@@ -62,11 +73,12 @@ function createWindow() {
     }
   });
 
-  // Load a quick dark loading placeholder until server is up
-  mainWindow.loadURL(`data:text/html;charset=utf-8,<html><body style="background:%231c1c1e;color:%23fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;"><h2 style="margin:0 0 8px;font-size:18px;">Antigravity Voice Studio</h2><p style="color:%238E8E93;font-size:13px;margin:0;">Starting neural voice engine...</p></div></body></html>`);
+  // 1. Show immediate dark loading animation
+  mainWindow.loadFile(path.join(__dirname, 'loading.html'));
 
+  // 2. Poll backend and load full UI once ready
   checkServerReady(() => {
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.loadURL(SERVER_URL);
     }
   });

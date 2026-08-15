@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Antigravity Voice Studio - Starting</title>
+  <style>
+    body {
+      background-color: #1c1c1e;
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .card {
+      text-align: center;
+      background: #2c2c2e;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 16px;
+      padding: 36px 44px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    h2 {
+      margin: 0 0 10px 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    p {
+      color: #8E8E93;
+      font-size: 13px;
+      margin: 0 0 20px 0;
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(70, 140, 246, 0.2);
+      border-top-color: #468CF6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Antigravity Voice Studio</h2>
+    <p id="statusMsg">Starting neural AI voice engine in background...</p>
+    <div class="spinner"></div>
+  </div>
+</body>
+</html>
