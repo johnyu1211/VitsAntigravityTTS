@@ -33,6 +33,26 @@
       padding: 0;
     }
 
+    /* Sleek Custom Studio Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.32);
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+    }
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg-color);
@@ -41,7 +61,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px 24px 30px;
+      padding: 18px 22px 28px;
     }
 
     .container {
@@ -456,41 +476,87 @@
     }
 
     button {
-      padding: 12px 18px;
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      font-weight: 600;
       font-family: inherit;
       cursor: pointer;
       border: none;
       transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      user-select: none;
     }
 
     .btn-primary {
       background: var(--primary);
       color: #FFFFFF;
-      flex: 1;
+      height: 36px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
     }
 
     .btn-primary:hover {
       background: var(--primary-hover);
+      box-shadow: 0 2px 10px rgba(70, 140, 246, 0.35);
     }
 
     .btn-secondary {
       background: var(--card-inner);
       color: var(--text-main);
       border: 1px solid var(--border-color);
-      flex: 1;
+      height: 36px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: rgba(255, 69, 58, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255, 69, 58, 0.3);
+      height: 36px;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #FFFFFF;
     }
 
     .btn-sm {
-      padding: 7px 12px;
-      font-size: 12px;
+      height: 28px !important;
+      padding: 0 10px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
       border-radius: 6px;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .btn-icon:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
     }
 
     /* Trimmer Styles */
@@ -874,10 +940,6 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           <span>Refresh Studio</span>
         </button>
-        <div class="status-badge" id="statusBadge">
-          <div class="status-dot" id="statusDot"></div>
-          <span id="statusText">Active</span>
-        </div>
       </div>
     </div>
 
@@ -892,338 +954,332 @@
           <button class="tab-btn" data-tab="tab-library" type="button">Voice Library</button>
         </nav>
 
-    <!-- ============================================== -->
-    <!-- TAB 1: MAIN VOICE STUDIO                       -->
-    <!-- ============================================== -->
-    <div class="tab-content active" id="tab-studio">
-      <!-- Live Spoken Transcript -->
-      <div class="section-card">
-        <div class="section-header">
-          <div class="section-title">Spoken Text Stream</div>
-          <div class="feed-badge" id="feedBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);">Idle</div>
-        </div>
-        <div class="transcript-box" id="transcriptBox">Waiting for speech activity...</div>
-      </div>
-
-      <!-- Language Voice Slots -->
-      <div class="section-card">
-        <div class="section-header">
-          <div class="section-title">Voice Character Slots</div>
-          <div class="autosave-badge" id="autoSaveBadge">Auto-Saved</div>
-        </div>
-
-        <!-- English Slot (Primary) -->
-        <div class="slot-box">
-          <div class="slot-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="slot-badge">English Voice (Primary Slot)</span>
-              <span class="hint-text">Primary voice used when English is detected</span>
+        <!-- ============================================== -->
+        <!-- TAB 1: MAIN VOICE STUDIO                       -->
+        <!-- ============================================== -->
+        <div class="tab-content active" id="tab-studio">
+          <!-- Live Spoken Transcript -->
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Spoken Text Stream</div>
+              <div class="feed-badge" id="feedBadge" style="font-size:11px;font-weight:600;color:var(--text-muted);">Idle</div>
             </div>
-            <button class="btn-primary btn-sm" id="btnTestVoiceEn" type="button" style="display: flex; align-items: center; gap: 5px; padding: 5px 12px; font-weight: 600;" title="Test English voice greeting">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Play Test</span>
-            </button>
+            <div class="transcript-box" id="transcriptBox">Waiting for speech activity...</div>
           </div>
 
-          <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 10px;">
-            <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
-            <div id="slotThumbEn" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <!-- Language Voice Slots -->
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Voice Character Slots</div>
+              <div class="autosave-badge" id="autoSaveBadge">Auto-Saved</div>
             </div>
 
-            <!-- Select & Prompt Form -->
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" for="voiceSelectEn">Selected Voice File</label>
-                <select id="voiceSelectEn"></select>
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">Companion Script (English Prompt)</label>
-                <input type="text" id="promptEnInput" placeholder="English transcript matching sample audio">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Second Language Slot (Secondary / Multilingual) -->
-        <div class="slot-box">
-          <div class="slot-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="slot-badge ko">Second Language Voice (Secondary Slot)</span>
-              <span class="hint-text">Fallback voice for non-English speech</span>
-            </div>
-            <button class="btn-primary btn-sm" id="btnTestVoiceKo" type="button" style="display: flex; align-items: center; gap: 5px; padding: 5px 12px; font-weight: 600;" title="Test second language voice greeting">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Play Test</span>
-            </button>
-          </div>
-
-          <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 10px;">
-            <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
-            <div id="slotThumbKo" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-            </div>
-
-            <!-- Select & Prompt Form -->
-            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" for="voiceSelectKo">Selected Voice File</label>
-                <select id="voiceSelectKo"></select>
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label">Companion Script (Second Language Prompt)</label>
-                <input type="text" id="promptKoInput" placeholder="Transcript matching the second language reference audio">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Master Tuning -->
-        <div class="form-group">
-          <label class="form-label">
-            <span>Temperature (Recommended: 0.60 ~ 0.70)</span>
-            <span class="range-val" id="tempVal">0.65</span>
-          </label>
-          <div class="range-wrap">
-            <input type="range" id="tempRange" min="0.5" max="0.95" step="0.05" value="0.65">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">
-            <span>Volume & Studio Boost</span>
-            <span class="range-val" id="volumeVal">100%</span>
-          </label>
-          <div class="range-wrap">
-            <input type="range" id="volumeRange" min="0" max="200" step="5" value="100">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">
-            <span>Speaking Speed</span>
-            <span class="range-val" id="speedVal">1.0x</span>
-          </label>
-          <div class="range-wrap">
-            <input type="range" id="speedRange" min="0.7" max="1.5" step="0.05" value="1.0">
-          </div>
-        </div>
-
-        <div class="toggle-row">
-          <div class="toggle-text">
-            <h4>Master Audio Output</h4>
-            <p>Toggle GPT-SoVITS voice synthesis on/off</p>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="masterToggle" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="btn-group">
-          <button class="btn-primary" id="testBtn">Test Voice Greeting</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================== -->
-    <!-- TAB 2: PRO VIDEO & AUDIO WAVEFORM EDITOR       -->
-    <!-- ============================================== -->
-    <div class="tab-content" id="tab-trimmer">
-      <div class="section-card">
-        <div class="section-header">
-          <div class="section-title">Visual Waveform Sample Editor</div>
-          <div class="duration-badge" id="durationBadge" style="font-size:12px;font-weight:700;color:var(--primary);">No Media Loaded</div>
-        </div>
-        <p class="hint-text">Extract and trim high-fidelity 32kHz voice samples directly from video (MP4, MKV, MOV, WebM) or audio files (MP3, WAV, FLAC, M4A).</p>
-
-        <div class="trimmer-box">
-          <div class="form-group">
-            <label class="form-label">Select Video or Audio File</label>
-            <input type="file" id="mediaFileInput" accept="audio/*,video/*">
-          </div>
-
-          <!-- Video Preview Container (Only shown for video files) -->
-          <div class="player-container" id="playerContainer" style="display: none; margin-bottom: 4px;">
-            <video id="videoPreview" controls style="display: none; max-height: 220px;"></video>
-            <audio id="audioPreview" style="display: none;"></audio>
-          </div>
-
-          <!-- PRO NLE TIMELINE SUITE (Premiere / CapCut DAW Style) -->
-          <div class="nle-editor-wrapper">
-            <!-- Timeline Toolbar -->
-            <div class="nle-toolbar">
-              <!-- Playback Controls -->
-              <div class="nle-tool-group">
-                <button class="btn-primary btn-sm" id="btnNlePlayPause" type="button" style="display:flex;align-items:center;gap:5px;padding:6px 12px;" title="Play / Pause (Spacebar)">
-                  <svg id="nlePlayIcon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  <span id="nlePlayText">Play (Space)</span>
-                </button>
-                <button class="btn-secondary btn-sm" id="btnNlePlaySelection" type="button" style="display:flex;align-items:center;gap:5px;" title="Play selected clip only">
+            <!-- English Slot (Primary) -->
+            <div class="slot-box">
+              <div class="slot-header">
+                <span class="slot-badge">English Voice (Primary Slot)</span>
+                <button class="btn-primary btn-sm" id="btnTestVoiceEn" type="button" title="Test English voice greeting">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  <span>Play Clip</span>
-                </button>
-                <button class="btn-secondary btn-sm" id="btnNlePlayMerged" type="button" style="display:flex;align-items:center;gap:5px;" title="Play all slices stitched in sequence">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  <span>Play Merged</span>
+                  <span>Play Test</span>
                 </button>
               </div>
 
-              <div class="nle-divider"></div>
-
-              <!-- Edit Tools: Split / Add / Delete -->
-              <div class="nle-tool-group">
-                <button class="btn-secondary btn-sm" id="btnNleSplit" type="button" style="display:flex;align-items:center;gap:5px;" title="Split clip at playhead cursor (Hotkey: S)">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
-                  <span>Split (S)</span>
-                </button>
-                <button class="btn-secondary btn-sm" id="btnNleAddClip" type="button" style="display:flex;align-items:center;gap:5px;" title="Add new slice at playhead">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                  <span>Add Clip</span>
-                </button>
-                <button class="btn-danger btn-sm" id="btnNleDeleteClip" type="button" style="display:flex;align-items:center;gap:4px;padding:6px 10px;" title="Delete selected clip (Hotkey: Delete)">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                  <span>Delete</span>
-                </button>
-              </div>
-
-              <div class="nle-divider"></div>
-
-              <!-- Zoom Controls -->
-              <div class="nle-tool-group">
-                <button class="btn-secondary btn-sm" id="btnNleZoomOut" type="button" style="padding:4px 8px;font-weight:700;" title="Zoom out timeline">−</button>
-                <span id="nleZoomDisplay" style="font-size:11px;font-weight:700;color:var(--text-muted);min-width:36px;text-align:center;">100%</span>
-                <button class="btn-secondary btn-sm" id="btnNleZoomIn" type="button" style="padding:4px 8px;font-weight:700;" title="Zoom in timeline">+</button>
-                <button class="btn-secondary btn-sm" id="btnNleZoomFit" type="button" style="padding:4px 8px;font-size:11px;" title="Fit entire track">Fit</button>
-              </div>
-
-              <!-- Time Counter -->
-              <div style="font-size:12px;font-weight:700;color:var(--text-muted);font-family:monospace;">
-                <span id="nleCurrentTime" style="color:#FF453A;">00:00.00</span> / <span id="nleTotalDuration">00:00.00</span>
-              </div>
-            </div>
-
-            <!-- NLE Track Scroll View -->
-            <div class="nle-ruler-track-container" id="nleScrollContainer">
-              <div id="nleTrackCanvasWrapper" style="position:relative; width:100%; min-width:100%; height:156px;">
-                <!-- Time Ruler Bar -->
-                <div class="nle-ruler-bar" id="nleRulerBar" title="Click or drag to scrub playhead">
-                  <canvas id="nleRulerCanvas" style="width:100%;height:100%;display:block;"></canvas>
+              <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 6px;">
+                <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
+                <div id="slotThumbEn" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 </div>
 
-                <!-- Audio Track Area -->
-                <div class="nle-track-area" id="nleTrackArea">
-                  <!-- Waveform Background Canvas -->
-                  <canvas class="nle-waveform-bg" id="nleWaveformCanvas"></canvas>
-                  
-                  <!-- Interactive Draggable Clips Container -->
-                  <div id="nleClipsContainer" style="position:absolute;top:0;left:0;right:0;bottom:0;"></div>
+                <!-- Select & Prompt Form -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="voiceSelectEn">Selected Voice File</label>
+                    <select id="voiceSelectEn"></select>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Companion Script (English Prompt)</label>
+                    <input type="text" id="promptEnInput" placeholder="English transcript matching sample audio">
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                  <!-- Red Playhead Line -->
-                  <div class="nle-playhead" id="nlePlayhead">
-                    <div class="nle-playhead-head"></div>
+            <!-- Second Language Slot (Secondary / Multilingual) -->
+            <div class="slot-box">
+              <div class="slot-header">
+                <span class="slot-badge ko">Second Language Voice (Secondary Slot)</span>
+                <button class="btn-primary btn-sm" id="btnTestVoiceKo" type="button" title="Test second language voice greeting">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                  <span>Play Test</span>
+                </button>
+              </div>
+
+              <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 6px;">
+                <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
+                <div id="slotThumbKo" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </div>
+
+                <!-- Select & Prompt Form -->
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 6px;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" for="voiceSelectKo">Selected Voice File</label>
+                    <select id="voiceSelectKo"></select>
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Companion Script (Second Language Prompt)</label>
+                    <input type="text" id="promptKoInput" placeholder="Transcript matching reference audio">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Master Tuning -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Temperature (Recommended: 0.60 ~ 0.70)</span>
+                <span class="range-val" id="tempVal">0.65</span>
+              </label>
+              <div class="range-wrap">
+                <input type="range" id="tempRange" min="0.5" max="0.95" step="0.05" value="0.65">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <span>Volume & Studio Boost</span>
+                <span class="range-val" id="volumeVal">100%</span>
+              </label>
+              <div class="range-wrap">
+                <input type="range" id="volumeRange" min="0" max="200" step="5" value="100">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <span>Speaking Speed</span>
+                <span class="range-val" id="speedVal">1.0x</span>
+              </label>
+              <div class="range-wrap">
+                <input type="range" id="speedRange" min="0.7" max="1.5" step="0.05" value="1.0">
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-text">
+                <h4>Master Audio Output</h4>
+                <p>Toggle GPT-SoVITS voice synthesis on/off</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="masterToggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="btn-group">
+              <button class="btn-primary" id="testBtn" type="button" style="width: 100%; height: 38px;">Test Voice Greeting</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 2: PRO VIDEO & AUDIO WAVEFORM EDITOR       -->
+        <!-- ============================================== -->
+        <div class="tab-content" id="tab-trimmer">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Waveform Sample Editor</div>
+              <div class="duration-badge" id="durationBadge" style="font-size:12px;font-weight:700;color:var(--primary);">No Media Loaded</div>
+            </div>
+
+            <div class="trimmer-box">
+              <div class="form-group">
+                <label class="form-label">Select Video or Audio File</label>
+                <input type="file" id="mediaFileInput" accept="audio/*,video/*">
+              </div>
+
+              <!-- Video Preview Container (Only shown for video files) -->
+              <div class="player-container" id="playerContainer" style="display: none; margin-bottom: 4px;">
+                <video id="videoPreview" controls style="display: none; max-height: 220px;"></video>
+                <audio id="audioPreview" style="display: none;"></audio>
+              </div>
+
+              <!-- PRO NLE TIMELINE SUITE -->
+              <div class="nle-editor-wrapper">
+                <!-- Timeline Toolbar -->
+                <div class="nle-toolbar">
+                  <!-- Playback Controls -->
+                  <div class="nle-tool-group">
+                    <button class="btn-primary btn-sm" id="btnNlePlayPause" type="button" title="Play / Pause (Spacebar)">
+                      <svg id="nlePlayIcon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <span id="nlePlayText">Play</span>
+                    </button>
+                    <button class="btn-secondary btn-sm" id="btnNlePlaySelection" type="button" title="Play selected clip only">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <span>Play Clip</span>
+                    </button>
+                    <button class="btn-secondary btn-sm" id="btnNlePlayMerged" type="button" title="Play all slices merged">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                      <span>Play All</span>
+                    </button>
                   </div>
 
-                  <div id="waveformLoading" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(10,10,12,0.85);font-size:12px;color:var(--text-muted);display:none;">Loading audio timeline waveform...</div>
+                  <div class="nle-divider"></div>
+
+                  <!-- Edit Tools: Split / Add / Delete -->
+                  <div class="nle-tool-group">
+                    <button class="btn-secondary btn-sm" id="btnNleSplit" type="button" title="Split clip at playhead (Hotkey: S)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                      <span>Split (S)</span>
+                    </button>
+                    <button class="btn-secondary btn-sm" id="btnNleAddClip" type="button" title="Add new slice at playhead">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      <span>Add Clip</span>
+                    </button>
+                    <button class="btn-danger btn-sm" id="btnNleDeleteClip" type="button" title="Delete selected clip (Hotkey: Delete)">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+
+                  <div class="nle-divider"></div>
+
+                  <!-- Zoom Controls -->
+                  <div class="nle-tool-group">
+                    <button class="btn-secondary btn-sm" id="btnNleZoomOut" type="button" style="width:28px;padding:0;" title="Zoom out">−</button>
+                    <span id="nleZoomDisplay" style="font-size:11px;font-weight:700;color:var(--text-muted);min-width:32px;text-align:center;">100%</span>
+                    <button class="btn-secondary btn-sm" id="btnNleZoomIn" type="button" style="width:28px;padding:0;" title="Zoom in">+</button>
+                    <button class="btn-secondary btn-sm" id="btnNleZoomFit" type="button" style="padding:0 8px;" title="Fit track">Fit</button>
+                  </div>
+
+                  <!-- Time Counter -->
+                  <div style="font-size:11.5px;font-weight:700;color:var(--text-muted);font-family:monospace;">
+                    <span id="nleCurrentTime" style="color:#FF453A;">00:00.00</span> / <span id="nleTotalDuration">00:00.00</span>
+                  </div>
+                </div>
+
+                <!-- NLE Track Scroll View -->
+                <div class="nle-ruler-track-container" id="nleScrollContainer">
+                  <div id="nleTrackCanvasWrapper" style="position:relative; width:100%; min-width:100%; height:156px;">
+                    <!-- Time Ruler Bar -->
+                    <div class="nle-ruler-bar" id="nleRulerBar" title="Click or drag to scrub playhead">
+                      <canvas id="nleRulerCanvas" style="width:100%;height:100%;display:block;"></canvas>
+                    </div>
+
+                    <!-- Audio Track Area -->
+                    <div class="nle-track-area" id="nleTrackArea">
+                      <!-- Waveform Background Canvas -->
+                      <canvas class="nle-waveform-bg" id="nleWaveformCanvas"></canvas>
+                      
+                      <!-- Interactive Draggable Clips Container -->
+                      <div id="nleClipsContainer" style="position:absolute;top:0;left:0;right:0;bottom:0;"></div>
+
+                      <!-- Red Playhead Line -->
+                      <div class="nle-playhead" id="nlePlayhead">
+                        <div class="nle-playhead-head"></div>
+                      </div>
+
+                      <div id="waveformLoading" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(10,10,12,0.85);font-size:12px;color:var(--text-muted);display:none;">Loading audio timeline waveform...</div>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <!-- Active Clip Inspector & Total Summary Bar -->
+              <div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;flex-wrap:wrap;">
+                <!-- Active Clip Fine Tuning Box -->
+                <div class="slot-box" style="flex:1;min-width:280px;padding:12px;">
+                  <div class="slot-header" style="margin-bottom:8px;">
+                    <span style="font-size:12px;font-weight:700;" id="activeClipTitle">Selected: Clip #1</span>
+                    <span style="font-size:12px;font-weight:700;color:var(--primary);" id="activeClipDurationBadge">0.00s</span>
+                  </div>
+                  <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
+                    <span>Start:</span>
+                    <input type="number" id="activeClipStartInput" step="0.05" min="0" value="0.00" style="width:68px;padding:4px 6px;font-size:12px;text-align:right;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:4px;color:var(--text-main);">
+                    <span>s</span>
+                    <span style="margin-left:6px;">End:</span>
+                    <input type="number" id="activeClipEndInput" step="0.05" min="0" value="2.50" style="width:68px;padding:4px 6px;font-size:12px;text-align:right;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:4px;color:var(--text-main);">
+                    <span>s</span>
+                    <button class="btn-secondary btn-sm" id="btnNudgeMinus" type="button" style="padding:0 7px;font-size:11px;margin-left:4px;" title="Nudge start -0.1s">-0.1s</button>
+                    <button class="btn-secondary btn-sm" id="btnNudgePlus" type="button" style="padding:0 7px;font-size:11px;" title="Nudge end +0.1s">+0.1s</button>
+                  </div>
+                </div>
+
+                <!-- Total Spliced Duration & Quality Indicator -->
+                <div class="trim-info" style="flex:1;min-width:280px;padding:12px;border-radius:var(--radius-sm);display:flex;flex-direction:column;justify-content:space-between;gap:6px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:12px;color:var(--text-muted);">Total Combined Length:</span>
+                    <strong id="durationDisplay" style="color:var(--primary);font-size:15px;">0.00s</strong>
+                  </div>
+                  <div id="clipGuideText" style="font-size:11px;color:var(--success);font-weight:600;display:flex;align-items:center;gap:4px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>Ideal length for voice cloning (3~6s)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 12px;">
+                <label class="form-label">
+                  <span>Companion Script (Transcript text)</span>
+                </label>
+                <input type="text" id="trimmerPromptText" placeholder="e.g. Hello there! Welcome to my stream.">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Save Filename (.wav)</label>
+                <input type="text" id="targetFilename" placeholder="my_sample.wav" value="custom_sample.wav">
+              </div>
+
+              <div class="btn-group">
+                <button class="btn-primary" id="trimSaveBtn" type="button" style="width: 100%; height: 38px;">Extract & Merge Spliced 32kHz WAV</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TAB 3: VOICE LIBRARY                           -->
+        <!-- ============================================== -->
+        <div class="tab-content" id="tab-library">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">Saved Voice Library</div>
+              <button class="btn-secondary btn-sm" id="btnRefreshLibrary" type="button">Refresh</button>
+            </div>
+
+            <div class="voice-list" id="voiceListContainer"></div>
+          </div>
+        </div>
+      </div> <!-- end .left-pane -->
+
+      <!-- RIGHT PANE: Persistent Live System Logs Sidebar -->
+      <div class="right-pane">
+        <div class="logs-panel-card">
+          <div class="section-header" style="margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="status-dot" style="background: #32D74B; box-shadow: 0 0 8px rgba(50, 215, 75, 0.7);"></div>
+              <div class="section-title" style="font-size: 13px;">Logs</div>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 4px;">
+                <input type="checkbox" id="autoScrollCheck" checked style="accent-color: var(--primary);"> Auto-Scroll
+              </label>
+              <button class="btn-icon" id="btnCopyLogs" type="button" title="Copy all logs">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+              <button class="btn-icon" id="btnClearLogs" type="button" title="Clear log view">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
             </div>
           </div>
 
-          <!-- Active Clip Inspector & Total Summary Bar -->
-          <div style="display:flex;gap:12px;margin-top:10px;align-items:stretch;flex-wrap:wrap;">
-            <!-- Active Clip Fine Tuning Box -->
-            <div class="slot-box" style="flex:1;min-width:280px;padding:12px;">
-              <div class="slot-header" style="margin-bottom:8px;">
-                <span style="font-size:12px;font-weight:700;" id="activeClipTitle">Selected: Clip #1</span>
-                <span style="font-size:12px;font-weight:700;color:var(--primary);" id="activeClipDurationBadge">0.00s</span>
-              </div>
-              <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
-                <span>Start:</span>
-                <input type="number" id="activeClipStartInput" step="0.05" min="0" value="0.00" style="width:70px;padding:4px 6px;font-size:12px;text-align:right;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:4px;color:var(--text-main);">
-                <span>s</span>
-                <span style="margin-left:8px;">End:</span>
-                <input type="number" id="activeClipEndInput" step="0.05" min="0" value="2.50" style="width:70px;padding:4px 6px;font-size:12px;text-align:right;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:4px;color:var(--text-main);">
-                <span>s</span>
-                <button class="btn-secondary btn-sm" id="btnNudgeMinus" type="button" style="padding:3px 7px;font-size:11px;margin-left:6px;" title="Nudge start -0.1s">-0.1s</button>
-                <button class="btn-secondary btn-sm" id="btnNudgePlus" type="button" style="padding:3px 7px;font-size:11px;" title="Nudge end +0.1s">+0.1s</button>
-              </div>
-            </div>
-
-            <!-- Total Spliced Duration & Quality Indicator -->
-            <div class="trim-info" style="flex:1;min-width:280px;padding:12px;border-radius:var(--radius-sm);display:flex;flex-direction:column;justify-content:space-between;gap:6px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-size:12px;color:var(--text-muted);">Total Combined Length:</span>
-                <strong id="durationDisplay" style="color:var(--primary);font-size:16px;">0.00s</strong>
-              </div>
-              <div id="clipGuideText" style="font-size:11px;color:var(--success);font-weight:600;display:flex;align-items:center;gap:4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Ideal combined length for voice cloning (3~6s)</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group" style="margin-top: 14px;">
-            <label class="form-label">
-              <span>Companion Transcript (Combined text spoken across all selected clips)</span>
-              <span style="font-size:11px;color:var(--primary);">Prosody & Pitch Anchor</span>
-            </label>
-            <input type="text" id="trimmerPromptText" placeholder="e.g. Hello there! Welcome to my stream.">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Save Filename (.wav)</label>
-            <input type="text" id="targetFilename" placeholder="my_sample.wav" value="custom_sample.wav">
-          </div>
-
-          <div class="btn-group">
-            <button class="btn-primary" id="trimSaveBtn" type="button" style="padding: 14px; font-size: 14px;">Extract & Merge Spliced 32kHz WAV</button>
+          <div id="logConsole" class="terminal-log-box">
+            Loading system logs...
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ============================================== -->
-    <!-- TAB 3: VOICE LIBRARY                           -->
-    <!-- ============================================== -->
-    <div class="tab-content" id="tab-library">
-      <div class="section-card">
-        <div class="section-header">
-          <div class="section-title">Saved Voice Library (reference_voices/)</div>
-          <button class="btn-secondary btn-sm" id="btnRefreshLibrary" type="button">Refresh</button>
-        </div>
-        <p class="hint-text">Manage saved reference voices, thumbnails, and companion transcript scripts.</p>
-
-        <div class="voice-list" id="voiceListContainer"></div>
-      </div>
-    </div>
-  </div> <!-- end .left-pane -->
-
-    <!-- RIGHT PANE: Persistent Live System Logs Sidebar -->
-    <div class="right-pane">
-      <div class="logs-panel-card">
-        <div class="section-header" style="margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="status-dot" style="background: #32D74B; box-shadow: 0 0 8px rgba(50, 215, 75, 0.7);"></div>
-            <div class="section-title" style="font-size: 14px;">Live System Logs</div>
-          </div>
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none;">
-              <input type="checkbox" id="autoScrollCheck" checked style="accent-color: var(--primary);"> Auto-Scroll
-            </label>
-            <button class="btn-secondary btn-sm" id="btnCopyLogs" type="button" style="padding: 3px 8px; font-size: 11px;">Copy</button>
-            <button class="btn-secondary btn-sm" id="btnClearLogs" type="button" style="padding: 3px 8px; font-size: 11px;">Clear</button>
-          </div>
-        </div>
-        <p class="hint-text" style="margin-bottom: 12px;">Real-time stream of GPT-SoVITS neural speech synthesis, text routing, and background engine events.</p>
-
-        <div id="logConsole" class="terminal-log-box">
-          Loading system logs...
-        </div>
-      </div>
-    </div> <!-- end .right-pane -->
-  </div> <!-- end .workspace-grid -->
-</div> <!-- end .container -->
+      </div> <!-- end .right-pane -->
+    </div> <!-- end .workspace-grid -->
+  </div> <!-- end .container -->
 
   <!-- In-App Custom Thumbnail Confirmation Modal -->
   <div id="thumbModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center;">
@@ -2698,8 +2754,13 @@
 
     btnCopyLogs.addEventListener('click', () => {
       navigator.clipboard.writeText(logConsole.innerText).then(() => {
-        btnCopyLogs.innerText = 'Copied!';
-        setTimeout(() => btnCopyLogs.innerText = 'Copy Logs', 1500);
+        const origHTML = btnCopyLogs.innerHTML;
+        btnCopyLogs.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#32D74B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        btnCopyLogs.title = 'Copied!';
+        setTimeout(() => {
+          btnCopyLogs.innerHTML = origHTML;
+          btnCopyLogs.title = 'Copy all logs';
+        }, 1500);
       });
     });
 
