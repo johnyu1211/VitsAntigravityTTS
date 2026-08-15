@@ -405,7 +405,7 @@ async def speech_worker():
             chunks = [clean.strip()] if clean and clean.strip() else []
         slot_override = item.get("slot_override")
 
-        for chunk in chunks:
+        for idx, chunk in enumerate(chunks):
             if gen_id != current_generation_id:
                 break
 
@@ -449,6 +449,8 @@ async def speech_worker():
                 speed_mode = current_settings.get("speed_mode", "ultra")
                 pipe_tag = f" [{speed_mode.upper()}]" if speed_mode != "standard" else ""
                 log_preview = chunk[:35].replace('\n', ' ')
+                if idx > 0 and pygame.mixer.music.get_busy():
+                    print(f"[Parallel Stream] 🔄 Chunk {idx+1}/{len(chunks)} synthesizing in GPU background while speaker plays...")
                 success = await asyncio.to_thread(
                     gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol, fast_mode, speed_mode
                 )
