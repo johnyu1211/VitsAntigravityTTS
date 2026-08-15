@@ -271,6 +271,7 @@ async def speech_worker():
         temperature = float(current_settings.get("temperature", 0.65))
 
         chunks = split_into_conversational_chunks(clean)
+        slot_override = item.get("slot_override")
 
         for chunk in chunks:
             if gen_id != current_generation_id:
@@ -281,17 +282,27 @@ async def speech_worker():
 
             lang = detect_language(chunk)
             
-            # Universal Language Routing:
-            # 1. English -> Primary English Voice Slot
-            # 2. Any other language (KO, JA, ZH, etc.) -> Second Language Voice Slot
-            if lang == "en":
+            # Universal Language Routing with Slot Override Support:
+            if slot_override == "en" or slot_override == "first":
                 ref_voice = current_settings.get("voice_en", "voiceSCOURCE.wav")
                 prompt_text = current_settings.get("prompt_en", "")
                 prompt_lang = "en"
-            else:
+                lang = "en"
+            elif slot_override == "ko" or slot_override == "second":
                 ref_voice = current_settings.get("voice_ko", current_settings.get("voice_en", "voiceSCOURCE.wav"))
                 prompt_text = current_settings.get("prompt_ko", "")
                 prompt_lang = "auto"
+                if lang == "en":
+                    prompt_lang = "en"
+            else:
+                if lang == "en":
+                    ref_voice = current_settings.get("voice_en", "voiceSCOURCE.wav")
+                    prompt_text = current_settings.get("prompt_en", "")
+                    prompt_lang = "en"
+                else:
+                    ref_voice = current_settings.get("voice_ko", current_settings.get("voice_en", "voiceSCOURCE.wav"))
+                    prompt_text = current_settings.get("prompt_ko", "")
+                    prompt_lang = "auto"
 
             uid = f"{int(time.time()*1000)}_{os.getpid()}_{hash(chunk)%10000}"
             temp_out = os.path.join(TEMP_DIR, f"speech_{uid}.wav")
@@ -324,6 +335,7 @@ async def handle_index(request):
 
 async def handle_get_settings(request):
     return web.json_response({
+        "status": "ok",
         "settings": current_settings,
         "available_voices": gpt_sovits_engine.get_available_reference_voices()
     })
@@ -354,8 +366,27 @@ async def handle_save_settings(request):
 async def handle_test_speak(request):
     global current_generation_id
     current_generation_id += 1
-    test_phrase = "Hello! This is an English voice test. And this is a second language voice synthesis test."
-    await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id})
+    
+    slot = "en"
+    custom_text = ""
+    try:
+        if request.can_read_body:
+            body = await request.json()
+            slot = body.get("slot", "en")
+            custom_text = body.get("text", "")
+    except:
+        pass
+
+    if custom_text:
+        test_phrase = custom_text
+    elif slot == "en" or slot == "first":
+        test_phrase = "Hello! Nice to meet you. This is an English voice test."
+    elif slot == "ko" or slot == "second":
+        test_phrase = "Hello there! Nice to meet you. This is a second language voice test."
+    else:
+        test_phrase = "Hello! Nice to meet you. This is an AI voice synthesis test."
+
+    await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id, "slot_override": slot})
     return web.json_response({"status": "queued"})
 
 async def handle_status(request):

@@ -847,9 +847,15 @@
 
         <!-- English Slot (Primary) -->
         <div class="slot-box">
-          <div class="slot-header">
-            <span class="slot-badge">English Voice (Primary Slot)</span>
-            <span class="hint-text">Primary voice used when English is detected</span>
+          <div class="slot-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="slot-badge">English Voice (Primary Slot)</span>
+              <span class="hint-text">Primary voice used when English is detected</span>
+            </div>
+            <button class="btn-primary btn-sm" id="btnTestVoiceEn" type="button" style="display: flex; align-items: center; gap: 5px; padding: 5px 12px; font-weight: 600;" title="Test English voice greeting">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Play Test</span>
+            </button>
           </div>
 
           <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 10px;">
@@ -874,9 +880,15 @@
 
         <!-- Second Language Slot (Secondary / Multilingual) -->
         <div class="slot-box">
-          <div class="slot-header">
-            <span class="slot-badge ko">Second Language Voice (Secondary Slot)</span>
-            <span class="hint-text">Universal fallback voice for non-English speech (Korean, Japanese, Chinese, etc.)</span>
+          <div class="slot-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="slot-badge ko">Second Language Voice (Secondary Slot)</span>
+              <span class="hint-text">Fallback voice for non-English speech</span>
+            </div>
+            <button class="btn-primary btn-sm" id="btnTestVoiceKo" type="button" style="display: flex; align-items: center; gap: 5px; padding: 5px 12px; font-weight: 600;" title="Test second language voice greeting">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Play Test</span>
+            </button>
           </div>
 
           <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 10px;">
@@ -942,7 +954,7 @@
         </div>
 
         <div class="btn-group">
-          <button class="btn-primary" id="testBtn">Test Bilingual Voice</button>
+          <button class="btn-primary" id="testBtn">Test Voice Greeting</button>
         </div>
       </div>
     </div>
@@ -2475,11 +2487,60 @@
       } catch (err) {}
     }
 
+    const btnTestVoiceEn = document.getElementById('btnTestVoiceEn');
+    const btnTestVoiceKo = document.getElementById('btnTestVoiceKo');
+
+    if (btnTestVoiceEn) {
+      btnTestVoiceEn.addEventListener('click', async () => {
+        if (isServerDead) return;
+        const origText = btnTestVoiceEn.innerHTML;
+        btnTestVoiceEn.innerHTML = `<span>Cloning...</span>`;
+        btnTestVoiceEn.disabled = true;
+        try {
+          await fetch('/api/test_speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot: 'en', text: 'Hello! Nice to meet you. This is an English voice test.' })
+          });
+        } catch (e) {}
+        setTimeout(() => {
+          btnTestVoiceEn.innerHTML = origText;
+          btnTestVoiceEn.disabled = false;
+        }, 2500);
+      });
+    }
+
+    if (btnTestVoiceKo) {
+      btnTestVoiceKo.addEventListener('click', async () => {
+        if (isServerDead) return;
+        const origText = btnTestVoiceKo.innerHTML;
+        btnTestVoiceKo.innerHTML = `<span>Cloning...</span>`;
+        btnTestVoiceKo.disabled = true;
+        try {
+          await fetch('/api/test_speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot: 'ko', text: 'Hello there! Nice to meet you. This is a second language voice test.' })
+          });
+        } catch (e) {}
+        setTimeout(() => {
+          btnTestVoiceKo.innerHTML = origText;
+          btnTestVoiceKo.disabled = false;
+        }, 2500);
+      });
+    }
+
     testBtn.addEventListener('click', async () => {
       if (isServerDead) return;
       testBtn.innerText = 'Cloning...';
-      await fetch('/api/test_speak', { method: 'POST' });
-      setTimeout(() => testBtn.innerText = 'Test Bilingual Voice', 2500);
+      try {
+        await fetch('/api/test_speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot: 'all', text: 'Hello! Nice to meet you. This is an AI voice synthesis test.' })
+        });
+      } catch (e) {}
+      setTimeout(() => testBtn.innerText = 'Test Voice Greeting', 2500);
     });
 
     setInterval(async () => {
