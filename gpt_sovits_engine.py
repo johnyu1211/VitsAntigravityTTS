@@ -38,11 +38,41 @@ class GPTSoVITSEngine:
         config.t2s_weights_path = t2s_path
         config.vits_weights_path = vits_path
         config.bert_base_path = bert_path
-        config.cnhuhbert_base_path = cnhubert_path
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
+            try:
+                torch.backends.cuda.matmul.allow_tf32 = True
+                torch.backends.cudnn.allow_tf32 = True
+            except:
+                pass
 
         print(f"[GPT-SoVITS Engine] Initializing V2 on {self.device} (FP16={self.is_half})...")
         self.tts = TTS(config)
         print("[GPT-SoVITS Engine] Neural models loaded and ready in VRAM!")
+
+        # Pre-warm GPU CUDA kernels for zero-lag first response
+        try:
+            voices = self.get_available_reference_voices()
+            if voices:
+                warmup_ref = os.path.join(self.ref_dir, voices[0]["filename"])
+                dummy_inputs = {
+                    'text': "Ready",
+                    'text_lang': "en",
+                    'ref_audio_path': warmup_ref,
+                    'prompt_text': "",
+                    'prompt_lang': "en",
+                    'top_k': 5,
+                    'top_p': 1.0,
+                    'temperature': 0.6,
+                    'text_split_method': 'cut0',
+                    'speed_factor': 1.0,
+                    'batch_size': 1,
+                    'stream_mode': 'normal'
+                }
+                for _ in self.tts.run(dummy_inputs): pass
+                print("[GPT-SoVITS Engine] GPU kernels pre-warmed for ultra-low latency inference!")
+        except:
+            pass
 
     def get_voice_metadata(self, voice_filename):
         base_name = os.path.splitext(voice_filename)[0]
