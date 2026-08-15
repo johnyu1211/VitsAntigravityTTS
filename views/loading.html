@@ -64,17 +64,17 @@
   </div>
 
   <script>
-    let elapsed = 0;
+    const startTime = Date.now();
     const secBadge = document.getElementById('secBadge');
     const statusMsg = document.getElementById('statusMsg');
 
     setInterval(() => {
-      elapsed++;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
       secBadge.innerText = `Connecting (${elapsed}s)`;
-      if (elapsed > 4) {
+      if (elapsed >= 3) {
         statusMsg.innerText = 'Initializing neural vocoder & weights...';
       }
-    }, 1000);
+    }, 250);
   </script>
 </body>
 </html>
