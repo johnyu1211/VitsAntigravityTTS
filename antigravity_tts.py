@@ -115,7 +115,7 @@ def clean_markdown_text(text):
         return ""
     
     # 1. Remove code blocks completely
-    text = re.sub(r'```[\s\S]*?```', ' ', text)
+    text = re.sub(r'```[\s\S]*?```', '\n', text)
     text = re.sub(r'`[^`]+`', ' ', text)
 
     # 2. Markdown links: [Link Title](http://...) -> Link Title
@@ -131,8 +131,8 @@ def clean_markdown_text(text):
 
     # 5. HTML tags & Markdown elements & Tables
     text = re.sub(r'<[^>]+>', ' ', text)
-    text = re.sub(r'\|[^\n]+\|', ' ', text)
-    text = re.sub(r'[-:|]{3,}', ' ', text)
+    text = re.sub(r'\|[^\n]+\|', '\n', text)
+    text = re.sub(r'[-:|]{3,}', '\n', text)
     text = re.sub(r'\\\[[\s\S]*?\\\]', ' ', text)
     text = re.sub(r'\\\([^\)]*?\\\)', ' ', text)
     text = re.sub(r'\$\$[\s\S]*?\$\$', ' ', text)
@@ -141,32 +141,66 @@ def clean_markdown_text(text):
     text = re.sub(r'^\s*[-+*•·]\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'^\s*>\s*', '', text, flags=re.MULTILINE)
     
-    # 6. Comprehensive Special Character Purge
-    # Protect decimal points (e.g. 3.14, 2.0)
+    # 6. Protect decimal points (e.g. 3.14, 2.0)
     text = re.sub(r'(\d+)\.(\d+)', r'\1_DECIMAL_DOT_\2', text)
     
-    text = re.sub(r'[^\w\s\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?]', ' ', text)
+    # 7. Keep letters, numbers, spaces, newlines, and key punctuation
+    text = re.sub(r'[^\w\s\n\uac00-\ud7a3\u1100-\u11ff\u3040-\u30ff\u4e00-\u9fff\.\!\?\~,;:—\-]', ' ', text)
     text = re.sub(r'[_]', ' ', text)
     
-    # 7. Normalize multiple punctuations & replace breathless commas with clean space
+    # 8. Normalize multiple punctuations
     text = re.sub(r'[\.!\?]{2,}', '.', text)
-    text = re.sub(r'\s*,\s*', ' ', text)
-    text = re.sub(r'\s*([\.!\?])\s*', r'\1 ', text)
     
     # Restore decimal points
     text = text.replace(' DECIMAL DOT ', '.').replace('DECIMAL DOT', '.').replace('DECIMALDOT', '.')
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
+    return text.strip()
 
-def split_into_conversational_chunks(text):
+def split_into_conversational_chunks(text, max_chars=45):
+    """
+    Splits text into bite-sized conversational chunks (max 35~45 chars) so that
+    GPT-SoVITS synthesizes each chunk in <1.0s, completely eliminating playback buffer underruns.
+    """
     if not text:
         return []
-    normalized = re.sub(r'\s*\n+\s*', ' ', text).strip()
-    marked = re.sub(r'(\s+)(?=\d+[\.\)]\s+)', r' <CHUNK_SPLIT> ', normalized)
-    marked = re.sub(r'(?<=[^\d][\.\!\?])\s+', r' <CHUNK_SPLIT> ', marked)
-    raw_chunks = marked.split('<CHUNK_SPLIT>')
-    chunks = [c.strip() for c in raw_chunks if c.strip()]
-    return chunks if chunks else [normalized]
+    
+    # 1. Normalize line endings and mark natural boundary breaks
+    t = re.sub(r'\r\n', '\n', text)
+    # Numbered list items: '1. ', '2) ' -> new chunk line
+    t = re.sub(r'(\s+)(?=\d+[\.\)]\s+)', r'\n', t)
+    # Sentence ending punctuation followed by whitespace or line break
+    t = re.sub(r'(?<=[^\d][\.\!\?~;:])\s+', r'\n', t)
+    
+    raw_lines = [line.strip() for line in t.split('\n') if line.strip()]
+    final_chunks = []
+
+    for line in raw_lines:
+        line = re.sub(r'\s+', ' ', line).strip()
+        if not line:
+            continue
+        
+        # If line is already short enough, keep it intact
+        if len(line) <= max_chars:
+            final_chunks.append(line)
+            continue
+        
+        # Sub-clause splitting for long lines: split by commas, dashes, and common conjunctions
+        sub_tokens = re.split(r'([,，—\-]|\s+(?:그리고|하지만|또한|그러나|그러므로|and|but|or|so|because|while|with)\s+)', line)
+        
+        current_chunk = ''
+        for tok in sub_tokens:
+            if not tok:
+                continue
+            if len(current_chunk) + len(tok) <= max_chars:
+                current_chunk += tok
+            else:
+                if current_chunk.strip():
+                    final_chunks.append(current_chunk.strip())
+                current_chunk = tok
+        
+        if current_chunk.strip():
+            final_chunks.append(current_chunk.strip())
+
+    return final_chunks if final_chunks else [text.strip()]
 
 def stop_and_clear_everything():
     global current_generation_id
