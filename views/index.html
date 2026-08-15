@@ -630,11 +630,11 @@
 
         <div class="form-group">
           <label class="form-label">
-            <span>Volume (음량)</span>
+            <span>Volume (음량 및 스튜디오 증폭)</span>
             <span class="range-val" id="volumeVal">100%</span>
           </label>
           <div class="range-wrap">
-            <input type="range" id="volumeRange" min="0" max="100" step="1" value="100">
+            <input type="range" id="volumeRange" min="0" max="200" step="5" value="100">
           </div>
         </div>
 
@@ -876,7 +876,8 @@
     });
 
     volumeRange.addEventListener('input', () => {
-      volumeVal.innerText = volumeRange.value + '%';
+      const val = parseInt(volumeRange.value);
+      volumeVal.innerText = val > 100 ? `${val}% (Boost)` : `${val}%`;
       triggerAutoSave();
     });
 
@@ -1314,7 +1315,7 @@
         if (s.volume !== undefined) {
           const vPercent = Math.round(s.volume * 100);
           volumeRange.value = vPercent;
-          volumeVal.innerText = vPercent + '%';
+          volumeVal.innerText = vPercent > 100 ? `${vPercent}% (Boost)` : `${vPercent}%`;
         }
 
         if (s.speed) {

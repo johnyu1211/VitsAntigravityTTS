@@ -181,6 +181,24 @@ def stop_and_clear_everything():
             except:
                 break
 
+import numpy as np
+
+def apply_studio_volume_boost(wav_path, volume_multiplier):
+    """Applies studio-grade dynamic analog saturation and soft-knee limiting for clean loudness boost without clipping."""
+    if volume_multiplier <= 1.0 or not os.path.exists(wav_path):
+        return wav_path
+    try:
+        data, sr = sf.read(wav_path)
+        gain = 1.0 + (volume_multiplier - 1.0) * 1.3
+        boosted = np.tanh(data * gain)
+        max_val = np.max(np.abs(boosted))
+        if max_val > 0:
+            boosted = (boosted / max_val) * 0.98
+        sf.write(wav_path, boosted, sr)
+    except Exception as e:
+        print(f"[Volume Boost Error] {e}")
+    return wav_path
+
 async def audio_player_worker():
     global current_generation_id
     while True:
@@ -197,15 +215,19 @@ async def audio_player_worker():
 
         try:
             vol = float(current_settings.get("volume", 1.0))
-            pygame.mixer.music.set_volume(max(0.0, min(1.0, vol)))
+            if vol > 1.0:
+                # Apply high-fidelity analog volume boost on playback audio stream
+                audio_file = await asyncio.to_thread(apply_studio_volume_boost, audio_file, vol)
+                pygame.mixer.music.set_volume(1.0)
+            else:
+                pygame.mixer.music.set_volume(max(0.0, min(1.0, vol)))
+
             pygame.mixer.music.load(audio_file)
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy():
                 if gen_id != current_generation_id:
                     pygame.mixer.music.stop()
                     break
-                vol = float(current_settings.get("volume", 1.0))
-                pygame.mixer.music.set_volume(max(0.0, min(1.0, vol)))
                 await asyncio.sleep(0.02)
             pygame.mixer.music.unload()
         except Exception as e:
