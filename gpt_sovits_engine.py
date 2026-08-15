@@ -233,10 +233,8 @@ class GPTSoVITSEngine:
                 })
         return sorted(voices, key=lambda x: x["filename"])
 
-    def synthesize(self, text, ref_audio_name="voiceSCOURCE.wav", text_lang="ko", speed=1.0, temperature=0.65, prompt_text="", prompt_lang="auto", output_path=None, volume=1.0, fast_mode=True):
-        if not self._is_ready:
-            self.load_models()
-        if not self.tts:
+    def synthesize(self, text, ref_audio_name, text_lang="ko", speed=1.0, temperature=0.65, prompt_text="", prompt_lang="auto", output_path=None, volume=1.0, fast_mode=True, speed_mode="ultra"):
+        if not self._is_ready or not self.tts:
             print("[GPT-SoVITS Engine] Error: Model is not ready for synthesis!")
             return False
         try:
@@ -267,21 +265,38 @@ class GPTSoVITSEngine:
                 else:
                     prompt_lang = text_lang
 
-            # Use cut0 (no artificial chunking inside model) for smooth, unbroken human sentence flow
+            # Multi-tier Acceleration Engine configurations:
+            if speed_mode == "ultra":
+                top_k = 3
+                top_p = 0.75
+                parallel_infer = True
+                max_sec = min(12, max(4, int(len(text) * 0.35)))
+            elif speed_mode == "turbo" or fast_mode:
+                top_k = 5
+                top_p = 0.85
+                parallel_infer = True
+                max_sec = min(22, max(6, int(len(text) * 0.55)))
+            else:  # standard (1x)
+                top_k = 15
+                top_p = 0.95
+                parallel_infer = False
+                max_sec = 45
+
             inputs = {
                 'text': text,
                 'text_lang': text_lang,
                 'ref_audio_path': ref_path,
                 'prompt_text': prompt_text,
                 'prompt_lang': prompt_lang if prompt_text else text_lang,
-                'top_k': 5 if fast_mode else 15,
-                'top_p': 0.85 if fast_mode else 0.95,
+                'top_k': top_k,
+                'top_p': top_p,
                 'temperature': max(0.5, min(1.0, float(temperature))),
                 'text_split_method': 'cut0',
                 'speed_factor': speed,
                 'batch_size': 1,
                 'stream_mode': 'normal',
-                'parallel_infer': True if fast_mode else False
+                'parallel_infer': parallel_infer,
+                'max_sec': max_sec
             }
 
             audio_chunks = []

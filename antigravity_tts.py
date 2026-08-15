@@ -73,7 +73,8 @@ current_settings = {
     "enabled": True,
     "skip_code": True,
     "fast_pipeline": True,
-    "enable_chunking": True
+    "enable_chunking": True,
+    "speed_mode": "ultra"
 }
 
 speech_queue = asyncio.Queue()
@@ -431,10 +432,11 @@ async def speech_worker():
             t0 = time.perf_counter()
             try:
                 fast_mode = current_settings.get("fast_pipeline", True)
-                pipe_tag = " [FAST]" if fast_mode else ""
+                speed_mode = current_settings.get("speed_mode", "ultra")
+                pipe_tag = f" [{speed_mode.upper()}]" if speed_mode != "standard" else ""
                 log_preview = chunk[:35].replace('\n', ' ')
                 success = await asyncio.to_thread(
-                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol, fast_mode
+                    gpt_sovits_engine.synthesize, chunk, ref_voice, lang, speed, temperature, prompt_text, prompt_lang, temp_out, vol, fast_mode, speed_mode
                 )
                 elapsed_ms = (time.perf_counter() - t0) * 1000.0
                 elapsed_s = elapsed_ms / 1000.0

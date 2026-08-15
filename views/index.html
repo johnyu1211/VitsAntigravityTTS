@@ -1165,6 +1165,25 @@
               </label>
             </div>
 
+            <!-- AI Synthesis Acceleration Engine -->
+            <div class="control-row" style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display:flex; align-items:center; gap:7px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#468CF6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <label style="font-size: 13px; font-weight: 600; color: var(--text-main); margin:0;">AI Synthesis Acceleration</label>
+                </div>
+                <span id="speedModeDesc" style="font-size: 11px; font-weight: 600; color: #468CF6;">Ultra-Turbo (4x Fast)</span>
+              </div>
+              <div class="custom-segmented-control" id="speedModeGroup" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; background: rgba(0,0,0,0.25); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                <button type="button" class="speed-mode-btn" data-mode="standard" style="background: transparent; border: none; color: var(--text-muted); padding: 6px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Standard (1x)</button>
+                <button type="button" class="speed-mode-btn" data-mode="turbo" style="background: transparent; border: none; color: var(--text-muted); padding: 6px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">Turbo (2.5x)</button>
+                <button type="button" class="speed-mode-btn active" data-mode="ultra" style="background: var(--primary); border: none; color: #ffffff; padding: 6px 0; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(70, 140, 246, 0.35);">Ultra-Turbo (4x)</button>
+              </div>
+            </div>
+
             <div class="btn-group">
               <button class="btn-primary" id="testBtn" type="button" style="width: 100%; height: 38px;">Test Voice Greeting</button>
             </div>
@@ -1579,6 +1598,39 @@
       speedVal.innerText = speedRange.value + 'x';
       updateSliderTrackFill(speedRange);
       triggerAutoSave();
+    });
+
+    let currentSpeedMode = 'ultra';
+    const speedModeDesc = document.getElementById('speedModeDesc');
+    const speedModeBtns = document.querySelectorAll('.speed-mode-btn');
+
+    function setSpeedMode(mode, triggerSave = true) {
+      currentSpeedMode = mode || 'ultra';
+      speedModeBtns.forEach(btn => {
+        if (btn.getAttribute('data-mode') === currentSpeedMode) {
+          btn.classList.add('active');
+          btn.style.background = 'var(--primary)';
+          btn.style.color = '#ffffff';
+          btn.style.boxShadow = '0 2px 8px rgba(70, 140, 246, 0.35)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'transparent';
+          btn.style.color = 'var(--text-muted)';
+          btn.style.boxShadow = 'none';
+        }
+      });
+      if (speedModeDesc) {
+        if (currentSpeedMode === 'ultra') speedModeDesc.innerText = 'Ultra-Turbo (4x Fast)';
+        else if (currentSpeedMode === 'turbo') speedModeDesc.innerText = 'Turbo (2.5x Fast)';
+        else speedModeDesc.innerText = 'Standard (1x Baseline)';
+      }
+      if (triggerSave) triggerAutoSave();
+    }
+
+    speedModeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setSpeedMode(btn.getAttribute('data-mode'));
+      });
     });
 
     chunkingToggle.addEventListener('change', triggerAutoSave);
@@ -2760,6 +2812,9 @@
         if (s.enable_chunking !== undefined) {
           chunkingToggle.checked = s.enable_chunking !== false;
         }
+        if (s.speed_mode) {
+          setSpeedMode(s.speed_mode, false);
+        }
         if (s.fast_pipeline !== undefined) {
           fastPipelineToggle.checked = s.fast_pipeline !== false;
         }
@@ -2781,6 +2836,7 @@
         volume: parseFloat(volumeRange.value) / 100.0,
         speed: parseFloat(speedRange.value),
         enable_chunking: chunkingToggle.checked,
+        speed_mode: currentSpeedMode,
         fast_pipeline: fastPipelineToggle.checked,
         enabled: true
       };
@@ -3076,6 +3132,9 @@
           }
           if (s.enable_chunking !== undefined) {
             chunkingToggle.checked = s.enable_chunking !== false;
+          }
+          if (s.speed_mode) {
+            setSpeedMode(s.speed_mode, false);
           }
           if (s.fast_pipeline !== undefined) {
             fastPipelineToggle.checked = s.fast_pipeline !== false;
