@@ -1,5 +1,9 @@
 import os
 import sys
+
+# Force English localization for clean international terminal logs
+os.environ["I18N_LANG"] = "en_US"
+
 import soundfile as sf
 import json
 
