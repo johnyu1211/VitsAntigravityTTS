@@ -529,6 +529,9 @@ async def handle_test_speak(request):
     else:
         test_phrase = "Hello! Nice to meet you. This is an AI voice synthesis test."
 
+    # Immediate priority interrupt: cut off previous ongoing speech and play test greeting immediately!
+    stop_and_clear_everything()
+
     await speech_queue.put({"text": test_phrase, "gen_id": current_generation_id, "slot_override": slot})
     return web.json_response({"status": "queued"})
 
