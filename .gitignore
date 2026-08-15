@@ -25,9 +25,17 @@ build/
 *.ogg
 *.aac
 
-# User Reference Voices (Strictly ignore all except README.txt)
+# User Reference Voices & Thumbnails (Strictly ignore all except README.txt)
 reference_voices/*
 !reference_voices/README.txt
+reference_voices/*.png
+reference_voices/*.jpg
+reference_voices/*.jpeg
+reference_voices/*.webp
+*.png
+*.jpg
+*.jpeg
+*.webp
 
 # User Configuration & Runtime Created Configs
 config.json
