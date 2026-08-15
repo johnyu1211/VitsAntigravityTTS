@@ -1,14 +1,7 @@
 import os
 import sys
-import torch
 import soundfile as sf
 import json
-
-# Bypass transformers CVE-2025-32434 check for local trusted pretrained models
-import transformers.modeling_utils
-import transformers.utils.import_utils
-transformers.modeling_utils.check_torch_load_is_safe = lambda: None
-transformers.utils.import_utils.check_torch_load_is_safe = lambda: None
 
 core_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gpt_sovits_core")
 base_dir = os.path.join(core_dir, "GPT_SoVITS")
@@ -16,65 +9,104 @@ sys.path.insert(0, core_dir)
 sys.path.insert(0, base_dir)
 sys.path.insert(0, os.path.join(base_dir, "eres2net"))
 
-from TTS_infer_pack.TTS import TTS, TTS_Config
-
 class GPTSoVITSEngine:
     def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.is_half = True if self.device == "cuda" else False
+        self.device = "cuda"
+        self.is_half = True
         self.version = "v2"
         self.ref_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reference_voices")
         os.makedirs(self.ref_dir, exist_ok=True)
-        
-        t2s_path = os.path.join(base_dir, "pretrained_models", "gsv-v2final-pretrained", "s1bert25hz-5kh-longer-epoch=12-step=369668.ckpt")
-        vits_path = os.path.join(base_dir, "pretrained_models", "gsv-v2final-pretrained", "s2G2333k.pth")
-        bert_path = os.path.join(base_dir, "pretrained_models", "chinese-roberta-wwm-ext-large")
-        cnhubert_path = os.path.join(base_dir, "pretrained_models", "chinese-hubert-base")
+        self.tts = None
+        self._is_ready = False
+        self._is_loading = False
 
-        config = TTS_Config()
-        config.device = self.device
-        config.is_half = self.is_half
-        config.version = self.version
-        config.t2s_weights_path = t2s_path
-        config.vits_weights_path = vits_path
-        config.bert_base_path = bert_path
-        config.cnhuhbert_base_path = cnhubert_path
-        if torch.cuda.is_available():
-            torch.backends.cudnn.benchmark = True
+    def is_ready(self):
+        return self._is_ready
+
+    def load_models(self):
+        if self._is_ready:
+            return True
+        if self._is_loading:
+            import time
+            while self._is_loading and not self._is_ready:
+                time.sleep(0.1)
+            return self._is_ready
+
+        self._is_loading = True
+        try:
+            import torch
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.is_half = True if self.device == "cuda" else False
+
+            # Bypass transformers CVE-2025-32434 check for local trusted pretrained models
             try:
-                torch.backends.cuda.matmul.allow_tf32 = True
-                torch.backends.cudnn.allow_tf32 = True
+                import transformers.modeling_utils
+                import transformers.utils.import_utils
+                transformers.modeling_utils.check_torch_load_is_safe = lambda: None
+                transformers.utils.import_utils.check_torch_load_is_safe = lambda: None
             except:
                 pass
 
-        print(f"[GPT-SoVITS Engine] Initializing V2 on {self.device} (FP16={self.is_half})...")
-        self.tts = TTS(config)
-        print("[GPT-SoVITS Engine] Neural models loaded and ready in VRAM!")
+            from TTS_infer_pack.TTS import TTS, TTS_Config
+            t2s_path = os.path.join(base_dir, "pretrained_models", "gsv-v2final-pretrained", "s1bert25hz-5kh-longer-epoch=12-step=369668.ckpt")
+            vits_path = os.path.join(base_dir, "pretrained_models", "gsv-v2final-pretrained", "s2G2333k.pth")
+            bert_path = os.path.join(base_dir, "pretrained_models", "chinese-roberta-wwm-ext-large")
+            cnhubert_path = os.path.join(base_dir, "pretrained_models", "chinese-hubert-base")
 
-        # Pre-warm GPU CUDA kernels for zero-lag first response
-        try:
-            voices = self.get_available_reference_voices()
-            if voices:
-                warmup_ref = os.path.join(self.ref_dir, voices[0]["filename"])
-                dummy_inputs = {
-                    'text': "Ready.",
-                    'text_lang': "en",
-                    'ref_audio_path': warmup_ref,
-                    'prompt_text': "Ready.",
-                    'prompt_lang': "en",
-                    'top_k': 5,
-                    'top_p': 1.0,
-                    'temperature': 0.6,
-                    'text_split_method': 'cut0',
-                    'speed_factor': 1.0,
-                    'batch_size': 1,
-                    'stream_mode': 'normal',
-                    'parallel_infer': True
-                }
-                for _ in self.tts.run(dummy_inputs): pass
-                print("[GPT-SoVITS Engine] GPU kernels pre-warmed for ultra-low latency inference!")
-        except:
-            pass
+            config = TTS_Config()
+            config.device = self.device
+            config.is_half = self.is_half
+            config.version = self.version
+            config.t2s_weights_path = t2s_path
+            config.vits_weights_path = vits_path
+            config.bert_base_path = bert_path
+            config.cnhuhbert_base_path = cnhubert_path
+            if torch.cuda.is_available():
+                torch.backends.cudnn.benchmark = True
+                try:
+                    torch.backends.cuda.matmul.allow_tf32 = True
+                    torch.backends.cudnn.allow_tf32 = True
+                except:
+                    pass
+
+            print(f"[GPT-SoVITS Engine] Initializing V2 on {self.device} (FP16={self.is_half})...")
+            self.tts = TTS(config)
+            print("[GPT-SoVITS Engine] Neural models loaded and ready in VRAM!")
+
+            # Pre-warm GPU CUDA kernels for zero-lag first response
+            try:
+                voices = self.get_available_reference_voices()
+                if voices:
+                    warmup_ref = os.path.join(self.ref_dir, voices[0]["filename"])
+                    dummy_inputs = {
+                        'text': "Ready.",
+                        'text_lang': "en",
+                        'ref_audio_path': warmup_ref,
+                        'prompt_text': "Ready.",
+                        'prompt_lang': "en",
+                        'top_k': 5,
+                        'top_p': 1.0,
+                        'temperature': 0.6,
+                        'text_split_method': 'cut0',
+                        'speed_factor': 1.0,
+                        'batch_size': 1,
+                        'stream_mode': 'normal',
+                        'parallel_infer': True
+                    }
+                    for _ in self.tts.run(dummy_inputs): pass
+                    print("[GPT-SoVITS Engine] GPU kernels pre-warmed for ultra-low latency inference!")
+            except Exception as e:
+                print(f"[GPT-SoVITS Warmup Notice] {e}")
+
+            self._is_ready = True
+            return True
+        except Exception as e:
+            print(f"[GPT-SoVITS Engine Load Error] {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+        finally:
+            self._is_loading = False
 
     def get_voice_metadata(self, voice_filename):
         base_name = os.path.splitext(voice_filename)[0]
@@ -197,8 +229,12 @@ class GPTSoVITSEngine:
                 })
         return sorted(voices, key=lambda x: x["filename"])
 
-    @torch.inference_mode()
     def synthesize(self, text, ref_audio_name="voiceSCOURCE.wav", text_lang="ko", speed=1.0, temperature=0.65, prompt_text="", prompt_lang="auto", output_path=None, volume=1.0, fast_mode=True):
+        if not self._is_ready:
+            self.load_models()
+        if not self.tts:
+            print("[GPT-SoVITS Engine] Error: Model is not ready for synthesis!")
+            return False
         try:
             ref_path = os.path.join(self.ref_dir, ref_audio_name)
             if not os.path.exists(ref_path):
@@ -247,9 +283,11 @@ class GPTSoVITSEngine:
             audio_chunks = []
             sample_rate = 32000
 
-            for sr, audio in self.tts.run(inputs):
-                sample_rate = sr
-                audio_chunks.append(audio)
+            import torch
+            with torch.inference_mode():
+                for sr, audio in self.tts.run(inputs):
+                    sample_rate = sr
+                    audio_chunks.append(audio)
 
             if not audio_chunks:
                 return False

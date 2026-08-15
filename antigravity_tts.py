@@ -358,6 +358,16 @@ async def speech_worker():
             speech_queue.task_done()
             continue
 
+        if not gpt_sovits_engine.is_ready():
+            print("[GPT-SoVITS] Speech requested while neural models are loading into GPU. Waiting for engine ready...")
+            while not gpt_sovits_engine.is_ready():
+                if gen_id != current_generation_id:
+                    break
+                await asyncio.sleep(0.3)
+            if gen_id != current_generation_id:
+                speech_queue.task_done()
+                continue
+
         last_spoken_text = clean
         vol = float(current_settings.get("volume", 1.0))
         speed = float(current_settings.get("speed", 1.0))
@@ -467,24 +477,23 @@ async def handle_save_settings(request):
     })
 
 async def handle_test_speak(request):
-    global current_generation_id
-    current_generation_id += 1
-    
-    slot = "en"
-    custom_text = ""
+    if not gpt_sovits_engine.is_ready():
+        return web.json_response({
+            "status": "error",
+            "message": "AI neural model is still loading into GPU VRAM (Please wait a few moments)."
+        }, status=503)
     try:
-        if request.can_read_body:
-            body = await request.json()
-            slot = body.get("slot", "en")
-            custom_text = body.get("text", "")
+        data = await request.json()
     except:
-        pass
+        data = {}
+    slot = data.get("slot", "all")
+    custom_text = data.get("text", "").strip()
 
     if custom_text:
         test_phrase = custom_text
-    elif slot == "en" or slot == "first":
+    elif slot == "en":
         test_phrase = "Hello! Nice to meet you. This is an English voice test."
-    elif slot == "ko" or slot == "second":
+    elif slot == "ko":
         test_phrase = "Hello there! Nice to meet you. This is a second language voice test."
     else:
         test_phrase = "Hello! Nice to meet you. This is an AI voice synthesis test."
@@ -498,10 +507,13 @@ async def handle_status(request):
         is_busy = pygame.mixer.music.get_busy() or not audio_play_queue.empty()
     except:
         pass
+    model_ready = gpt_sovits_engine.is_ready() if gpt_sovits_engine else False
     return web.json_response({
         "enabled": current_settings.get("enabled", True),
         "is_playing": is_busy,
-        "last_spoken": last_spoken_text
+        "last_spoken": last_spoken_text,
+        "model_ready": model_ready,
+        "status": "ready" if model_ready else "loading_models"
     })
 
 async def handle_get_logs(request):
@@ -813,18 +825,33 @@ async def background_log_watcher():
 
         await asyncio.sleep(0.15)
 
+async def async_load_ai_engine():
+    loop = asyncio.get_running_loop()
+    print("[Antigravity Studio] Initializing AI neural models in background...")
+    try:
+        await loop.run_in_executor(None, gpt_sovits_engine.load_models)
+        print("[Antigravity Studio] AI Neural Model ready for real-time multilingual voice cloning!")
+    except Exception as e:
+        print(f"[Antigravity Studio] Neural Model load error: {e}")
+
 async def start_background_tasks(app):
+    app['engine_loader'] = asyncio.create_task(async_load_ai_engine())
     app['worker'] = asyncio.create_task(speech_worker())
     app['player'] = asyncio.create_task(audio_player_worker())
     app['watcher'] = asyncio.create_task(background_log_watcher())
 
 async def cleanup_background_tasks(app):
+    if 'engine_loader' in app and not app['engine_loader'].done():
+        app['engine_loader'].cancel()
     app['worker'].cancel()
     app['player'].cancel()
     app['watcher'].cancel()
-    await app['worker']
-    await app['player']
-    await app['watcher']
+    try: await app['worker']
+    except: pass
+    try: await app['player']
+    except: pass
+    try: await app['watcher']
+    except: pass
     cleanup_temp_dir()
 
 def main():
