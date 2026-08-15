@@ -22,8 +22,7 @@
 
 ## 실행 방법
 
-- **[run_app.vbs](run_app.vbs)**: 콘솔 창 없는 완전 무음 1-클릭 실행 (추천)
-- **[run_electron.bat](run_electron.bat)**: 배치 파일 실행
+- **[run_app.vbs](run_app.vbs)**: 더블 클릭하여 완전 무음으로 데스크톱 앱 실행 (검은 콘솔 창 없음)
 
 ---
 
