@@ -346,18 +346,18 @@
     }
 
     .slot-badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: var(--primary-subtle);
-      color: var(--primary);
-      text-transform: uppercase;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 0;
+      background: transparent !important;
+      color: var(--text-main) !important;
+      text-transform: none;
+      letter-spacing: normal;
     }
 
     .slot-badge.ko {
-      background: rgba(50, 215, 75, 0.15);
-      color: var(--success);
+      background: transparent !important;
+      color: var(--text-main) !important;
     }
 
     .form-group {
@@ -374,7 +374,7 @@
       justify-content: space-between;
     }
 
-    select, input[type="text"], input[type="number"], input[type="file"] {
+    select, input[type="text"], input[type="number"] {
       width: 100%;
       background: rgba(0, 0, 0, 0.25);
       border: 1px solid var(--border-color);
@@ -385,11 +385,6 @@
       font-family: inherit;
       outline: none;
       transition: var(--transition);
-    }
-
-    input[type="file"] {
-      padding: 10px;
-      cursor: pointer;
     }
 
     select:focus, input[type="text"]:focus, input[type="number"]:focus {
@@ -403,12 +398,37 @@
     }
 
     input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
       flex: 1;
       accent-color: var(--primary);
       height: 6px;
-      background: var(--card-inner);
+      background: #232328;
+      border: none !important;
+      outline: none !important;
       border-radius: 3px;
-      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      background: #232328;
+      height: 6px;
+      border-radius: 3px;
+      border: none !important;
+      outline: none !important;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      border: none !important;
+      outline: none !important;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      margin-top: -5px;
     }
 
     .range-val {
@@ -947,7 +967,7 @@
     <!-- Header -->
     <div class="header-card">
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #1f1f24, #0e0e11); border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #1f1f24, #0e0e11); border: 1px solid rgba(255,255,255,0.12); display: flex; align-items: center; justify-content: center;">
           <svg width="22" height="22" viewBox="0 0 36 36" fill="none">
             <defs>
               <linearGradient id="headerNeonBlue" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -965,13 +985,16 @@
         </div>
         <div class="title-wrap">
           <h1 style="font-size: 18px; font-weight: 700; letter-spacing: -0.02em;">Antigravity Studio</h1>
-          <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 1px;">GPT-SoVITS V2 Real-Time Multilingual Voice Suite</p>
         </div>
       </div>
       <div class="header-right">
         <button class="btn-refresh" id="refreshBtn" type="button">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-          <span>Refresh Studio</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+            <line x1="12" y1="8" x2="12" y2="13"></line>
+          </svg>
+          <span>Reboot Studio</span>
         </button>
       </div>
     </div>
@@ -1028,8 +1051,8 @@
 
               <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 6px;">
                 <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
-                <div id="slotThumbEn" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <div id="slotThumbEn" style="width: 126px; min-width: 126px; height: 126px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 </div>
 
                 <!-- Select & Prompt Form -->
@@ -1058,8 +1081,8 @@
 
               <div style="display: flex; gap: 14px; align-items: stretch; margin-top: 6px;">
                 <!-- Display-Only Slot Avatar Thumbnail (Preview) -->
-                <div id="slotThumbKo" style="width: 86px; min-width: 86px; height: 86px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <div id="slotThumbKo" style="width: 126px; min-width: 126px; height: 126px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35); pointer-events: none; user-select: none;">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                 </div>
 
                 <!-- Select & Prompt Form -->
@@ -1121,17 +1144,6 @@
               </label>
             </div>
 
-            <div class="toggle-row">
-              <div class="toggle-text">
-                <h4>Master Audio Output</h4>
-                <p>Toggle GPT-SoVITS voice synthesis on/off</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="masterToggle" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-
             <div class="btn-group">
               <button class="btn-primary" id="testBtn" type="button" style="width: 100%; height: 38px;">Test Voice Greeting</button>
             </div>
@@ -1145,18 +1157,30 @@
           <div class="section-card">
             <div class="section-header">
               <div class="section-title">Waveform Sample Editor</div>
-              <div class="duration-badge" id="durationBadge" style="font-size:12px;font-weight:700;color:var(--primary);">No Media Loaded</div>
+              <div class="duration-badge" id="durationBadge" style="font-size:12px;font-weight:700;color:var(--text-muted);">No Media Loaded</div>
             </div>
 
             <div class="trimmer-box">
               <div class="form-group">
-                <label class="form-label">Select Video or Audio File</label>
-                <input type="file" id="mediaFileInput" accept="audio/*,video/*">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span>Source Video / Audio Media</span>
+                  <span id="selectedFileNameDisplay" style="font-size:11.5px; color:var(--text-muted); font-weight:500;">No file loaded</span>
+                </label>
+                <div style="display:flex; gap:10px; align-items:center; background: rgba(0,0,0,0.25); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:6px 10px;">
+                  <input type="file" id="mediaFileInput" accept="audio/*,video/*" style="display:none;">
+                  <button class="btn-secondary btn-sm" type="button" onclick="document.getElementById('mediaFileInput').click()" style="display:flex; align-items:center; gap:6px; padding:7px 14px; font-weight:600; font-size:12.5px; border-radius:var(--radius-sm);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Browse Media File...</span>
+                  </button>
+                  <div id="mediaFileBadge" style="font-size:11.5px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+                    Supports MP4, MKV, MOV, WEBM, WAV, MP3, FLAC
+                  </div>
+                </div>
               </div>
 
               <!-- Video Preview Container (Only shown for video files) -->
-              <div class="player-container" id="playerContainer" style="display: none; margin-bottom: 4px;">
-                <video id="videoPreview" controls style="display: none; max-height: 220px;"></video>
+              <div class="player-container" id="playerContainer" style="display: none; margin-bottom: 8px; justify-content:center;">
+                <video id="videoPreview" controls style="display: none; max-height: 220px; border-radius:var(--radius-sm); border:1px solid var(--border-color);"></video>
                 <audio id="audioPreview" style="display: none;"></audio>
               </div>
 
@@ -1267,9 +1291,8 @@
                     <span style="font-size:12px;color:var(--text-muted);">Total Combined Length:</span>
                     <strong id="durationDisplay" style="color:var(--primary);font-size:15px;">0.00s</strong>
                   </div>
-                  <div id="clipGuideText" style="font-size:11px;color:var(--success);font-weight:600;display:flex;align-items:center;gap:4px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    <span>Ideal length for voice cloning (3~6s)</span>
+                  <div id="clipGuideText" style="font-size:11px;color:var(--text-muted);font-weight:500;display:flex;align-items:center;gap:4px;">
+                    <span>Recommended length for voice cloning: 3.0s ~ 6.0s</span>
                   </div>
                 </div>
               </div>
@@ -1412,7 +1435,6 @@
     const speedRange = document.getElementById('speedRange');
     const speedVal = document.getElementById('speedVal');
     const fastPipelineToggle = document.getElementById('fastPipelineToggle');
-    const masterToggle = document.getElementById('masterToggle');
     const testBtn = document.getElementById('testBtn');
     const autoSaveBadge = document.getElementById('autoSaveBadge');
     const feedBadge = document.getElementById('feedBadge');
@@ -1440,19 +1462,19 @@
       const slotThumbKo = document.getElementById('slotThumbKo');
 
       const defaultIconEn = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;user-select:none;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#468CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;user-select:none;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#468CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2v20M17 5v14M7 5v14M2 9v6M22 9v6"></path>
           </svg>
-          <span style="font-size:9.5px;font-weight:700;letter-spacing:0.05em;color:#468CF6;opacity:0.9;">EN VOICE</span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.05em;color:#468CF6;opacity:0.9;">EN VOICE</span>
         </div>`;
 
       const defaultIconKo = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;user-select:none;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#32D74B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;user-select:none;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#32D74B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2v20M17 5v14M7 5v14M2 9v6M22 9v6"></path>
           </svg>
-          <span style="font-size:9.5px;font-weight:700;letter-spacing:0.05em;color:#32D74B;opacity:0.9;">2ND VOICE</span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.05em;color:#32D74B;opacity:0.9;">2ND VOICE</span>
         </div>`;
 
       if (slotThumbEn) {
@@ -1631,15 +1653,25 @@
       let totalDur = 0;
       segments.forEach(s => { totalDur += Math.max(0, s.end - s.start); });
       durationDisplay.innerText = totalDur.toFixed(2) + 's';
-      durationBadge.innerText = `Combined: ${totalDur.toFixed(2)}s`;
 
-      if (totalDur >= 2.5 && totalDur <= 7.0) {
+      if (!mediaDuration || totalDur === 0) {
+        clipGuideText.innerHTML = '<span>Recommended length for voice cloning: 3.0s ~ 6.0s</span>';
+        clipGuideText.style.color = 'var(--text-muted)';
+        durationBadge.innerText = 'No Media Loaded';
+        durationBadge.style.color = 'var(--text-muted)';
+      } else if (totalDur >= 2.5 && totalDur <= 7.0) {
+        durationBadge.innerText = `Combined: ${totalDur.toFixed(2)}s`;
+        durationBadge.style.color = 'var(--primary)';
         clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Ideal combined length for voice cloning (3~6s)';
         clipGuideText.style.color = 'var(--success)';
       } else if (totalDur < 2.5) {
+        durationBadge.innerText = `Combined: ${totalDur.toFixed(2)}s`;
+        durationBadge.style.color = '#FF9F0A';
         clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too short (<2.5s may reduce clone accuracy)';
         clipGuideText.style.color = '#FF9F0A';
       } else {
+        durationBadge.innerText = `Combined: ${totalDur.toFixed(2)}s`;
+        durationBadge.style.color = '#FF9F0A';
         clipGuideText.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Too long (>7s may increase latency)';
         clipGuideText.style.color = '#FF9F0A';
       }
@@ -2142,6 +2174,17 @@
     mediaFileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      
+      const fileNameDisp = document.getElementById('selectedFileNameDisplay');
+      const fileBadge = document.getElementById('mediaFileBadge');
+      if (fileNameDisp) {
+        fileNameDisp.innerText = `${file.name} (${(file.size / (1024*1024)).toFixed(1)} MB)`;
+        fileNameDisp.style.color = 'var(--primary)';
+      }
+      if (fileBadge) {
+        fileBadge.innerText = `Loaded: ${file.name}`;
+      }
+
       loadedMediaBlob = file;
       const url = URL.createObjectURL(file);
       const isVideo = file.type.startsWith('video') || /\.(mp4|mkv|mov|webm|avi)$/i.test(file.name);
@@ -2663,7 +2706,6 @@
         if (s.fast_pipeline !== undefined) {
           fastPipelineToggle.checked = s.fast_pipeline !== false;
         }
-        masterToggle.checked = s.enabled !== false;
       } catch (err) {
         // Backend still booting up, retry loading settings in 500ms
         setTimeout(loadSettings, 500);
@@ -2681,7 +2723,7 @@
         volume: parseFloat(volumeRange.value) / 100.0,
         speed: parseFloat(speedRange.value),
         fast_pipeline: fastPipelineToggle.checked,
-        enabled: masterToggle.checked
+        enabled: true
       };
 
       try {
@@ -2938,9 +2980,6 @@
           if (s.fast_pipeline !== undefined) {
             fastPipelineToggle.checked = s.fast_pipeline !== false;
           }
-          if (s.enabled !== undefined) {
-            masterToggle.checked = s.enabled !== false;
-          }
         }
       } catch (e) {}
     }
@@ -2950,8 +2989,10 @@
       refreshBtn.addEventListener('click', () => {
         refreshBtn.classList.add('spinning');
         const txt = refreshBtn.querySelector('span');
-        if (txt) txt.innerText = 'Refreshing...';
-        if (window.electronAPI && window.electronAPI.reload) {
+        if (txt) txt.innerText = 'Rebooting...';
+        if (window.electronAPI && window.electronAPI.relaunch) {
+          window.electronAPI.relaunch();
+        } else if (window.electronAPI && window.electronAPI.reload) {
           window.electronAPI.reload();
         } else {
           window.location.reload();
