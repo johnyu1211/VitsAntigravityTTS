@@ -2934,6 +2934,9 @@
       if (escaped.includes('[Media Trimmer]')) {
         escaped = escaped.replace('[Media Trimmer]', '<span style="color:#FF9F0A;font-weight:700;">[Media Trimmer]</span>');
       }
+      if (line.includes('%|') || line.includes('it/s') || line.includes('s/it')) {
+        escaped = `<span style="color:#64D2FF;font-weight:600;">${escaped}</span>`;
+      }
       if (escaped.toLowerCase().includes('error')) {
         escaped = `<span style="color:#FF453A;">${escaped}</span>`;
       }
@@ -2987,7 +2990,21 @@
             lines = lines.filter(l => !isNoiseHttpLog(l));
           }
 
-          const formatted = lines.map(colorizeLog).join('\n');
+          let processed = [];
+          for (const raw of lines) {
+            const isProgress = /\d+%\s*\|.*(?:it\/s|s\/it)/.test(raw) || /\d+%\s*\|[█▌▎▏#\s]+\|/.test(raw);
+            if (isProgress && processed.length > 0) {
+              const prev = processed[processed.length - 1];
+              const prevIsProgress = /\d+%\s*\|.*(?:it\/s|s\/it)/.test(prev) || /\d+%\s*\|[█▌▎▏#\s]+\|/.test(prev);
+              if (prevIsProgress) {
+                processed[processed.length - 1] = raw;
+                continue;
+              }
+            }
+            processed.push(raw);
+          }
+
+          const formatted = processed.map(colorizeLog).join('\n');
           if (formatted !== lastLogContent) {
             const currentScrollTop = logConsole.scrollTop;
 

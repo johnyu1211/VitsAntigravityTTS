@@ -537,14 +537,35 @@ async def handle_status(request):
         "status": "ready" if model_ready else "loading_models"
     })
 
+def collapse_progress_logs(raw_text):
+    """
+    Simulates real terminal in-place carriage returns (\r) and collapses repetitive
+    tqdm progress bar iterations so they update on a single line without scrolling up.
+    """
+    lines = []
+    for raw_line in raw_text.splitlines():
+        parts = raw_line.split('\r')
+        line = parts[-1].strip('\r')
+        if not line.strip():
+            continue
+            
+        is_progress = bool(re.search(r'\d+%\s*\|.*(?:it/s|s/it|it\/s)', line) or re.search(r'\d+%\s*\|[█▌▎▏#\s]+\|', line))
+        if is_progress and lines:
+            prev_is_progress = bool(re.search(r'\d+%\s*\|.*(?:it/s|s/it|it\/s)', lines[-1]) or re.search(r'\d+%\s*\|[█▌▎▏#\s]+\|', lines[-1]))
+            if prev_is_progress:
+                lines[-1] = line  # Overwrite previous progress line in-place!
+                continue
+        lines.append(line)
+    return lines[-300:]
+
 async def handle_get_logs(request):
     logs = []
     log_file = os.path.join(APP_DIR, "logs", "electron_backend.log")
     if os.path.exists(log_file):
         try:
             with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
-                lines = f.readlines()
-                logs = [line.rstrip() for line in lines[-300:]]
+                content = f.read()
+                logs = collapse_progress_logs(content)
         except:
             pass
     return web.json_response({"logs": logs})
