@@ -10,6 +10,18 @@ let didSpawnBackend = false;
 let isConnected = false;
 const SERVER_URL = 'http://127.0.0.1:7861';
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
 process.on('uncaughtException', (err) => {
   console.error('[Electron Uncaught Exception]', err);
 });

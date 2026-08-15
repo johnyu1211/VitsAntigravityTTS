@@ -1297,12 +1297,12 @@
       <!-- RIGHT PANE: Persistent Live System Logs Sidebar -->
       <div class="right-pane">
         <div class="logs-panel-card" style="position: relative;">
-          <!-- Floating Startup Loading Overlay (Z-Index above Logs) -->
-          <div id="startupEngineOverlay" style="position: absolute; top: 52px; left: 14px; right: 14px; background: rgba(20, 20, 24, 0.94); backdrop-filter: blur(12px); border: 1px solid rgba(70, 140, 246, 0.45); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; align-items: center; gap: 12px; z-index: 50; box-shadow: 0 8px 28px rgba(0,0,0,0.65); transition: opacity 0.4s ease, transform 0.4s ease;">
-            <div style="width: 20px; height: 20px; min-width: 20px; border: 2.5px solid rgba(70, 140, 246, 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <!-- Floating Startup Loading Overlay (70% width, Horizontally Centered in Logs) -->
+          <div id="startupEngineOverlay" style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); width: 70%; max-width: 320px; background: rgba(20, 20, 24, 0.94); backdrop-filter: blur(12px); border: 1px solid rgba(70, 140, 246, 0.45); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; gap: 10px; z-index: 50; box-shadow: 0 8px 28px rgba(0,0,0,0.65); transition: opacity 0.4s ease, transform 0.4s ease;">
+            <div style="width: 18px; height: 18px; min-width: 18px; border: 2px solid rgba(70, 140, 246, 0.2); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
             <div style="flex: 1; min-width: 0;">
-              <div style="font-size: 12.5px; font-weight: 700; color: #FFFFFF;" id="startupTitle">Starting AI Voice Engine...</div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="startupSubtext">Loading neural models into GPU VRAM...</div>
+              <div style="font-size: 12px; font-weight: 700; color: #FFFFFF;" id="startupTitle">Starting AI Engine...</div>
+              <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="startupSubtext">Loading models into GPU VRAM...</div>
             </div>
           </div>
 
@@ -2595,11 +2595,16 @@
         if (!res.ok) throw new Error('Engine not ready');
         const data = await res.json();
         
+        // Save cached data for instant frame 0 rendering on next launches
+        try {
+          localStorage.setItem('cached_studio_data', JSON.stringify(data));
+        } catch (e) {}
+
         // Hide Startup Floating Overlay smoothly
         const startupOverlay = document.getElementById('startupEngineOverlay');
         if (startupOverlay && startupOverlay.style.display !== 'none') {
           startupOverlay.style.opacity = '0';
-          startupOverlay.style.transform = 'translateY(-8px)';
+          startupOverlay.style.transform = 'translate(-50%, -10px)';
           setTimeout(() => { startupOverlay.style.display = 'none'; }, 450);
         }
         const s = data.settings;
@@ -2872,15 +2877,54 @@
     setInterval(fetchSystemLogs, 800);
     fetchSystemLogs();
 
+    function hydrateFromLocalCache() {
+      try {
+        const cachedStr = localStorage.getItem('cached_studio_data');
+        if (cachedStr) {
+          const data = JSON.parse(cachedStr);
+          const s = data.settings || {};
+          voicesMetadata = {};
+          if (data.available_voices && data.available_voices.length > 0) {
+            data.available_voices.forEach(v => {
+              const fname = typeof v === 'string' ? v : v.filename;
+              const ptext = typeof v === 'object' ? v.prompt_text : "";
+              let thumb = typeof v === 'object' ? v.thumbnail : null;
+              if (thumb && !thumb.startsWith('http') && !thumb.startsWith('data:')) thumb = API_BASE + thumb;
+              voicesMetadata[fname] = { prompt_text: ptext, thumbnail: thumb };
+            });
+
+            populateSelect(voiceSelectEn, data.available_voices, s.voice_en || "voiceSCOURCE.wav");
+            populateSelect(voiceSelectKo, data.available_voices, s.voice_ko || "voiceSCOURCE.wav");
+            updateSlotThumbnails();
+            renderVoiceLibrary(data.available_voices);
+          }
+
+          if (s.prompt_en !== undefined) promptEnInput.value = s.prompt_en;
+          if (s.prompt_ko !== undefined) promptKoInput.value = s.prompt_ko;
+          if (s.temperature !== undefined) {
+            tempRange.value = s.temperature;
+            tempVal.innerText = parseFloat(s.temperature).toFixed(2);
+          }
+          if (s.volume !== undefined) {
+            const vPercent = Math.round(s.volume * 100);
+            volumeRange.value = vPercent;
+            volumeVal.innerText = vPercent > 100 ? `${vPercent}% (Boost)` : `${vPercent}%`;
+          }
+          if (s.speed) {
+            speedRange.value = s.speed;
+            speedVal.innerText = s.speed + 'x';
+          }
+        }
+      } catch (e) {}
+    }
+
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
       refreshBtn.addEventListener('click', () => {
         refreshBtn.classList.add('spinning');
         const txt = refreshBtn.querySelector('span');
-        if (txt) txt.innerText = 'Restarting...';
-        if (window.electronAPI && window.electronAPI.relaunch) {
-          window.electronAPI.relaunch();
-        } else if (window.electronAPI && window.electronAPI.reload) {
+        if (txt) txt.innerText = 'Refreshing...';
+        if (window.electronAPI && window.electronAPI.reload) {
           window.electronAPI.reload();
         } else {
           window.location.reload();
@@ -2888,6 +2932,7 @@
       });
     }
 
+    hydrateFromLocalCache();
     loadSettings();
   </script>
 </body>
