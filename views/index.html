@@ -1351,6 +1351,9 @@
     }
 
     async function setVoiceThumbnail(filename) {
+      if (!confirm(`Paste image from clipboard as thumbnail for "${filename}"?`)) return;
+
+      let pasted = false;
       try {
         if (navigator.clipboard && navigator.clipboard.read) {
           const items = await navigator.clipboard.read();
@@ -1363,6 +1366,7 @@
                   await uploadThumbnailBase64(filename, reader.result);
                 };
                 reader.readAsDataURL(blob);
+                pasted = true;
                 return;
               }
             }
@@ -1370,17 +1374,17 @@
         }
       } catch (e) {}
 
-      const input = prompt(`"${filename}" 보이스 썸네일 이미지 설정\n\n이미지 웹 URL을 입력하시거나, 클립보드에 이미지를 복사(Ctrl+C)한 상태에서 확인을 누르세요:`);
-      if (!input) return;
-
-      if (input.startsWith('http://') || input.startsWith('https://') || input.startsWith('data:image/')) {
-        if (input.startsWith('data:image/')) {
-          await uploadThumbnailBase64(filename, input);
-        } else {
-          await uploadThumbnailUrl(filename, input);
+      if (!pasted) {
+        const urlInput = prompt('No image found in clipboard.\n\nEnter Image URL (http/https) instead:');
+        if (urlInput && (urlInput.startsWith('http://') || urlInput.startsWith('https://') || urlInput.startsWith('data:image/'))) {
+          if (urlInput.startsWith('data:image/')) {
+            await uploadThumbnailBase64(filename, urlInput);
+          } else {
+            await uploadThumbnailUrl(filename, urlInput);
+          }
+        } else if (urlInput) {
+          alert('Invalid Image URL provided.');
         }
-      } else {
-        alert('올바른 이미지 URL(http... 또는 https...)을 입력해 주세요.');
       }
     }
 
@@ -1448,12 +1452,12 @@
           await loadSettings();
         } else {
           alert('Error: ' + (data.error || 'Failed to rename'));
-          btn.innerText = 'Save & Rename';
+          btn.innerText = 'Save';
           btn.disabled = false;
         }
       } catch (err) {
         alert('Request failed');
-        btn.innerText = 'Save & Rename';
+        btn.innerText = 'Save';
         btn.disabled = false;
       }
     }
@@ -1516,15 +1520,15 @@
         });
 
         item.innerHTML = `
-          <div style="display: flex; gap: 14px; align-items: center;">
-            <!-- Avatar Thumbnail Box (Click or Paste Image) -->
-            <div onclick="setVoiceThumbnail('${fname.replace(/'/g, "\\'")}')" title="클릭하여 썸네일 이미지 URL 입력 또는 클립보드 붙여넣기 (Ctrl+V)" style="width: 64px; min-width: 64px; height: 64px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: var(--transition);">
-              ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;flex-direction:column;align-items:center;color:var(--text-muted);font-size:10px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span style="margin-top:2px;font-size:9px;">+ Image</span></div>`}
+          <div style="display: flex; gap: 16px; align-items: stretch;">
+            <!-- Large Avatar Thumbnail Box (Click to paste image from clipboard) -->
+            <div onclick="setVoiceThumbnail('${fname.replace(/'/g, "\\'")}')" title="Click to paste image from clipboard" style="width: 90px; min-width: 90px; height: 90px; background: #141416; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: var(--transition); box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+              ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="display:flex;flex-direction:column;align-items:center;color:var(--text-muted);font-size:11px;font-weight:600;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span style="margin-top:4px;font-size:10px;">+ Paste Image</span></div>`}
             </div>
 
             <!-- Content Area -->
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-              <!-- Top Row: Play / Filename / Image / Save / Delete -->
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 8px;">
+              <!-- Top Row: Play / Filename / Save / Delete -->
               <div style="display: flex; gap: 8px; align-items: center;">
                 <button class="btn-play-preview" onclick="playVoiceSample(this, '${fname.replace(/'/g, "\\'")}')" type="button">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -1534,10 +1538,6 @@
                   <span style="font-size: 11px; color: var(--text-muted); margin-right: 6px;">File:</span>
                   <input type="text" id="${nameInputId}" value="${fname}" style="flex: 1; background: transparent; border: none; padding: 6px 0; font-size: 13px; font-weight: 600; color: var(--text-main); outline: none;">
                 </div>
-                <button class="btn-secondary btn-sm" onclick="setVoiceThumbnail('${fname.replace(/'/g, "\\'")}')" type="button" title="URL 또는 클립보드 이미지 적용" style="display:flex;align-items:center;gap:4px;">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                  <span>Image</span>
-                </button>
                 <button class="btn-secondary btn-sm" id="${saveBtnId}" onclick="saveVoiceItem('${fname.replace(/'/g, "\\'")}', '${nameInputId}', '${promptInputId}', this)" type="button" style="display:flex;align-items:center;gap:4px;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                   <span>Save</span>
