@@ -3120,12 +3120,12 @@
       if (subtext) {
         if (elapsedSec < 4) {
           subtext.innerText = 'Connecting to AI Voice Studio backend...';
-        } else if (elapsedSec < 15) {
-          subtext.innerText = 'Loading neural models & weights into GPU VRAM...';
-        } else if (elapsedSec < 30) {
+        } else if (elapsedSec < 18) {
+          subtext.innerText = 'Loading neural models & weights into GPU VRAM (FP16)...';
+        } else if (elapsedSec < 45) {
           subtext.innerText = 'Pre-warming CUDA speech synthesis pipeline...';
         } else {
-          subtext.innerText = 'Initialization taking longer than expected. Retrying backend connection...';
+          subtext.innerText = 'Finalizing GPU kernels. If needed, click retry below:';
           if (retryBox) retryBox.style.display = 'block';
         }
       }

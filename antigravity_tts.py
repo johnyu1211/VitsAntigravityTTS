@@ -556,16 +556,21 @@ def collapse_progress_logs(raw_text):
                 lines[-1] = line  # Overwrite previous progress line in-place!
                 continue
         lines.append(line)
-    return lines[-300:]
+    return lines[-150:]
 
 async def handle_get_logs(request):
     logs = []
     log_file = os.path.join(APP_DIR, "logs", "electron_backend.log")
     if os.path.exists(log_file):
         try:
-            with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
-                content = f.read()
-                logs = collapse_progress_logs(content)
+            # Fast tail-seek to avoid reading 15MB+ file and blocking event loop
+            max_bytes = 64 * 1024
+            with open(log_file, 'rb') as f:
+                f.seek(0, os.SEEK_END)
+                size = f.tell()
+                f.seek(max(0, size - max_bytes), os.SEEK_SET)
+                raw_text = f.read().decode('utf-8', errors='ignore')
+            logs = collapse_progress_logs(raw_text)
         except:
             pass
     return web.json_response({"logs": logs})
@@ -822,48 +827,50 @@ async def background_log_watcher():
     
     last_file = None
     last_pos = 0
+    last_scan_time = 0
 
     while True:
-        latest = get_latest_transcript_path()
-        if not latest or not os.path.exists(latest):
-            await asyncio.sleep(0.5)
-            continue
+        now = time.time()
+        # Non-blocking async check for new conversation sessions every 3 seconds
+        if last_file is None or (now - last_scan_time > 3.0):
+            last_scan_time = now
+            latest = await asyncio.to_thread(get_latest_transcript_path)
+            if latest and latest != last_file:
+                last_file = latest
+                last_pos = os.path.getsize(latest)
+                stop_and_clear_everything()
 
-        if latest != last_file:
-            last_file = latest
-            last_pos = os.path.getsize(latest)
-            stop_and_clear_everything()
+        if last_file and os.path.exists(last_file):
+            try:
+                curr_size = os.path.getsize(last_file)
+                if curr_size > last_pos:
+                    with open(last_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        f.seek(last_pos)
+                        new_lines = f.readlines()
+                        last_pos = f.tell()
 
-        try:
-            curr_size = os.path.getsize(last_file)
-            if curr_size > last_pos:
-                with open(last_file, 'r', encoding='utf-8', errors='ignore') as f:
-                    f.seek(last_pos)
-                    new_lines = f.readlines()
-                    last_pos = f.tell()
+                    for line in new_lines:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            data = json.loads(line)
+                            msg_type = data.get("type")
 
-                for line in new_lines:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        data = json.loads(line)
-                        msg_type = data.get("type")
-
-                        if msg_type == "USER_INPUT":
-                            stop_and_clear_everything()
-                        elif msg_type == "PLANNER_RESPONSE":
-                            tool_calls = data.get("tool_calls", [])
-                            content = data.get("content", "")
-                            if content and len(tool_calls) == 0 and current_settings.get("enabled", True):
+                            if msg_type == "USER_INPUT":
                                 stop_and_clear_everything()
-                                await speech_queue.put({"text": content, "gen_id": current_generation_id})
-                    except Exception as e:
-                        pass
-            elif curr_size < last_pos:
-                last_pos = curr_size
-        except Exception as e:
-            pass
+                            elif msg_type == "PLANNER_RESPONSE":
+                                tool_calls = data.get("tool_calls", [])
+                                content = data.get("content", "")
+                                if content and len(tool_calls) == 0 and current_settings.get("enabled", True):
+                                    stop_and_clear_everything()
+                                    await speech_queue.put({"text": content, "gen_id": current_generation_id})
+                        except Exception as e:
+                            pass
+                elif curr_size < last_pos:
+                    last_pos = curr_size
+            except Exception as e:
+                pass
 
         await asyncio.sleep(0.15)
 
