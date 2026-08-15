@@ -123,26 +123,20 @@ function createWindow() {
     mainWindow.webContents.session.clearCache();
   } catch (e) {}
 
-  // 1. Show sleek loading screen first
-  mainWindow.loadFile(path.join(rootDir, 'views', 'loading.html')).catch(() => {});
+  // 1. Show main studio UI immediately (Zero waiting time!)
+  mainWindow.loadFile(path.join(rootDir, 'views', 'index.html')).catch(() => {});
 
   // 2. Prevent blank screen if load ever fails
   mainWindow.webContents.on('did-fail-load', (event, errorCode) => {
-    if (!isConnected && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadFile(path.join(rootDir, 'views', 'loading.html')).catch(() => {});
-      setTimeout(pollAndLoadApp, 600);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadFile(path.join(rootDir, 'views', 'index.html')).catch(() => {});
     }
   });
 
-  // 3. Check if already running or launch
+  // 3. Check if backend is running or launch
   checkPortActive((alreadyRunning) => {
-    if (alreadyRunning) {
-      console.log('[Electron] Existing backend detected. Connecting immediately...');
-      isConnected = true;
-      mainWindow.loadURL(SERVER_URL, { extraHeaders: 'pragma: no-cache\ncache-control: no-cache\n' });
-    } else {
+    if (!alreadyRunning) {
       startPythonBackend();
-      pollAndLoadApp();
     }
   });
 
