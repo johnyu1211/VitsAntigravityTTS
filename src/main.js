@@ -100,10 +100,10 @@ function createWindow() {
   const rootDir = path.resolve(__dirname, '..');
 
   mainWindow = new BrowserWindow({
-    width: 780,
+    width: 1360,
     height: 920,
-    minWidth: 640,
-    minHeight: 700,
+    minWidth: 980,
+    minHeight: 650,
     backgroundColor: '#1c1c1e',
     title: 'Antigravity Voice Studio',
     icon: path.join(__dirname, 'assets', 'icon.png'),

@@ -41,15 +41,79 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 32px 20px 60px;
+      padding: 20px 24px 30px;
     }
 
     .container {
       width: 100%;
-      max-width: 720px;
+      max-width: 1440px;
       display: flex;
       flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 2-Column Split Workspace Grid */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
       gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 1080px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+      .right-pane {
+        position: static !important;
+      }
+      .logs-panel-card {
+        height: 520px !important;
+      }
+    }
+
+    .left-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .right-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+      position: sticky;
+      top: 16px;
+    }
+
+    .logs-panel-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 125px);
+      min-height: 600px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    }
+
+    .terminal-log-box {
+      flex: 1;
+      background: #0c0c0e;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      overflow-y: auto;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: #D1D1D6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
     }
 
     /* Header */
@@ -57,7 +121,7 @@
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 20px 24px;
+      padding: 16px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -817,13 +881,16 @@
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="tab-studio" type="button">Voice Studio</button>
-      <button class="tab-btn" data-tab="tab-trimmer" type="button">Video & Audio Trimmer</button>
-      <button class="tab-btn" data-tab="tab-library" type="button">Voice Library</button>
-      <button class="tab-btn" data-tab="tab-logs" type="button">System Logs</button>
-    </nav>
+    <!-- 2-Column Split Workspace Grid -->
+    <div class="workspace-grid">
+      <!-- LEFT PANE: Active Studio Tools -->
+      <div class="left-pane">
+        <!-- Navigation Tabs -->
+        <nav class="tab-nav">
+          <button class="tab-btn active" data-tab="tab-studio" type="button">Voice Studio</button>
+          <button class="tab-btn" data-tab="tab-trimmer" type="button">Video & Audio Trimmer</button>
+          <button class="tab-btn" data-tab="tab-library" type="button">Voice Library</button>
+        </nav>
 
     <!-- ============================================== -->
     <!-- TAB 1: MAIN VOICE STUDIO                       -->
@@ -1127,33 +1194,34 @@
         </div>
         <p class="hint-text">Manage saved reference voices, thumbnails, and companion transcript scripts.</p>
 
-        <div class="voice-list" id="voiceListContainer"></div>
       </div>
-    </div>
+    </div> <!-- end .left-pane -->
 
-    <!-- ============================================== -->
-    <!-- TAB 4: SYSTEM LOGS & CONSOLE                   -->
-    <!-- ============================================== -->
-    <div class="tab-content" id="tab-logs">
-      <div class="section-card">
-        <div class="section-header">
-          <div class="section-title">Real-Time Engine Logs (logs/electron_backend.log)</div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+    <!-- RIGHT PANE: Persistent Live System Logs Sidebar -->
+    <div class="right-pane">
+      <div class="logs-panel-card">
+        <div class="section-header" style="margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="status-dot" style="background: #32D74B; box-shadow: 0 0 8px rgba(50, 215, 75, 0.7);"></div>
+            <div class="section-title" style="font-size: 14px;">Live System Logs</div>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none;">
               <input type="checkbox" id="autoScrollCheck" checked style="accent-color: var(--primary);"> Auto-Scroll
             </label>
-            <button class="btn-secondary btn-sm" id="btnCopyLogs" type="button">Copy Logs</button>
-            <button class="btn-secondary btn-sm" id="btnClearLogs" type="button">Clear View</button>
+            <button class="btn-secondary btn-sm" id="btnCopyLogs" type="button" style="padding: 3px 8px; font-size: 11px;">Copy</button>
+            <button class="btn-secondary btn-sm" id="btnClearLogs" type="button" style="padding: 3px 8px; font-size: 11px;">Clear</button>
           </div>
         </div>
-        <p class="hint-text">Live stream of neural voice synthesis, text routing, and background engine events.</p>
+        <p class="hint-text" style="margin-bottom: 12px;">Real-time stream of GPT-SoVITS neural speech synthesis, text routing, and background engine events.</p>
 
-        <div id="logConsole" style="background: #111113; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px 16px; height: 380px; overflow-y: auto; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; color: #D1D1D6; white-space: pre-wrap; word-break: break-all;">
+        <div id="logConsole" class="terminal-log-box">
           Loading system logs...
         </div>
       </div>
-    </div>
-  </div>
+    </div> <!-- end .right-pane -->
+  </div> <!-- end .workspace-grid -->
+</div> <!-- end .container -->
 
   <!-- In-App Custom Thumbnail Confirmation Modal -->
   <div id="thumbModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center;">
